@@ -1,10 +1,10 @@
 import React from 'react';
-import Dashboard from './components/Dashboard';
+import Home from './components/home/Home';
 
 const App = () => {
   return (
     <div className="App">
-      <Dashboard />
+      <Home />
     </div>
   );
 };

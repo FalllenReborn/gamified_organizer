@@ -1,11 +1,13 @@
 import React, { useContext, useState } from 'react';
 import { ThemeContext } from '../../ThemeContext';
 import LoginPopup from '../login/LoginPopup';
+import RegisterPopup from '../register/RegisterPopup';
 import './sidebar.css';
 
 const Sidebar = ({ onReturnHome }) => {
     const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
     const [showLoginPopup, setShowLoginPopup] = useState(false);
+    const [showRegisterPopup, setShowRegisterPopup] = useState(false);
 
     const translations = {
         english: {
@@ -29,11 +31,18 @@ const Sidebar = ({ onReturnHome }) => {
     const t = translations[selectedLanguage];
 
     const handleLoginClick = () => {
-        setShowLoginPopup(true);
+        setShowRegisterPopup(false); // Close the register popup
+        setShowLoginPopup(true); // Open the login popup
       };
     
-      const handleClosePopup = () => {
+      const handleRegisterClick = () => {
+        setShowLoginPopup(false); // Close the login popup
+        setShowRegisterPopup(true); // Open the register popup
+      };
+    
+      const handleClosePopups = () => {
         setShowLoginPopup(false);
+        setShowRegisterPopup(false);
       };
 
   return (
@@ -55,10 +64,11 @@ const Sidebar = ({ onReturnHome }) => {
       </div>
       <div className="sidebar-bottom-buttons">
         <button className="sidebar-button" onClick={handleLoginClick}>{t.login}</button>
-        <button className="sidebar-button">{t.register}</button>
+        <button className="sidebar-button" onClick={handleRegisterClick}>{t.register}</button>
         <button className="sidebar-button" onClick={onReturnHome}>{t.returnHome}</button>
       </div>
-      <LoginPopup show={showLoginPopup} onClose={handleClosePopup} />
+      <LoginPopup show={showLoginPopup} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />
+      <RegisterPopup show={showRegisterPopup} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />
     </div>
   );
 };

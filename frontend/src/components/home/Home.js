@@ -3,11 +3,13 @@ import './home.css';
 import Dashboard from '../dashboard/Dashboard';
 import { ThemeContext } from '../../ThemeContext';
 import LoginPopup from '../login/LoginPopup';
+import RegisterPopup from '../register/RegisterPopup';
 
 const Home = () => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const [isGuest, setIsGuest] = useState(false);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
+  const [showRegisterPopup, setShowRegisterPopup] = useState(false);
 
   const handleGuestClick = () => {
     setIsGuest(true);
@@ -33,11 +35,18 @@ const Home = () => {
   const t = translations[selectedLanguage];
 
   const handleLoginClick = () => {
-    setShowLoginPopup(true);
+    setShowRegisterPopup(false); // Close the register popup
+    setShowLoginPopup(true); // Open the login popup
   };
 
-  const handleClosePopup = () => {
+  const handleRegisterClick = () => {
+    setShowLoginPopup(false); // Close the login popup
+    setShowRegisterPopup(true); // Open the register popup
+  };
+
+  const handleClosePopups = () => {
     setShowLoginPopup(false);
+    setShowRegisterPopup(false);
   };
 
   if (isGuest) {
@@ -60,10 +69,11 @@ const Home = () => {
       </div>
       <div className="home-buttons">
         <button className="home-button" onClick={handleLoginClick}>{t.login}</button>
-        <button className="home-button" onClick={() => {}}>{t.register}</button>
+        <button className="home-button" onClick={handleRegisterClick}>{t.register}</button>
         <button className="home-button" onClick={handleGuestClick}>{t.guest}</button>
       </div>
-      <LoginPopup show={showLoginPopup} onClose={handleClosePopup} />
+      <LoginPopup show={showLoginPopup} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />
+      <RegisterPopup show={showRegisterPopup} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />
     </div>
   );
 };

@@ -1,9 +1,13 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { ThemeContext } from '../../ThemeContext';
-import './loginPopup.css';
+import './registerPopup.css';
 
-const LoginPopup = ({ show, onClose, onOpenRegister }) => {
+const RegisterPopup = ({ show, onClose, onOpenLogin }) => {
   const { isDarkMode, selectedLanguage } = useContext(ThemeContext);
+
+  if (!show) {
+    return null;
+  }
 
   const translations = {
     english: {
@@ -11,29 +15,33 @@ const LoginPopup = ({ show, onClose, onOpenRegister }) => {
       confirm: 'Confirm',
       register: 'Register',
       username: 'Username',
-      password: 'Password'
+      email: 'Email',
+      password: 'Password',
+      confirmPassword: 'Confirm Password'
     },
     polish: {
       login: 'Zaloguj się',
       confirm: 'Potwierdź',
       register: 'Zarejestruj się',
       username: 'Nazwa użytkownika',
-      password: 'Hasło'
+      email: 'Email',
+      password: 'Hasło',
+      confirmPassword: 'Potwierdź hasło'
     }
   };
 
   const t = translations[selectedLanguage];
 
-  if (!show) {
-    return null;
-  }
-
   return (
     <div className={`popup-overlay ${isDarkMode ? 'dark-mode' : ''}`}>
       <div className={`popup-content ${isDarkMode ? 'dark-mode' : ''}`}>
         <button className="close-icon" onClick={onClose}>X</button>
-        <h2>{t.login}</h2>
+        <h2>{t.register}</h2>
         <form className="login-form">
+            <div className="form-group">
+              <label htmlFor="email">{t.email}</label>
+              <input type="email" id="email" name="email" required />
+            </div>
           <div className="form-group">
             <label htmlFor="username">{t.username}</label>
             <input type="text" id="username" name="username" required />
@@ -42,8 +50,12 @@ const LoginPopup = ({ show, onClose, onOpenRegister }) => {
             <label htmlFor="password">{t.password}</label>
             <input type="password" id="password" name="password" required />
           </div>
+            <div className="form-group">
+              <label htmlFor="confirmPassword">{t.confirmPassword}</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" required />
+            </div>
           <div className="form-actions">
-            <button type="button" className="register-button" onClick={onOpenRegister}>{t.register}</button>
+            <button type="button" className="toggle-mode-button" onClick={onOpenLogin}>{t.login}</button>
             <button type="button" className="confirm-button">{t.confirm}</button>
           </div>
         </form>
@@ -52,4 +64,4 @@ const LoginPopup = ({ show, onClose, onOpenRegister }) => {
   );
 };
 
-export default LoginPopup;
+export default RegisterPopup;

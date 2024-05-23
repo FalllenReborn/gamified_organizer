@@ -1,9 +1,11 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { ThemeContext } from '../../ThemeContext';
+import LoginPopup from '../login/LoginPopup';
 import './sidebar.css';
 
 const Sidebar = ({ onReturnHome }) => {
     const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
+    const [showLoginPopup, setShowLoginPopup] = useState(false);
 
     const translations = {
         english: {
@@ -26,6 +28,14 @@ const Sidebar = ({ onReturnHome }) => {
     
     const t = translations[selectedLanguage];
 
+    const handleLoginClick = () => {
+        setShowLoginPopup(true);
+      };
+    
+      const handleClosePopup = () => {
+        setShowLoginPopup(false);
+      };
+
   return (
     <div className={`sidebar ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
       <div className="sidebar-top">
@@ -44,10 +54,11 @@ const Sidebar = ({ onReturnHome }) => {
         <button className="sidebar-button">{t.createXP}</button>
       </div>
       <div className="sidebar-bottom-buttons">
-        <button className="sidebar-button">{t.login}</button>
+        <button className="sidebar-button" onClick={handleLoginClick}>{t.login}</button>
         <button className="sidebar-button">{t.register}</button>
         <button className="sidebar-button" onClick={onReturnHome}>{t.returnHome}</button>
       </div>
+      <LoginPopup show={showLoginPopup} onClose={handleClosePopup} />
     </div>
   );
 };

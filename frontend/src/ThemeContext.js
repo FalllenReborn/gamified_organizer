@@ -1,13 +1,18 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
+import { getSettings, saveSettings } from './utils/localStorageUtils';
 
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('english');
+  const [isDarkMode, setIsDarkMode] = useState(getSettings().isDarkMode);
+  const [selectedLanguage, setSelectedLanguage] = useState(getSettings().selectedLanguage);
+
+  useEffect(() => {
+    saveSettings({ isDarkMode, selectedLanguage });
+  }, [isDarkMode, selectedLanguage]);
 
   const toggleDarkMode = () => {
-    setIsDarkMode(prevMode => !prevMode);
+    setIsDarkMode((prevMode) => !prevMode);
   };
 
   const handleLanguageChange = (language) => {

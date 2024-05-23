@@ -2,10 +2,12 @@ import React, { useState, useContext } from 'react';
 import './home.css';
 import Dashboard from '../dashboard/Dashboard';
 import { ThemeContext } from '../../ThemeContext';
+import LoginPopup from '../login/LoginPopup';
 
 const Home = () => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const [isGuest, setIsGuest] = useState(false);
+  const [showLoginPopup, setShowLoginPopup] = useState(false);
 
   const handleGuestClick = () => {
     setIsGuest(true);
@@ -30,6 +32,14 @@ const Home = () => {
 
   const t = translations[selectedLanguage];
 
+  const handleLoginClick = () => {
+    setShowLoginPopup(true);
+  };
+
+  const handleClosePopup = () => {
+    setShowLoginPopup(false);
+  };
+
   if (isGuest) {
     return <Dashboard onReturnHome={handleReturnHome} />;
   }
@@ -49,10 +59,11 @@ const Home = () => {
         </select>
       </div>
       <div className="home-buttons">
-        <button className="home-button" onClick={() => {}}>{t.login}</button>
+        <button className="home-button" onClick={handleLoginClick}>{t.login}</button>
         <button className="home-button" onClick={() => {}}>{t.register}</button>
         <button className="home-button" onClick={handleGuestClick}>{t.guest}</button>
       </div>
+      <LoginPopup show={showLoginPopup} onClose={handleClosePopup} />
     </div>
   );
 };

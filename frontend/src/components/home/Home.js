@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import './home.css';
 import Dashboard from '../dashboard/Dashboard';
+import { ThemeContext } from '../../ThemeContext';
 
 const Home = () => {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const [selectedLanguage, setSelectedLanguage] = useState('english');
   const [isGuest, setIsGuest] = useState(false);
 
   const handleModeChange = () => {
-    setIsDarkMode(!isDarkMode);
+    toggleDarkMode();
   };
 
   const handleLanguageChange = (e) => {

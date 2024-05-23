@@ -1,11 +1,14 @@
 import React from 'react';
 import Home from './components/home/Home';
+import { ThemeProvider } from './ThemeContext';
 
 const App = () => {
   return (
-    <div className="App">
-      <Home />
-    </div>
+    <ThemeProvider>
+      <div className="App">
+        <Home />
+      </div>
+    </ThemeProvider>
   );
 };
 

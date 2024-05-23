@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { ThemeContext } from '../../ThemeContext';
 import './sidebar.css';
 
 const Sidebar = ({ onReturnHome }) => {
+    const { isDarkMode } = useContext(ThemeContext);
   return (
-    <div className="sidebar">
+    <div className={`sidebar ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
       <div className="sidebar-top">
         <label className="switch">
           <input type="checkbox" />

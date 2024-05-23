@@ -1,12 +1,18 @@
-import React from 'react';
+import React, { useContext } from 'react';
+import { ThemeContext } from '../../ThemeContext';
 import './loginPopup.css';
 
 const LoginPopup = ({ show, onClose }) => {
-  if (!show) return null;
+  const { isDarkMode } = useContext(ThemeContext);
+
+  if (!show) {
+    return null;
+  }
 
   return (
-    <div className="popup-overlay">
-      <div className="popup-content">
+    <div className={`popup-overlay ${isDarkMode ? 'dark-mode' : ''}`}>
+      <div className={`popup-content ${isDarkMode ? 'dark-mode' : ''}`}>
+        <button className="close-icon" onClick={onClose}>X</button>
         <h2>Login</h2>
         <form className="login-form">
           <div className="form-group">
@@ -18,8 +24,8 @@ const LoginPopup = ({ show, onClose }) => {
             <input type="password" id="password" name="password" required />
           </div>
           <div className="form-actions">
-            <button type="button" className="close-button" onClick={onClose}>Close</button>
             <button type="button" className="register-button">Register</button>
+            <button type="button" className="confirm-button">Confirm</button>
           </div>
         </form>
       </div>

@@ -31,11 +31,19 @@
     align-items: center;
 }
 
+.dateTime {
+    position: absolute;
+    top: 55px;
+    right: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 .sidebarButtons {
     display: flex;
     flex-direction: column;
-    margin-top: 100%;
-    height: 50%;
+    margin-top: 125%;
 }
 
 .sidebarButton {

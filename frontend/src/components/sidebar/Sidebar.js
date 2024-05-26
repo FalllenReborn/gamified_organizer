@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../ThemeContext';
 import { useAuth } from '../../AuthContext';
@@ -12,7 +12,20 @@ const Sidebar = () => {
   const { isAuthenticated, logout } = useAuth();
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
+  const [currentDateTime, setCurrentDateTime] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      const currentDate = new Date();
+      const formattedDate = currentDate.toLocaleDateString();
+      const formattedTime = currentDate.toLocaleTimeString();
+      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      setCurrentDateTime(`${formattedDate}, ${formattedTime} (${timeZone})`);
+    }, 1000);
+  
+    return () => clearInterval(intervalId);
+  }, []);
 
   const translations = {
       english: {
@@ -71,6 +84,9 @@ const Sidebar = () => {
           <option value="english">🇺🇸 English</option>
           <option value="polish">🇵🇱 Polish</option>
         </select>
+      </div>
+      <div className={styles.dateTime}>
+        {currentDateTime && <p>{currentDateTime}</p>}
       </div>
       <div className={styles.sidebarButtons}>
         <button className={styles.sidebarButton}>{t.createList}</button>

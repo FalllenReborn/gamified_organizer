@@ -15,7 +15,7 @@ def login_view(request):
         user = authenticate(request, username=username, password=password)
         if user is not None:
             login(request, user)
-            return JsonResponse({'message': 'User logged in successfully'})  # , 'redirect': '/dashboard'
+            return JsonResponse({'message': 'User logged in successfully', 'redirect': '/dashboard'})
         else:
             return JsonResponse({'error': 'Invalid credentials'}, status=400)
     return JsonResponse({'error': 'Invalid method'}, status=405)
@@ -41,6 +41,6 @@ def register_view(request):
 
         user = User.objects.create_user(username=username, email=email, password=password)
         user.save()
-        return JsonResponse({'message': 'User registered successfully'})  # , 'redirect': '/dashboard'
+        return JsonResponse({'message': 'User registered successfully', 'redirect': '/dashboard'})
     return JsonResponse({'error': 'Invalid method'}, status=405)
 

@@ -1,13 +1,17 @@
 import React, { useContext, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../ThemeContext';
+import { useAuth } from '../../AuthContext';
 import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
 import './sidebar.css';
 
-const Sidebar = ({ onReturnHome }) => {
+const Sidebar = () => {
     const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
+    const { isAuthenticated, logout } = useAuth();
     const [showLoginPopup, setShowLoginPopup] = useState(false);
     const [showRegisterPopup, setShowRegisterPopup] = useState(false);
+    const navigate = useNavigate();
 
     const translations = {
         english: {
@@ -16,7 +20,8 @@ const Sidebar = ({ onReturnHome }) => {
           createXP: 'Create new XP bar',
           login: 'Login',
           register: 'Register',
-          returnHome: 'Return to Home page'
+          returnHome: 'Home page',
+          logout: 'Logout'
         },
         polish: {
           createList: 'Stwórz nową listę',
@@ -24,7 +29,8 @@ const Sidebar = ({ onReturnHome }) => {
           createXP: 'Stwórz nowy licznik doświadczenia',
           login: 'Zaloguj się',
           register: 'Zarejestruj się',
-          returnHome: 'Wróć do strony głównej'
+          returnHome: 'Strona Główna',
+          logout: 'Wyloguj się'
         }
       };
     
@@ -45,6 +51,14 @@ const Sidebar = ({ onReturnHome }) => {
         setShowRegisterPopup(false);
       };
 
+      const handleReturnHome = () => {
+        navigate('/');
+      };
+
+      const handleLogout = () => {
+        logout();
+      };
+
   return (
     <div className={`sidebar ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
       <div className="sidebar-top">
@@ -63,12 +77,27 @@ const Sidebar = ({ onReturnHome }) => {
         <button className="sidebar-button">{t.createXP}</button>
       </div>
       <div className="sidebar-bottom-buttons">
-        <button className="sidebar-button" onClick={handleLoginClick}>{t.login}</button>
-        <button className="sidebar-button" onClick={handleRegisterClick}>{t.register}</button>
-        <button className="sidebar-button" onClick={onReturnHome}>{t.returnHome}</button>
+        {isAuthenticated ? (
+          <>
+            <div className="return-home">
+              <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
+            </div>
+            <button className="btn btn-secondary mt-2" onClick={handleLogout}>{t.logout}</button>
+          </>
+        ) : (
+          <>
+            <div className="return-home">
+              <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
+            </div>
+            <div className="auth-buttons">
+              <button className="btn btn-link" onClick={handleLoginClick}>{t.login}</button>
+              <button className="btn btn-link" onClick={handleRegisterClick}>{t.register}</button>
+            </div>
+          </>
+        )}
       </div>
-      <LoginPopup show={showLoginPopup} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />
-      <RegisterPopup show={showRegisterPopup} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />
+      {showLoginPopup && <LoginPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />}
+      {showRegisterPopup && <RegisterPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />}
     </div>
   );
 };

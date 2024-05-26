@@ -1,34 +1,32 @@
 import React, { useState, useContext } from 'react';
-import './home.css';
-import Dashboard from '../dashboard/Dashboard';
+import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../ThemeContext';
+import { useAuth } from '../../AuthContext';
 import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
+import './home.css';
 
 const Home = () => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
-  const [isGuest, setIsGuest] = useState(false);
+  const { isAuthenticated, logout } = useAuth();
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
-
-  const handleGuestClick = () => {
-    setIsGuest(true);
-  };
-
-  const handleReturnHome = () => {
-    setIsGuest(false);
-  };
+  const navigate = useNavigate();
 
   const translations = {
     english: {
       login: 'Login',
       register: 'Register',
-      guest: 'Guest'
+      guest: 'Guest',
+      logout: 'Logout',
+      dashboard: 'Dashboard'
     },
     polish: {
       login: 'Zaloguj się',
       register: 'Zarejestruj się',
-      guest: 'Gość'
+      guest: 'Gość',
+      logout: 'Wyloguj się',
+      dashboard: 'Tablica'
     }
   };
 
@@ -49,9 +47,13 @@ const Home = () => {
     setShowRegisterPopup(false);
   };
 
-  if (isGuest) {
-    return <Dashboard onReturnHome={handleReturnHome} />;
-  }
+  const handleDashboardGuest = () => {
+    navigate('/dashboard');
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
 
   return (
     <div className={`home-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
@@ -67,13 +69,20 @@ const Home = () => {
           <option value="polish">🇵🇱 Polish</option>
         </select>
       </div>
-      <div className="home-buttons">
-        <button className="home-button" onClick={handleLoginClick}>{t.login}</button>
-        <button className="home-button" onClick={handleRegisterClick}>{t.register}</button>
-        <button className="home-button" onClick={handleGuestClick}>{t.guest}</button>
-      </div>
-      <LoginPopup show={showLoginPopup} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />
-      <RegisterPopup show={showRegisterPopup} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />
+      {isAuthenticated ? (
+        <div className="home-buttons">
+          <button className="home-button" onClick={handleDashboardGuest}>{t.dashboard}</button>
+          <button className="home-button" onClick={handleLogout}>{t.logout}</button>
+        </div>
+      ) : (
+        <div className="home-buttons">
+          <button className="home-button" onClick={handleLoginClick}>{t.login}</button>
+          <button className="home-button" onClick={handleRegisterClick}>{t.register}</button>
+          <button className="home-button" onClick={handleDashboardGuest}>{t.guest}</button>
+        </div>
+      )}
+      {showLoginPopup && <LoginPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />}
+      {showRegisterPopup && <RegisterPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />}
     </div>
   );
 };

@@ -1,18 +1,22 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../ThemeContext';
+import { useAuth } from '../../AuthContext';
 import './registerPopup.css';
 
-const RegisterPopup = ({ show, onClose, onOpenLogin }) => {
+const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {
   const { isDarkMode, selectedLanguage } = useContext(ThemeContext);
-
+  const { isAuthenticated, login } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const navigate = useNavigate();
+  const inputRef = useRef(null);
+
+  // Authentication handler
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -25,6 +29,12 @@ const RegisterPopup = ({ show, onClose, onOpenLogin }) => {
       });
       setMessage(response.data.message);
       if (response.data.redirect) {
+        // Automatically log in the user after registration
+        const loginResponse = await axios.post('http://127.0.0.1:8000/accounts/login/', {
+          username,
+          password,
+        });
+        login();
         navigate(response.data.redirect);
       }
     } catch (error) {
@@ -32,9 +42,7 @@ const RegisterPopup = ({ show, onClose, onOpenLogin }) => {
     }
   };
 
-  if (!show) {
-    return null;
-  }
+    // Translations
 
   const translations = {
     english: {
@@ -59,26 +67,35 @@ const RegisterPopup = ({ show, onClose, onOpenLogin }) => {
 
   const t = translations[selectedLanguage];
 
+  if (!show) {
+    return null;
+  }
+
+  if (!isOpen) return null;
+
   return (
     <div className={`popup-overlay ${isDarkMode ? 'dark-mode' : ''}`}>
-      <div className={`popup-content ${isDarkMode ? 'dark-mode' : ''}`}>
-        <button className="close-icon" onClick={onClose}>X</button>
+      <div className={`popup ${isDarkMode ? 'dark-mode' : ''}`}>
+        <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
         <h2>{t.register}</h2>
         <form className="login-form" onSubmit={handleRegister}>
-            <div className="form-group">
-              <label htmlFor="email">{t.email}</label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+          <div className="mb-3">
+            <label htmlFor="email" className="form-label">{t.email}</label>
+            <input
+              type="email"
+              className="form-control"
+              id="email"
+              ref={inputRef}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
           <div className="form-group">
-            <label htmlFor="username">{t.username}</label>
+            <label htmlFor="username" className="form-label">{t.username}</label>
             <input
                 type="text"
+                className="form-control"
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -86,28 +103,32 @@ const RegisterPopup = ({ show, onClose, onOpenLogin }) => {
               />
           </div>
           <div className="form-group">
-            <label htmlFor="password">{t.password}</label>
+            <label htmlFor="password" className="form-label">{t.password}</label>
             <input
               type="password"
+              className="form-control"
               id="password"
+              ref={inputRef}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">{t.confirmPassword}</label>
+            <label htmlFor="confirmPassword" className="form-label">{t.confirmPassword}</label>
             <input
               type="password"
+              className="form-control"
               id="confirmPassword"
+              ref={inputRef}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
             />
           </div>
-          <div className="form-actions">
-            <button type="button" className="toggle-mode-button" onClick={onOpenLogin}>{t.login}</button>
-            <button type="submit" className="confirm-button">{t.confirm}</button>
+          <div className="popup-buttons">
+            <button type="button" className="btn btn-link" onClick={onOpenLogin}>{t.login}</button>
+            <button type="submit" className="btn btn-primary">{t.confirm}</button>
           </div>
         </form>
         <p>{message}</p>

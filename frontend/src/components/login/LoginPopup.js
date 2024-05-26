@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../ThemeContext';
 import { useAuth } from '../../AuthContext';
-import './loginPopup.css';
+import styles from './loginPopup.module.css';
 
 const LoginPopup = ({ show, isOpen, onClose, onOpenRegister }) => {
   const { isDarkMode, selectedLanguage } = useContext(ThemeContext);
@@ -26,6 +26,7 @@ const LoginPopup = ({ show, isOpen, onClose, onOpenRegister }) => {
       setMessage(response.data.message);
       if (response.data.redirect) {
         login();
+        onClose();
         navigate(response.data.redirect);
       }
     } catch (error) {
@@ -61,11 +62,11 @@ const LoginPopup = ({ show, isOpen, onClose, onOpenRegister }) => {
   if (!isOpen) return null;
 
   return (
-    <div className={`popup-overlay ${isDarkMode ? 'dark-mode' : ''}`}>
-      <div className={`popup ${isDarkMode ? 'dark-mode' : ''}`}>
-        <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
+    <div className={`${styles.popupOverlay} ${isDarkMode ? styles.darkMode : ''}`}>
+      <div className={`${styles.popup} ${isDarkMode ? styles.darkMode : ''}`}>
+        <button type="button" className={`btn-close ${styles.closeIcon}`} aria-label="Close" onClick={onClose}></button>
         <h2>{t.login}</h2>
-        <form className="login-form" onSubmit={handleLogin}>
+        <form className={styles.loginForm} onSubmit={handleLogin}>
           <div className="mb-3">
             <label htmlFor="username" className="form-label">{t.username}</label>
             <input
@@ -89,9 +90,9 @@ const LoginPopup = ({ show, isOpen, onClose, onOpenRegister }) => {
               required
             />
           </div>
-          <div className="popup-buttons">
-            <button type="button" className="btn btn-link" onClick={onOpenRegister}>{t.register}</button>
-            <button type="submit" className="btn btn-primary">{t.confirm}</button>
+          <div className={styles.popupButtons}>
+            <button type="button" className={`btn btn-link ${styles.registerButton}`} onClick={onOpenRegister}>{t.register}</button>
+            <button type="submit" className={`btn btn-primary ${styles.confirmButton}`}>{t.confirm}</button>
           </div>
         </form>
         <p>{message}</p>

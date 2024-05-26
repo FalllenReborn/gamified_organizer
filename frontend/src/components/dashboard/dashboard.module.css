@@ -1,0 +1,26 @@
+.dashboardContainer {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background-color: var(--background-color); /* Set background color */
+  color: var(--text-color);
+}
+
+.dashboardContent {
+  flex: 1;
+  padding: 20px;
+}
+
+.lightMode {
+  --background-color: #f0f0f0; /* Set light mode background color */
+  --text-color: #000;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+.darkMode {
+  --background-color: #1e1e1e; /* Set dark mode background color */
+  --text-color: #fff;
+  background-image: linear-gradient(to right, rgba(255, 255, 255, 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
+  background-size: 50px 50px;
+}

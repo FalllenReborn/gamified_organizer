@@ -1,16 +1,16 @@
 import React, { useContext } from 'react';
 import { ThemeContext } from '../../ThemeContext';
 import Sidebar from '../sidebar/Sidebar';
-import './dashboard.css';
+import styles from './dashboard.module.css';
 
 
 const Dashboard = ({ onReturnHome }) => {
   const { isDarkMode } = useContext(ThemeContext);
 
   return (
-    <div className={`dashboard-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
+    <div className={`${styles.dashboardContainer} ${isDarkMode ? styles.darkMode : styles.lightMode}`}>
       <Sidebar onReturnHome={onReturnHome} />
-      <div className="dashboard-content">
+      <div className={styles.dashboardContent}>
         <h1></h1>
         {/* Other dashboard content will go here */}
       </div>

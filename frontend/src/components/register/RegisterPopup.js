@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../ThemeContext';
 import { useAuth } from '../../AuthContext';
-import './registerPopup.css';
+import styles from './registerPopup.module.css';
 
 const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {
   const { isDarkMode, selectedLanguage } = useContext(ThemeContext);
@@ -74,11 +74,11 @@ const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {
   if (!isOpen) return null;
 
   return (
-    <div className={`popup-overlay ${isDarkMode ? 'dark-mode' : ''}`}>
-      <div className={`popup ${isDarkMode ? 'dark-mode' : ''}`}>
-        <button type="button" className="btn-close" aria-label="Close" onClick={onClose}></button>
+    <div className={`${styles.popupOverlay} ${isDarkMode ? styles.darkMode : ''}`}>
+      <div className={`${styles.popup} ${isDarkMode ? styles.darkMode : ''}`}>
+        <button type="button" className={`btn-close ${styles.closeIcon}`} aria-label="Close" onClick={onClose}></button>
         <h2>{t.register}</h2>
-        <form className="login-form" onSubmit={handleRegister}>
+        <form className={styles.loginForm} onSubmit={handleRegister}>
           <div className="mb-3">
             <label htmlFor="email" className="form-label">{t.email}</label>
             <input
@@ -91,18 +91,18 @@ const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {
               required
             />
           </div>
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label htmlFor="username" className="form-label">{t.username}</label>
             <input
-                type="text"
-                className="form-control"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-              />
+              type="text"
+              className="form-control"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+            />
           </div>
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label htmlFor="password" className="form-label">{t.password}</label>
             <input
               type="password"
@@ -114,7 +114,7 @@ const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {
               required
             />
           </div>
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label htmlFor="confirmPassword" className="form-label">{t.confirmPassword}</label>
             <input
               type="password"
@@ -126,7 +126,7 @@ const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {
               required
             />
           </div>
-          <div className="popup-buttons">
+          <div className={styles.popupButtons}>
             <button type="button" className="btn btn-link" onClick={onOpenLogin}>{t.login}</button>
             <button type="submit" className="btn btn-primary">{t.confirm}</button>
           </div>

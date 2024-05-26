@@ -4,7 +4,8 @@ import { ThemeContext } from '../../ThemeContext';
 import { useAuth } from '../../AuthContext';
 import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
-import './home.css';
+import styles from './home.module.css';
+import classNames from 'classnames';
 
 const Home = () => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
@@ -56,33 +57,33 @@ const Home = () => {
   };
 
   return (
-    <div className={`home-container ${isDarkMode ? 'dark-mode' : 'light-mode'}`}>
-      <div className="top-left">
-        <label className="switch">
-          <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />
-          <span className="slider round"></span>
-        </label>
-      </div>
-      <div className="top-right">
-        <select className="language-dropdown" value={selectedLanguage} onChange={(e) => handleLanguageChange(e.target.value)}>
-          <option value="english">🇺🇸 English</option>
-          <option value="polish">🇵🇱 Polish</option>
-        </select>
-      </div>
-      {isAuthenticated ? (
-        <div className="home-buttons">
-          <button className="home-button" onClick={handleDashboardGuest}>{t.dashboard}</button>
-          <button className="home-button" onClick={handleLogout}>{t.logout}</button>
+    <div className={`${styles.container} ${isDarkMode ? styles.darkMode : styles.lightMode}`}>
+      <div className={styles.homeContainer}>
+        <div className={styles.topLeft}>
+          <label className={styles.switch}>
+            <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />
+            <span className={classNames(styles.slider, styles.round)}></span>
+          </label>
+          <select className={styles.languageDropdown} value={selectedLanguage} onChange={(e) => handleLanguageChange(e.target.value)}>
+            <option value="english">🇺🇸 English</option>
+            <option value="polish">🇵🇱 Polish</option>
+          </select>
         </div>
-      ) : (
-        <div className="home-buttons">
-          <button className="home-button" onClick={handleLoginClick}>{t.login}</button>
-          <button className="home-button" onClick={handleRegisterClick}>{t.register}</button>
-          <button className="home-button" onClick={handleDashboardGuest}>{t.guest}</button>
-        </div>
-      )}
-      {showLoginPopup && <LoginPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />}
-      {showRegisterPopup && <RegisterPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />}
+        {isAuthenticated ? (
+          <div className={styles.homeButtons}>
+            <button className={styles.homeButton} onClick={handleDashboardGuest}>{t.dashboard}</button>
+            <button className={styles.homeButton} onClick={handleLogout}>{t.logout}</button>
+          </div>
+        ) : (
+          <div className={styles.homeButtons}>
+            <button className={styles.homeButton} onClick={handleLoginClick}>{t.login}</button>
+            <button className={styles.homeButton} onClick={handleRegisterClick}>{t.register}</button>
+            <button className={styles.homeButton} onClick={handleDashboardGuest}>{t.guest}</button>
+          </div>
+        )}
+        {showLoginPopup && <LoginPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />}
+        {showRegisterPopup && <RegisterPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />}
+      </div>
     </div>
   );
 };

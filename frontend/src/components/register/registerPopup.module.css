@@ -1,4 +1,4 @@
-.popup-overlay {
+.popupOverlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -24,73 +24,53 @@
   text-align: center;
 }
 
-.popup.dark-mode {
+.popup.darkMode {
   background: #333;
   color: white;
 }
 
-.popup-buttons {
+.popupButtons {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 20px;
 }
 
-.btn-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: var(--text-color);
-  cursor: pointer;
-}
-
-.login-form {
+.loginForm {
   display: flex;
   flex-direction: column;
 }
 
-.form-group {
+.formGroup {
   margin-bottom: 15px;
 }
 
-.form-group label {
+.formGroup label {
   margin-bottom: 5px;
   display: block;
 }
 
-.form-group input {
+.formGroup input {
   width: 100%;
   padding: 8px;
   box-sizing: border-box;
 }
 
-.form-actions {
+.formActions {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 20px;
 }
 
-.close-icon {
+.closeIcon {
   position: absolute;
   top: 10px;
   right: 10px;
-  background: none;
-  border: none;
-  color: inherit;
-  font-size: 16px;
-  cursor: pointer;
 }
 
-.close-icon:hover {
-  text-decoration: underline;
-}
-
-.confirm-button,
-.register-button {
+.toggleModeButton,
+.confirmButton {
   background: none;
   border: none;
   color: blue;
@@ -98,12 +78,12 @@
   font-size: 14px;
 }
 
-.confirm-button:hover,
-.register-button:hover {
+.toggleModeButton:hover,
+.confirmButton:hover {
   text-decoration: underline;
 }
 
-.dark-mode .confirm-button,
-.dark-mode .register-button {
+.darkMode .confirmButton,
+.darkMode .toggleModeButton {
   color: #9cdbff;
 }

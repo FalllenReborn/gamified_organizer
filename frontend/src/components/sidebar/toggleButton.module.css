@@ -1,0 +1,16 @@
+.toggleButton {
+    position: absolute;
+    cursor: pointer;
+    top: 10px;
+    left: 10px;
+    background: none;
+    background-color: #fff;
+    border: none;
+    padding: 0px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;  /* Adjust the size as needed */
+    height: 35px; /* Adjust the size as needed */
+    z-index: 2000;
+  }

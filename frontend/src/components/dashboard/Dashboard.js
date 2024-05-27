@@ -3,10 +3,12 @@ import { ThemeContext } from '../../ThemeContext';
 import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
+import ToggleButton from '../sidebar/ToggleButton';
 
 const Dashboard = ({ onReturnHome }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [scale, setScale] = useState(1);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -96,6 +98,10 @@ const Dashboard = ({ onReturnHome }) => {
     e.stopPropagation();
   };
 
+  const handleToggle = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
@@ -111,6 +117,9 @@ const Dashboard = ({ onReturnHome }) => {
       }}
       ref={dashboardRef}
     >
+      <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
+      {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} />}
+      <ResetButton onClick={handleReset} />
       <div
         className={`${styles.clickableArea} ${isDraggingSidebar && styles.hidden}`}
         onMouseDown={handleMouseDown}
@@ -121,8 +130,6 @@ const Dashboard = ({ onReturnHome }) => {
         className={styles.sidebarArea}
         onMouseDown={(e) => e.stopPropagation()} // Prevent clicks on the sidebar from reaching the dashboard
       >
-        <Sidebar onReturnHome={onReturnHome} />
-        <ResetButton onClick={handleReset} />
       </div>
       <div
         className={styles.dashboardContent}

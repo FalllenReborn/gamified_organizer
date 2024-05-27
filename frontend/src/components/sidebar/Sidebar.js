@@ -6,10 +6,12 @@ import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
 import styles from './sidebar.module.css';
 import classNames from 'classnames';
+import ToggleButton from './ToggleButton';
 
 const Sidebar = () => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
+  const [isVisible, setIsVisible] = useState(true);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
   const [currentDateTime, setCurrentDateTime] = useState('');
@@ -77,8 +79,13 @@ const Sidebar = () => {
     e.preventDefault();
   };
 
+  const handleToggle = () => {
+    setIsVisible(!isVisible);
+  };
+
   return (
     <div className={`${styles.sidebar} ${isDarkMode ? styles.darkMode : styles.lightMode}`} onDragStart={handleDragStart}>
+      {/* {isVisible && <ToggleButton onClick={handleToggle} isVisible={isVisible} />} */}
       <div className={styles.sidebarTop}>
         <label className={styles.switch}>
           <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />

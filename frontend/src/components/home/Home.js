@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../ThemeContext';
-import { useAuth } from '../../AuthContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
 import styles from './home.module.css';

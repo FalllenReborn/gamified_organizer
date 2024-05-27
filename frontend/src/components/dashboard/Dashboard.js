@@ -1,5 +1,5 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
-import { ThemeContext } from '../../ThemeContext';
+import { ThemeContext } from '../../context/ThemeContext';
 import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';

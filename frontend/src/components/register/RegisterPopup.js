@@ -1,8 +1,8 @@
 import React, { useContext, useState, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../ThemeContext';
-import { useAuth } from '../../AuthContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 import styles from './registerPopup.module.css';
 
 const RegisterPopup = ({ show, isOpen ,onClose, onOpenLogin }) => {

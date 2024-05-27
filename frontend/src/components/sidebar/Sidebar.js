@@ -1,7 +1,8 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../ThemeContext';
-import { useAuth } from '../../AuthContext';
+import { ThemeContext } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
+import { ClockContext } from '../../context/ClockContext'; // Import ClockContext
 import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
 import styles from './sidebar.module.css';
@@ -11,52 +12,40 @@ import ToggleButton from './ToggleButton';
 const Sidebar = () => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
+  const currentDateTime = useContext(ClockContext); // Use ClockContext
   const [isVisible, setIsVisible] = useState(true);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
-  const [currentDateTime, setCurrentDateTime] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      const currentDate = new Date();
-      const formattedDate = currentDate.toLocaleDateString('en-GB'); // DD/MM/YYYY format
-      const formattedTime = currentDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); // 24-hour format
-      const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      setCurrentDateTime(`${formattedDate}, ${formattedTime} (${timeZone})`);
-    }, 1000);
-  
-    return () => clearInterval(intervalId);
-  }, []);
-
   const translations = {
-      english: {
-        createList: 'Create new list',
-        createShop: 'Create new shop',
-        createXP: 'Create new XP bar',
-        login: 'Login',
-        register: 'Register',
-        returnHome: 'Home page',
-        logout: 'Logout'
-      },
-      polish: {
-        createList: 'Stwórz nową listę',
-        createShop: 'Stwórz nowy sklep',
-        createXP: 'Stwórz nowy licznik doświadczenia',
-        login: 'Zaloguj się',
-        register: 'Zarejestruj się',
-        returnHome: 'Strona Główna',
-        logout: 'Wyloguj się'
-      }
-    };
-  
+    english: {
+      createList: 'Create new list',
+      createShop: 'Create new shop',
+      createXP: 'Create new XP bar',
+      login: 'Login',
+      register: 'Register',
+      returnHome: 'Home page',
+      logout: 'Logout',
+    },
+    polish: {
+      createList: 'Stwórz nową listę',
+      createShop: 'Stwórz nowy sklep',
+      createXP: 'Stwórz nowy licznik doświadczenia',
+      login: 'Zaloguj się',
+      register: 'Zarejestruj się',
+      returnHome: 'Strona Główna',
+      logout: 'Wyloguj się',
+    },
+  };
+
   const t = translations[selectedLanguage];
 
   const handleLoginClick = () => {
-      setShowRegisterPopup(false); // Close the register popup
-      setShowLoginPopup(true); // Open the login popup
-    };
-    
+    setShowRegisterPopup(false); // Close the register popup
+    setShowLoginPopup(true); // Open the login popup
+  };
+
   const handleRegisterClick = () => {
     setShowLoginPopup(false); // Close the login popup
     setShowRegisterPopup(true); // Open the register popup

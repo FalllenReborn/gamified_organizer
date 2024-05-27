@@ -1,26 +1,60 @@
 .dashboardContainer {
+  position: relative;
   display: flex;
   height: 100vh;
   width: 100%;
-  background-color: var(--background-color); /* Set background color */
+  background-color: var(--background-color);
   color: var(--text-color);
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
 }
 
 .dashboardContent {
-  flex: 1;
-  padding: 20px;
+  width: 10000px;
+  height: 10000px;
+  cursor: grab;
+  transform-origin: 0 0;
+  position: absolute;
+}
+
+.dashboardContent:active {
+  cursor: grabbing;
+}
+
+.lightMode, .darkMode {
+  background-size: var(--background-size);
+  background-position: var(--background-position);
 }
 
 .lightMode {
-  --background-color: #f0f0f0; /* Set light mode background color */
+  --background-color: #f0f0f0;
   --text-color: #000;
   background-image: linear-gradient(to right, rgba(0, 0, 0, 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 1px, transparent 1px);
-  background-size: 50px 50px;
 }
 
 .darkMode {
-  --background-color: #1e1e1e; /* Set dark mode background color */
+  --background-color: #1e1e1e;
   --text-color: #fff;
   background-image: linear-gradient(to right, rgba(255, 255, 255, 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.5) 1px, transparent 1px);
-  background-size: 50px 50px;
+}
+
+.redDot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background-color: red;
+  border-radius: 50%;
+  transform-origin: center;
+}
+
+.shield {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  pointer-events: none; /* Ensure the shield does not capture pointer events */
+  z-index: 2000; /* Ensure the shield is positioned above other dashboard content */
 }

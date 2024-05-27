@@ -18,8 +18,8 @@ const Sidebar = () => {
   useEffect(() => {
     const intervalId = setInterval(() => {
       const currentDate = new Date();
-      const formattedDate = currentDate.toLocaleDateString();
-      const formattedTime = currentDate.toLocaleTimeString();
+      const formattedDate = currentDate.toLocaleDateString('en-GB'); // DD/MM/YYYY format
+      const formattedTime = currentDate.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }); // 24-hour format
       const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       setCurrentDateTime(`${formattedDate}, ${formattedTime} (${timeZone})`);
     }, 1000);
@@ -73,8 +73,12 @@ const Sidebar = () => {
     logout();
   };
 
+  const handleDragStart = (e) => {
+    e.preventDefault();
+  };
+
   return (
-    <div className={`${styles.sidebar} ${isDarkMode ? styles.darkMode : styles.lightMode}`}>
+    <div className={`${styles.sidebar} ${isDarkMode ? styles.darkMode : styles.lightMode}`} onDragStart={handleDragStart}>
       <div className={styles.sidebarTop}>
         <label className={styles.switch}>
           <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />
@@ -99,7 +103,7 @@ const Sidebar = () => {
             <div className={styles.returnHome}>
               <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
             </div>
-            <button className="btn btn-secondary mt-2" onClick={logout}>{t.logout}</button>
+            <button className="btn btn-secondary mt-2" onClick={handleLogout}>{t.logout}</button>
           </>
         ) : (
           <>

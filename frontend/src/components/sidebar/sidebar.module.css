@@ -10,6 +10,7 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 10px;
+    z-index: 1000;
 }
 
 .sidebar.lightMode {
@@ -34,10 +35,19 @@
 .dateTime {
     position: absolute;
     top: 55px;
-    right: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: black; /* Change to the color you want */
+    font-size: 14px; /* Example styling */
+}
+  
+.darkMode .dateTime {
+color: white; /* Change to the color you want in dark mode */
+}
+
+.lightMode .dateTime {
+color: black; /* Change to the color you want in light mode */
 }
 
 .sidebarButtons {

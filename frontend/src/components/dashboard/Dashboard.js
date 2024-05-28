@@ -4,18 +4,21 @@ import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
+import Window from './Window';
 
-const Dashboard = ({ onReturnHome }) => {
+const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [scale, setScale] = useState(1);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [windows, setWindows] = useState([]);
+  const [isDragging, setIsDragging] = useState(false);
   const dashboardRef = useRef(null);
   const sidebarWidth = 250;
 
-  const getInitialTranslate = () => {
+    const getInitialTranslate = () => {
     const dashboardRect = dashboardRef.current.getBoundingClientRect();
     const centerX = (dashboardRect.width / 2) - (sidebarWidth / 2);
     const centerY = dashboardRect.height / 2;
@@ -24,10 +27,12 @@ const Dashboard = ({ onReturnHome }) => {
 
   const handleMouseDown = (e) => {
     setIsDraggingSidebar(true);
+    setIsDragging(true);
     setStartPos({
       x: e.clientX - translate.x,
       y: e.clientY - translate.y,
     });
+    document.body.classList.add('disable-select'); // Apply disable-select class to prevent text selection
   };
 
   const handleMouseMove = (e) => {
@@ -41,6 +46,8 @@ const Dashboard = ({ onReturnHome }) => {
 
   const handleMouseUp = () => {
     setIsDraggingSidebar(false);
+    setIsDragging(false);
+    document.body.classList.add('disable-select'); // Apply disable-select class to prevent text selection
   };
 
   const handleWheel = (e) => {
@@ -71,10 +78,16 @@ const Dashboard = ({ onReturnHome }) => {
   };
 
   useEffect(() => {
-    const handleMouseUp = () => {
-      setIsDraggingSidebar(false);
-    };
+    if (createNewList) {
+      const newWindow = {
+        id: windows.length,
+        // Add other necessary properties for the window
+      };
+      setWindows((prevWindows) => [...prevWindows, newWindow]);
+    }
+  }, [createNewList]);
 
+  useEffect(() => {
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
       window.removeEventListener('mouseup', handleMouseUp);
@@ -102,12 +115,16 @@ const Dashboard = ({ onReturnHome }) => {
     setIsSidebarVisible(!isSidebarVisible);
   };
 
+  const handleCloseWindow = (id) => {
+    setWindows((prevWindows) => prevWindows.filter(window => window.id !== id));
+  };
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
   return (
     <div
-      className={`${styles.dashboardContainer} ${isDarkMode ? styles.darkMode : styles.lightMode}`}
+      className={`${styles.dashboardContainer} ${isDragging ? styles.dragging : ''} ${isDarkMode ? styles.darkMode : styles.lightMode}`}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onWheel={handleWheel}
@@ -117,9 +134,6 @@ const Dashboard = ({ onReturnHome }) => {
       }}
       ref={dashboardRef}
     >
-      <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
-      {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} />}
-      <ResetButton onClick={handleReset} />
       <div
         className={`${styles.clickableArea} ${isDraggingSidebar && styles.hidden}`}
         onMouseDown={handleMouseDown}
@@ -130,6 +144,12 @@ const Dashboard = ({ onReturnHome }) => {
         className={styles.sidebarArea}
         onMouseDown={(e) => e.stopPropagation()} // Prevent clicks on the sidebar from reaching the dashboard
       >
+        <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
+        {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={onCreateNewList} />}
+        <ResetButton onClick={handleReset} />
+        {windows.map(window => (
+          <Window key={window.id} id={window.id} className={styles.window} onClose={handleCloseWindow} translate={translate} />
+        ))}
       </div>
       <div
         className={styles.dashboardContent}

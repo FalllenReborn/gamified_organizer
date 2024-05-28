@@ -68,22 +68,41 @@ color: black; /* Change to the color you want in light mode */
 }
 
 .sidebarBottomButtons {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-.authButtons {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.returnHome {
-    display: flex;
-    justify-content: center;
+    position: absolute;
+    bottom: 20px;
+    left: 0;
     width: 100%;
-}
+    text-align: center;
+  }
+  
+  .returnHome,
+  .logoutButton,
+  .authButtons {
+    display: inline-block;
+    width: 200px; /* Set the width for all buttons */
+  }
+  
+  .returnHome button{
+    margin-right: 25px;
+    width: 100%; 
+  }
+  
+  .authButtons {
+    display: flex;
+    align-items: center;
+    margin-left: 25px;
+    gap: 10px;
+    width: 100%; 
+  }
+  
+  .authButtons button {
+    width: calc(50% - 30px); /* Set width for login/register buttons */
+    
+  }
+
+  .logoutButton button {
+    width: 100%;
+  }
 
 .sidebarButton:hover,
 .sidebarBottomButtons .sidebarButton:hover {

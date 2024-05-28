@@ -7,13 +7,11 @@ import LoginPopup from '../login/LoginPopup';
 import RegisterPopup from '../register/RegisterPopup';
 import styles from './sidebar.module.css';
 import classNames from 'classnames';
-import ToggleButton from './ToggleButton';
 
-const Sidebar = () => {
+const Sidebar = ({ onCreateNewList }) => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const currentDateTime = useContext(ClockContext); // Use ClockContext
-  const [isVisible, setIsVisible] = useState(true);
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
   const navigate = useNavigate();
@@ -68,10 +66,6 @@ const Sidebar = () => {
     e.preventDefault();
   };
 
-  const handleToggle = () => {
-    setIsVisible(!isVisible);
-  };
-
   return (
     <div className={`${styles.sidebar} ${isDarkMode ? styles.darkMode : styles.lightMode}`} onDragStart={handleDragStart}>
       {/* {isVisible && <ToggleButton onClick={handleToggle} isVisible={isVisible} />} */}
@@ -89,28 +83,23 @@ const Sidebar = () => {
         {currentDateTime && <p>{currentDateTime}</p>}
       </div>
       <div className={styles.sidebarButtons}>
-        <button className={styles.sidebarButton}>{t.createList}</button>
+        <button className={styles.sidebarButton} onClick={onCreateNewList}>{t.createList}</button>
         <button className={styles.sidebarButton}>{t.createShop}</button>
         <button className={styles.sidebarButton}>{t.createXP}</button>
       </div>
       <div className={styles.sidebarBottomButtons}>
+        <div className={styles.returnHome}>
+          <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
+        </div>
         {isAuthenticated ? (
-          <>
-            <div className={styles.returnHome}>
-              <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
-            </div>
+          <div className={styles.logoutButton}>
             <button className="btn btn-secondary mt-2" onClick={handleLogout}>{t.logout}</button>
-          </>
+          </div>
         ) : (
-          <>
-            <div className={styles.returnHome}>
-              <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
-            </div>
-            <div className={styles.authButtons}>
-              <button className="btn btn-link" onClick={handleLoginClick}>{t.login}</button>
-              <button className="btn btn-link" onClick={handleRegisterClick}>{t.register}</button>
-            </div>
-          </>
+          <div className={styles.authButtons}>
+            <button className="btn btn-secondary mt-2 mr-2" onClick={handleLoginClick}>{t.login}</button>
+            <button className="btn btn-secondary mt-2" onClick={handleRegisterClick}>{t.register}</button>
+          </div>
         )}
       </div>
       {showLoginPopup && <LoginPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />}

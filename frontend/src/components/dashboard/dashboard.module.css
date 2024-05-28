@@ -58,3 +58,17 @@
   pointer-events: none; /* Ensure the shield does not capture pointer events */
   z-index: 2000; /* Ensure the shield is positioned above other dashboard content */
 }
+
+/* Define a CSS class to disable text selection */
+.disable-select {
+  user-select: none; /* Standard syntax */
+  -webkit-user-select: none; /* Webkit browsers */
+  -moz-user-select: none; /* Mozilla Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+}
+
+/* Apply the disable-select class to the window during dragging */
+.dragging {
+  cursor: move; /* Set cursor to indicate dragging */
+  user-select: none;
+}

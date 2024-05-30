@@ -25,6 +25,7 @@ const Sidebar = ({ onCreateNewList }) => {
       register: 'Register',
       returnHome: 'Home page',
       logout: 'Logout',
+      settings: 'Settings',
     },
     polish: {
       createList: 'Stwórz nową listę',
@@ -34,6 +35,7 @@ const Sidebar = ({ onCreateNewList }) => {
       register: 'Zarejestruj się',
       returnHome: 'Strona Główna',
       logout: 'Wyloguj się',
+      settings: 'Ustawienia',
     },
   };
 
@@ -88,8 +90,11 @@ const Sidebar = ({ onCreateNewList }) => {
         <button className={styles.sidebarButton}>{t.createXP}</button>
       </div>
       <div className={styles.sidebarBottomButtons}>
+        <div className={styles.settingsButton}>
+          <button className="btn btn-primary mt-2" >{t.settings}</button>
+        </div>
         <div className={styles.returnHome}>
-          <button className="btn btn-primary" onClick={handleReturnHome}>{t.returnHome}</button>
+          <button className="btn btn-primary mt-2" onClick={handleReturnHome}>{t.returnHome}</button>
         </div>
         {isAuthenticated ? (
           <div className={styles.logoutButton}>

@@ -73,20 +73,23 @@ color: black; /* Change to the color you want in light mode */
     left: 0;
     width: 100%;
     text-align: center;
+    font-size: 14px;
   }
   
   .returnHome,
+  .settingsButton,
   .logoutButton,
   .authButtons {
     display: inline-block;
     width: 200px; /* Set the width for all buttons */
   }
   
+  .settingsButton button,
   .returnHome button{
     margin-right: 25px;
     width: 100%; 
   }
-  
+
   .authButtons {
     display: flex;
     align-items: center;

@@ -5,6 +5,7 @@ import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
+import RenamePopup from './RenamePopup';
 
 const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -16,6 +17,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const [windows, setWindows] = useState([]);
   const [windowOrder, setWindowOrder] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [renamePopup, setRenamePopup] = useState({ isOpen: false, id: null, defaultValue: '' });
   const dashboardRef = useRef(null);
   const sidebarWidth = 250;
 
@@ -84,11 +86,13 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
       const viewportHeight = window.innerHeight;
       const newWindow = {
         id: windows.length,
+        title: `New List [${windows.length + 1}]`,
         initialX: (viewportWidth / 2 - 150 + sidebarWidth / 2) / scale - translate.x / scale, // Centering and adjusting for scale and translation
         initialY: (viewportHeight / 2 - 75) / scale - translate.y / scale // Centering and adjusting for scale and translation
       };
       setWindows((prevWindows) => [...prevWindows, newWindow]);
       setWindowOrder((prevOrder) => [...prevOrder, newWindow.id]);
+      setRenamePopup({ isOpen: true, id: newWindow.id, defaultValue: newWindow.title }); // Open rename popup for the new window
     }
   }, [createNewList]);
 
@@ -137,6 +141,20 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
     });
   };
 
+  const handleRename = (id) => {
+    const window = windows.find(w => w.id === id);
+    setRenamePopup({ isOpen: true, id, defaultValue: window.title });
+  };
+
+  const handleSaveRename = (id, newName) => {
+    setWindows((prevWindows) =>
+      prevWindows.map((window) =>
+        window.id === id ? { ...window, title: newName || window.title } : window
+      )
+    );
+    setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
+  };
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
@@ -165,12 +183,14 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
         {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={onCreateNewList} />}
         <ResetButton onClick={handleReset} />
-        {windows.map((window, index) => (
+        {windows.map((window) => (
           <Window 
             key={window.id} 
             id={window.id} 
+            title={window.title}
             className={styles.window} 
             onClose={handleCloseWindow} 
+            onRename={handleRename} 
             translate={translate} 
             scale={scale} 
             onClick={() => bringWindowToFront(window.id)}
@@ -179,6 +199,15 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
             initialY={window.initialY}
           />
         ))}
+        {renamePopup.isOpen && (
+        <RenamePopup
+          isOpen={renamePopup.isOpen}
+          id={renamePopup.id}
+          defaultValue={renamePopup.defaultValue}
+          onSave={handleSaveRename}
+          onClose={() => setRenamePopup({ isOpen: false, id: null, defaultValue: '' })}
+        />
+      )}
       </div>
       <div
         className={styles.dashboardContent}
@@ -195,6 +224,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
           }}
         />
       </div>
+      
     </div>
   );
 };

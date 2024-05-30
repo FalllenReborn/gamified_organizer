@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styles from './window.module.css';
 
-const Window = ({ id, onClose, translate, scale, onClick, zIndex, initialX, initialY }) => {
+const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY }) => {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
@@ -63,6 +63,11 @@ const Window = ({ id, onClose, translate, scale, onClick, zIndex, initialX, init
     setIsDropdownOpen(false);
   };
 
+  const handleRename = () => {
+    onRename(id);
+    setIsDropdownOpen(false);
+  };
+
   return (
     <div
       className={`${styles.window} ${isDragging ? styles.dragging : ''}`}
@@ -75,17 +80,21 @@ const Window = ({ id, onClose, translate, scale, onClick, zIndex, initialX, init
       }}
     >
       <div className={styles.taskbar} onMouseDown={handleMouseDown}>
-        <span className={styles.title} style={{ userSelect: 'none' }}>Window {id}</span>
-        <div className={styles.dropdownContainer}>
-          <button className={styles.dropdownButton} onClick={toggleDropdown}>
-            ↓
-          </button>
-          {isDropdownOpen && (
-            <div className={styles.dropdownMenu}>
-              <button onClick={handleHide}>Hide</button>
-              <button onClick={handleDelete}>Delete</button>
-            </div>
-          )}
+      <span className={styles.title}>{title}</span>
+      <div className={styles.bottomBar}>
+          <span className={styles.id}>ID: {id}</span>
+          <div className={styles.dropdownContainer}>
+            <button className={styles.dropdownButton} onClick={toggleDropdown}>
+              ↓
+            </button>
+            {isDropdownOpen && (
+              <div className={styles.dropdownMenu}>
+                <button onClick={handleHide}>Hide</button>
+                <button onClick={handleDelete}>Delete</button>
+                <button onClick={handleRename}>Rename</button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       <div className={styles.content}>

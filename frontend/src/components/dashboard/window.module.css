@@ -2,16 +2,16 @@
     position: absolute;
     width: 300px;
     height: 200px;
-    border: 1px solid #ccc;
-    background-color: white;
+    border: 2px solid #bbb;
+    background-color: #4a4a4a;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     z-index: 500;
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.2s;
+    resize: both;
 }
-
 
 .dragging {
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
@@ -20,41 +20,51 @@
 }
 
 .taskbar {
-    width: 100%;
-    height: 30px;
-    background-color: #007bff;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 5px 10px;
+    flex-direction: column; /* Stack items vertically */
+    background-color: #2f2f2f;
+    border-bottom: 1px solid #aaa;
     cursor: grab;
-}
-
-.taskbar:active {
-    cursor: grabbing;
+    min-height: auto; /* Remove fixed height */
 }
 
 .title {
     flex-grow: 1;
-    font-weight: bold;
+    text-align: center; /* Center the title text */
+    word-wrap: break-word; /* Allow long titles to break */
+}
+
+.bottomBar {
+    display: flex;
+    justify-content: space-between; /* Space between ID and dropdown */
+    padding-top: 5px; /* Add some space between the title and bottom bar */
+}
+
+.id {
+    align-self: flex-start; /* Align ID to the left */
 }
 
 .dropdownContainer {
     position: relative;
+    display: flex;
+    justify-content: flex-end; /* Align dropdown to the right */
+    
 }
 
 .dropdownButton {
+    background-color: transparent;
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
+    color: white;
 }
 
 .dropdownMenu {
     position: absolute;
     right: 0;
     top: 100%;
-    background: white;
+    background: #585858;
     border: 1px solid #ccc;
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -68,7 +78,6 @@
     height: calc(100% - 30px); /* Adjust height to exclude taskbar */
 }
 
-/* Define a CSS class to disable text selection */
 .disable-select {
     user-select: none; /* Standard syntax */
     -webkit-user-select: none; /* Webkit browsers */
@@ -77,15 +86,16 @@
 }
 
 .dropdownMenu button {
-    padding: 10px;
+    padding: 5px;
     background: none;
     border: none;
     cursor: pointer;
     text-align: left;
+    color: white;
 }
 
 .dropdownMenu button:hover {
-    background: #f0f0f0;
+    background: #007bff;
 }
 
 .content {

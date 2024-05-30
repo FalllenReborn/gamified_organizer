@@ -14,11 +14,12 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [windows, setWindows] = useState([]);
+  const [windowOrder, setWindowOrder] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const dashboardRef = useRef(null);
   const sidebarWidth = 250;
 
-    const getInitialTranslate = () => {
+  const getInitialTranslate = () => {
     const dashboardRect = dashboardRef.current.getBoundingClientRect();
     const centerX = (dashboardRect.width / 2) - (sidebarWidth / 2);
     const centerY = dashboardRect.height / 2;
@@ -47,7 +48,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const handleMouseUp = () => {
     setIsDraggingSidebar(false);
     setIsDragging(false);
-    document.body.classList.add('disable-select'); // Apply disable-select class to prevent text selection
+    document.body.classList.remove('disable-select'); // Apply disable-select class to prevent text selection
   };
 
   const handleWheel = (e) => {
@@ -79,11 +80,15 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
 
   useEffect(() => {
     if (createNewList) {
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       const newWindow = {
         id: windows.length,
-        // Add other necessary properties for the window
+        initialX: (viewportWidth / 2 - 150 + sidebarWidth / 2) / scale - translate.x / scale, // Centering and adjusting for scale and translation
+        initialY: (viewportHeight / 2 - 75) / scale - translate.y / scale // Centering and adjusting for scale and translation
       };
       setWindows((prevWindows) => [...prevWindows, newWindow]);
+      setWindowOrder((prevOrder) => [...prevOrder, newWindow.id]);
     }
   }, [createNewList]);
 
@@ -117,6 +122,19 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
 
   const handleCloseWindow = (id) => {
     setWindows((prevWindows) => prevWindows.filter(window => window.id !== id));
+    setWindowOrder((prevOrder) => prevOrder.filter(windowId => windowId !== id));
+  };
+
+  const bringWindowToFront = (id) => {
+    setWindowOrder((prevOrder) => [...prevOrder.filter(windowId => windowId !== id), id]);
+    setWindows((prevWindows) => {
+      const windowIndex = prevWindows.findIndex((win) => win.id === id);
+      if (windowIndex === -1) return prevWindows;
+      const updatedWindows = [...prevWindows];
+      const [broughtToFront] = updatedWindows.splice(windowIndex, 1);
+      updatedWindows.push(broughtToFront);
+      return updatedWindows;
+    });
   };
 
   const backgroundSize = 50 * scale;
@@ -147,8 +165,19 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
         {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={onCreateNewList} />}
         <ResetButton onClick={handleReset} />
-        {windows.map(window => (
-          <Window key={window.id} id={window.id} className={styles.window} onClose={handleCloseWindow} translate={translate} />
+        {windows.map((window, index) => (
+          <Window 
+            key={window.id} 
+            id={window.id} 
+            className={styles.window} 
+            onClose={handleCloseWindow} 
+            translate={translate} 
+            scale={scale} 
+            onClick={() => bringWindowToFront(window.id)}
+            zIndex={windowOrder.indexOf(window.id) + 1}
+            initialX={window.initialX}
+            initialY={window.initialY}
+          />
         ))}
       </div>
       <div

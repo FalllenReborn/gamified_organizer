@@ -1,18 +1,20 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 
 class TaskList(models.Model):
-    name = models.CharField(max_length=255)
-    owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
+    list_id = models.AutoField(primary_key=True)
+    list_name = models.CharField(max_length=255, null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Set default user_id to 1
+    x_axis = models.FloatField()
+    y_axis = models.FloatField()
+    hidden = models.BooleanField(default=False)
+    size_vertical = models.FloatField()
+    size_horizontal = models.FloatField()
 
+    def __str__(self):
+        return self.list_name or f"List {self.list_id}"
 
-class Task(models.Model):
-    list = models.ForeignKey(TaskList, related_name='tasks', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, null=True)
-    completed = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateTimeField(blank=True, null=True)
-
+    class Meta:
+        db_table = 'task_lists'

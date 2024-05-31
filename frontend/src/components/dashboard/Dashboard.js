@@ -6,6 +6,7 @@ import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
 import RenamePopup from './RenamePopup';
+import axios from 'axios';
 
 const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const { isDarkMode } = useContext(ThemeContext);
@@ -18,6 +19,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   const [windowOrder, setWindowOrder] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [renamePopup, setRenamePopup] = useState({ isOpen: false, id: null, defaultValue: '' });
+  const [taskLists, setTaskLists] = useState([]);
   const dashboardRef = useRef(null);
   const sidebarWidth = 250;
 
@@ -79,6 +81,21 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
     });
     setScale(newScale);
   };
+
+  useEffect(() => {
+    // Fetch task lists from the backend API when the component mounts
+    const fetchTaskLists = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/tasklists/'); // Adjust the endpoint as per your Django URL configuration
+        setTaskLists(response.data); // Update taskLists state with fetched data
+        console.log('Fetched task lists:', response.data); // Log fetched data in console
+      } catch (error) {
+        console.error('Error fetching task lists:', error);
+      }
+    };
+
+    fetchTaskLists(); // Call the fetchTaskLists function
+  }, []); // Ensure the effect runs only once when the component mounts
 
   useEffect(() => {
     if (createNewList) {
@@ -197,6 +214,22 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
             zIndex={windowOrder.indexOf(window.id) + 1}
             initialX={window.initialX}
             initialY={window.initialY}
+          />
+        ))}
+        {taskLists.map((taskList) => (
+          <Window 
+            key={taskList.list_id} 
+            id={taskList.list_id} 
+            title={taskList.list_name}
+            className={styles.window} 
+            onClose={handleCloseWindow} 
+            onRename={handleRename} 
+            translate={translate} 
+            scale={scale} 
+            onClick={() => bringWindowToFront(taskList.list_id)}
+            zIndex={windowOrder.indexOf(taskList.list_id) + 1}
+            initialX={taskList.x_axis} // Use values from the fetched task list
+            initialY={taskList.y_axis} // Use values from the fetched task list
           />
         ))}
         {renamePopup.isOpen && (

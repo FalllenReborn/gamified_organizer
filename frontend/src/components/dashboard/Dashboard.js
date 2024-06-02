@@ -56,7 +56,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   };
 
   const handleWheel = (e) => {
-    e.preventDefault();
+
 
     const scaleFactor = 0.1;
     const delta = e.deltaY > 0 ? -scaleFactor : scaleFactor;
@@ -89,6 +89,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
         const response = await axios.get('http://localhost:8000/api/tasklists/'); // Adjust the endpoint as per your Django URL configuration
         setTaskLists(response.data); // Update taskLists state with fetched data
         console.log('Fetched task lists:', response.data); // Log fetched data in console
+
       } catch (error) {
         console.error('Error fetching task lists:', error);
       }
@@ -159,18 +160,55 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   };
 
   const handleRename = (id) => {
-    const window = windows.find(w => w.id === id);
-    setRenamePopup({ isOpen: true, id, defaultValue: window.title });
+    console.log(`Trying to rename window with id: ${id}`);
+    console.log('Current windows:', windows);
+  
+    const windowToUpdate = windows.find(w => w.id === id);
+    if (windowToUpdate) {
+      setRenamePopup({ isOpen: true, id, defaultValue: windowToUpdate.title });
+    } else {
+      console.error(`Window with id ${id} not found.`);
+    }
   };
 
-  const handleSaveRename = (id, newName) => {
-    setWindows((prevWindows) =>
-      prevWindows.map((window) =>
-        window.id === id ? { ...window, title: newName || window.title } : window
-      )
-    );
-    setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
-  };
+  useEffect(() => {
+  if (taskLists.length > 0) {
+    // Map over the task lists and create window objects
+    const newWindows = taskLists.map((taskList) => ({
+      id: taskList.list_id,
+      title: taskList.list_name,
+      initialX: taskList.x_axis,
+      initialY: taskList.y_axis,
+    }));
+    // Update the windows state with the new windows
+    setWindows(newWindows);
+  }
+}, [taskLists]);
+
+const handleSaveRename = async (id, newName) => {
+  try {
+    // Make an API request to rename the task list
+    await axios.put(`http://localhost:8000/api/tasklists/${id}/`, { newName });
+    // Fetch the updated task lists
+    const response = await axios.get('http://localhost:8000/api/tasklists/');
+    setTaskLists(response.data); // Update taskLists state with fetched data
+    console.log('Fetched updated task lists:', response.data); // Log fetched data in console
+
+  } catch (error) {
+    console.error('Error renaming task list or fetching updated task lists:', error);
+  }
+
+  // Close the rename popup
+  setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
+};
+
+const handleDragWindow = (id, x, y) => {
+  setWindows((prevWindows) =>
+    prevWindows.map((window) =>
+      window.id === id ? { ...window, initialX: x, initialY: y } : window
+    )
+  );
+};
 
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
@@ -200,22 +238,6 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
         {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={onCreateNewList} />}
         <ResetButton onClick={handleReset} />
-        {windows.map((window) => (
-          <Window 
-            key={window.id} 
-            id={window.id} 
-            title={window.title}
-            className={styles.window} 
-            onClose={handleCloseWindow} 
-            onRename={handleRename} 
-            translate={translate} 
-            scale={scale} 
-            onClick={() => bringWindowToFront(window.id)}
-            zIndex={windowOrder.indexOf(window.id) + 1}
-            initialX={window.initialX}
-            initialY={window.initialY}
-          />
-        ))}
         {taskLists.map((taskList) => (
           <Window 
             key={taskList.list_id} 
@@ -230,6 +252,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
             zIndex={windowOrder.indexOf(taskList.list_id) + 1}
             initialX={taskList.x_axis} // Use values from the fetched task list
             initialY={taskList.y_axis} // Use values from the fetched task list
+            onDrag={handleDragWindow} // Pass the handleDragWindow function
           />
         ))}
         {renamePopup.isOpen && (

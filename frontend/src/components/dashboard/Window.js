@@ -19,11 +19,18 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
 
   const handleMouseMove = (e) => {
     if (isDragging) {
-      setPosition({
-        x: (e.clientX / scale - startPos.x),
-        y: (e.clientY / scale - startPos.y),
-      });
-    }
+      const mouseX = e.clientX / scale;
+      const mouseY = e.clientY / scale;
+      console.log('Mouse X:', mouseX);
+      console.log('Mouse Y:', mouseY);
+      
+      const newX = mouseX - startPos.x;
+      const newY = mouseY - startPos.y;
+      console.log('New X:', newX);
+      console.log('New Y:', newY);
+      
+      setPosition({ x: newX, y: newY });
+      }
   };
 
   const handleMouseUp = () => {
@@ -78,8 +85,9 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         transformOrigin: 'top left',
         zIndex: zIndex + 500 // Add a base zIndex to keep windows above other components
       }}
+      onMouseDown={handleMouseDown}
     >
-      <div className={styles.taskbar} onMouseDown={handleMouseDown}>
+      <div className={styles.taskbar}>
       <span className={styles.title}>{title}</span>
       <div className={styles.bottomBar}>
           <span className={styles.id}>ID: {id}</span>

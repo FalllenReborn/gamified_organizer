@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styles from './renamePopup.module.css';
+import axios from 'axios';
 
 const RenamePopup = ({ isOpen, id, defaultValue, onSave, onClose }) => {
   const [name, setName] = useState(defaultValue);
@@ -10,9 +11,16 @@ const RenamePopup = ({ isOpen, id, defaultValue, onSave, onClose }) => {
     }
   }, [isOpen, defaultValue]);
 
-  const handleSave = () => {
-    onSave(id, name);
-    onClose();
+  const handleSave = async () => {
+    try {
+      const response = await axios.patch(`http://localhost:8000/api/tasklists/${id}/`, { list_name: name });
+      console.log('Response:', response);
+      onSave(id, name); // Call onSave after successful API request
+      onClose();
+    } catch (error) {
+      console.error('Error updating list name:', error.response ? error.response.data : error.message);
+      // Handle error
+    }
   };
 
   return (

@@ -19,6 +19,11 @@
     user-select: none;
 }
 
+.resizing {
+    cursor: nwse-resize; /* Set cursor to indicate resizing */
+    user-select: none;
+}
+
 .taskbar {
     display: flex;
     flex-direction: column; /* Stack items vertically */
@@ -100,4 +105,14 @@
 
 .content {
   padding: 20px;
+}
+
+.resizeHandle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    cursor: nwse-resize;
 }

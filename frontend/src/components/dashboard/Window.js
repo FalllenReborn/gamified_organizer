@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './window.module.css';
 import axios from 'axios';
 
-const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight }) => {
+const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight, onResize }) => {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const windowRef = useRef(null);
+
+  useEffect(() => {
+    // Ensure the initial size is set correctly
+    if (windowRef.current) {
+      const { clientWidth, clientHeight } = windowRef.current;
+      setSize({ width: clientWidth, height: clientHeight });
+      onResize(id, clientWidth, clientHeight); // Pass the resize event up to the Dashboard
+    }
+  }, []);
 
   const handleMouseDown = (e) => {
     setIsDragging(true);
@@ -29,27 +40,54 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
 
       setPosition({ x: newX, y: newY });
     }
+    if (isResizing) {
+      const mouseX = e.clientX / scale;
+      const mouseY = e.clientY / scale;
+
+      const newWidth = mouseX - position.x;
+      const newHeight = mouseY - position.y;
+
+      setSize({ width: newWidth, height: newHeight });
+    }
   };
 
   const handleMouseUp = (e) => {
-    setIsDragging(false);
-    document.body.classList.remove('disable-select'); // Remove disable-select class when dragging ends
+    if (isDragging) {
+      setIsDragging(false);
+      document.body.classList.remove('disable-select'); // Remove disable-select class when dragging ends
 
-    // Capture the final position on mouse up
-    const mouseX = e.clientX / scale;
-    const mouseY = e.clientY / scale;
-    const newX = mouseX - startPos.x;
-    const newY = mouseY - startPos.y;
+      // Capture the final position on mouse up
+      const mouseX = e.clientX / scale;
+      const mouseY = e.clientY / scale;
+      const newX = mouseX - startPos.x;
+      const newY = mouseY - startPos.y;
 
-    // Update the position state to the final values
-    setPosition({ x: newX, y: newY });
+      // Update the position state to the final values
+      setPosition({ x: newX, y: newY });
 
-    // Update the database with the final position
-    updatePositionInDatabase(newX, newY);
+      // Update the database with the final position
+      updatePositionInDatabase(newX, newY);
+    }
+    if (isResizing) {
+      setIsResizing(false);
+      document.body.classList.remove('disable-select');
+
+      // Capture the final size on mouse up
+      const { clientWidth, clientHeight } = windowRef.current;
+
+      // Update the size state to the final values
+      setSize({ width: clientWidth, height: clientHeight });
+
+      // Call onResize after resizing is complete
+      onResize(id, clientWidth, clientHeight);
+
+      // Update the database with the final size
+      updateSizeInDatabase(clientWidth, clientHeight);
+    }
   };
 
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging || isResizing) {
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
     } else {
@@ -60,7 +98,16 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, isResizing]);
+
+  const updateSizeInDatabase = async (width, height) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_size/`, { size_horizontal: width, size_vertical: height });
+      console.log('Size updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating size:', error);
+    }
+  };
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
@@ -88,13 +135,6 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
   // Function to update position in the database
   const updatePositionInDatabase = async (x, y) => {
     console.log(`Updating position in the database for window ${id} to (${x}, ${y})`);
-  
-    // Example using localStorage
-    const windows = JSON.parse(localStorage.getItem('windows')) || {};
-    windows[id] = { x, y };
-    localStorage.setItem('windows', JSON.stringify(windows));
-  
-    // Example API call:
     try {
       const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_position/`, { x_axis: x, y_axis: y });
       console.log('Position updated successfully:', response.data);
@@ -106,9 +146,16 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     }
   };
 
+  const handleResizeMouseDown = (e) => {
+    setIsResizing(true);
+    document.body.classList.add('disable-select');
+  };
+
   return (
     <div
-      className={`${styles.window} ${isDragging ? styles.dragging : ''}`}
+      id={`window-${id}`}
+      ref={windowRef}
+      className={`${styles.window} ${isDragging ? styles.dragging : ''} ${isResizing ? styles.resizing : ''}`} // Updated class name
       style={{
         top: `${position.y * scale}px`,
         left: `${position.x * scale}px`,
@@ -138,8 +185,12 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         </div>
       </div>
       <div className={styles.content}>
-          {/* Window content here */}
+        {/* Window content here */}
       </div>
+      <div
+        className={styles.resizeHandle}
+        onMouseDown={handleResizeMouseDown}
+      ></div>
     </div>
   );
 };

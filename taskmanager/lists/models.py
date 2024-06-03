@@ -10,8 +10,8 @@ class TaskList(models.Model):
     x_axis = models.FloatField(default=0)
     y_axis = models.FloatField(default=0)
     hidden = models.BooleanField(default=False)
-    size_vertical = models.FloatField(default=0)
-    size_horizontal = models.FloatField(default=0)
+    size_vertical = models.FloatField(default=200)
+    size_horizontal = models.FloatField(default=300)
 
     def __str__(self):
         return self.list_name or f"List {self.list_id}"

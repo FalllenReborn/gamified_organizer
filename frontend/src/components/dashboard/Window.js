@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import styles from './window.module.css';
+import axios from 'axios';
 
-const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY }) => {
+const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight }) => {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
+  const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -21,21 +23,29 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     if (isDragging) {
       const mouseX = e.clientX / scale;
       const mouseY = e.clientY / scale;
-      console.log('Mouse X:', mouseX);
-      console.log('Mouse Y:', mouseY);
-      
+
       const newX = mouseX - startPos.x;
       const newY = mouseY - startPos.y;
-      console.log('New X:', newX);
-      console.log('New Y:', newY);
-      
+
       setPosition({ x: newX, y: newY });
-      }
+    }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
     setIsDragging(false);
     document.body.classList.remove('disable-select'); // Remove disable-select class when dragging ends
+
+    // Capture the final position on mouse up
+    const mouseX = e.clientX / scale;
+    const mouseY = e.clientY / scale;
+    const newX = mouseX - startPos.x;
+    const newY = mouseY - startPos.y;
+
+    // Update the position state to the final values
+    setPosition({ x: newX, y: newY });
+
+    // Update the database with the final position
+    updatePositionInDatabase(newX, newY);
   };
 
   useEffect(() => {
@@ -75,21 +85,43 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     setIsDropdownOpen(false);
   };
 
+  // Function to update position in the database
+  const updatePositionInDatabase = async (x, y) => {
+    console.log(`Updating position in the database for window ${id} to (${x}, ${y})`);
+  
+    // Example using localStorage
+    const windows = JSON.parse(localStorage.getItem('windows')) || {};
+    windows[id] = { x, y };
+    localStorage.setItem('windows', JSON.stringify(windows));
+  
+    // Example API call:
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_position/`, { x_axis: x, y_axis: y });
+      console.log('Position updated successfully:', response.data);
+      if (response.data.x_axis !== x || response.data.y_axis !== y) {
+        console.error(`API did not update the position correctly. Expected (${x}, ${y}) but got (${response.data.x_axis}, ${response.data.y_axis})`);
+      }
+    } catch (error) {
+      console.error('Error updating position:', error);
+    }
+  };
+
   return (
     <div
       className={`${styles.window} ${isDragging ? styles.dragging : ''}`}
       style={{
         top: `${position.y * scale}px`,
         left: `${position.x * scale}px`,
+        width: `${size.width * scale}px`,
+        height: `${size.height * scale}px`,
         transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
         transformOrigin: 'top left',
         zIndex: zIndex + 500 // Add a base zIndex to keep windows above other components
       }}
-      onMouseDown={handleMouseDown}
     >
-      <div className={styles.taskbar}>
-      <span className={styles.title}>{title}</span>
-      <div className={styles.bottomBar}>
+      <div className={styles.taskbar} onMouseDown={handleMouseDown}>
+        <span className={styles.title}>{title}</span>
+        <div className={styles.bottomBar}>
           <span className={styles.id}>ID: {id}</span>
           <div className={styles.dropdownContainer}>
             <button className={styles.dropdownButton} onClick={toggleDropdown}>
@@ -106,7 +138,7 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         </div>
       </div>
       <div className={styles.content}>
-        {/* Window content here */}
+          {/* Window content here */}
       </div>
     </div>
   );

@@ -188,7 +188,7 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
 const handleSaveRename = async (id, newName) => {
   try {
     // Make an API request to rename the task list
-    await axios.put(`http://localhost:8000/api/tasklists/${id}/`, { newName });
+    await axios.put(`http://localhost:8000/api/tasklists/${id}/update_name/`, { list_name: newName });
     // Fetch the updated task lists
     const response = await axios.get('http://localhost:8000/api/tasklists/');
     setTaskLists(response.data); // Update taskLists state with fetched data
@@ -252,6 +252,8 @@ const handleDragWindow = (id, x, y) => {
             zIndex={windowOrder.indexOf(taskList.list_id) + 1}
             initialX={taskList.x_axis} // Use values from the fetched task list
             initialY={taskList.y_axis} // Use values from the fetched task list
+            initialWidth={taskList.size_horizontal}
+            initialHeight={taskList.size_vertical}
             onDrag={handleDragWindow} // Pass the handleDragWindow function
           />
         ))}

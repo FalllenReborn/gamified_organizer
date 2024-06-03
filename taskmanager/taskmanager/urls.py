@@ -25,7 +25,6 @@ router.register(r'tasklists', TaskListViewSet)
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('accounts.urls')),
-    path('', include(router.urls)),
-    path('api/', include('lists.urls')),
+    path('api/', include(router.urls)),
 ]
 

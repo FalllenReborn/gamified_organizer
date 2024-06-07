@@ -37,7 +37,7 @@ class TaskListViewSet(viewsets.ModelViewSet):
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-    @action(detail=True, methods=['put'], url_path='update_position')
+    @action(detail=True, methods=['put'], url_path='update_lists')
     def update_position(self, request, pk=None):
         tasklist = self.get_object()
         serializer = TaskListSerializer(tasklist, data=request.data, partial=True)

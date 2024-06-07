@@ -7,107 +7,145 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState('');
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const windowRef = useRef(null);
 
-  useEffect(() => {
-    // Ensure the initial size is set correctly
-    if (windowRef.current) {
-      const { clientWidth, clientHeight } = windowRef.current;
-      setSize({ width: clientWidth, height: clientHeight });
-      onResize(id, clientWidth, clientHeight); // Pass the resize event up to the Dashboard
-    }
-  }, []);
+  const positionRef = useRef(position);
+  const sizeRef = useRef(size);
 
-  const handleMouseDown = (e) => {
+  useEffect(() => {
+    positionRef.current = position;
+    sizeRef.current = size;
+  }, [position, size]);
+
+  const handleDragStart = (e) => {
     setIsDragging(true);
     setStartPos({
       x: e.clientX / scale - position.x,
       y: e.clientY / scale - position.y,
     });
     onClick();
-    document.body.classList.add('disable-select'); // Apply disable-select class to prevent text selection
+    document.body.classList.add('disable-select');
   };
 
-  const handleMouseMove = (e) => {
+  const handleDragMove = (e) => {
     if (isDragging) {
       const mouseX = e.clientX / scale;
       const mouseY = e.clientY / scale;
-
-      const newX = mouseX - startPos.x;
-      const newY = mouseY - startPos.y;
-
-      setPosition({ x: newX, y: newY });
-    }
-    if (isResizing) {
-      const mouseX = e.clientX / scale;
-      const mouseY = e.clientY / scale;
-
-      const newWidth = mouseX - position.x;
-      const newHeight = mouseY - position.y;
-
-      setSize({ width: newWidth, height: newHeight });
+      setPosition({ x: mouseX - startPos.x, y: mouseY - startPos.y });
     }
   };
 
-  const handleMouseUp = (e) => {
+  const handleDragEnd = () => {
     if (isDragging) {
       setIsDragging(false);
-      document.body.classList.remove('disable-select'); // Remove disable-select class when dragging ends
-
-      // Capture the final position on mouse up
-      const mouseX = e.clientX / scale;
-      const mouseY = e.clientY / scale;
-      const newX = mouseX - startPos.x;
-      const newY = mouseY - startPos.y;
-
-      // Update the position state to the final values
-      setPosition({ x: newX, y: newY });
-
-      // Update the database with the final position
-      updatePositionInDatabase(newX, newY);
+      document.body.classList.remove('disable-select');
+      updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
     }
+  };
+
+  const handleResizeStart = (e, direction) => {
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeDirection(direction);
+    setStartPos({
+      x: e.clientX / scale,
+      y: e.clientY / scale,
+    });
+    document.body.classList.add('disable-select');
+  };
+
+  const handleResizeMove = (e) => {
+    if (isResizing) {
+      const dx = (e.clientX / scale - startPos.x);
+      const dy = (e.clientY / scale - startPos.y);
+
+      let newWidth = size.width;
+      let newHeight = size.height;
+      let newX = position.x;
+      let newY = position.y;
+
+      if (resizeDirection.includes('right')) newWidth += dx;
+      if (resizeDirection.includes('bottom')) newHeight += dy;
+      if (resizeDirection.includes('left')) {
+        newWidth -= dx;
+        newX += dx;
+      }
+      if (resizeDirection.includes('top')) {
+        newHeight -= dy;
+        newY += dy;
+      }
+
+      setSize({ width: newWidth, height: newHeight });
+      setPosition({ x: newX, y: newY });
+      setStartPos({
+        x: e.clientX / scale,
+        y: e.clientY / scale,
+      });
+    }
+  };
+
+  const handleResizeEnd = () => {
     if (isResizing) {
       setIsResizing(false);
       document.body.classList.remove('disable-select');
-
-      // Capture the final size on mouse up
-      const { clientWidth, clientHeight } = windowRef.current;
-
-      // Update the size state to the final values
-      setSize({ width: clientWidth, height: clientHeight });
-
-      // Call onResize after resizing is complete
-      onResize(id, clientWidth, clientHeight);
-
-      // Update the database with the final size
-      updateSizeInDatabase(clientWidth, clientHeight);
+      setSize((prevSize) => {
+        const updatedSize = { ...prevSize };
+        updateSizeInDatabase(updatedSize.width, updatedSize.height);
+        updatePositionInDatabase(positionRef.current.x, positionRef.current.y); // Update position after resizing
+        onResize(id, updatedSize.width, updatedSize.height);
+        return updatedSize;
+      });
     }
   };
 
-  useEffect(() => {
-    if (isDragging || isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    }
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [isDragging, isResizing]);
-
   const updateSizeInDatabase = async (width, height) => {
     try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_size/`, { size_horizontal: width, size_vertical: height });
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: width, size_vertical: height });
       console.log('Size updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating size:', error);
     }
   };
+
+  const updatePositionInDatabase = async (x, y) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { x_axis: x, y_axis: y });
+      console.log('Position updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating position:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
+    } else {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
+    };
+  }, [isDragging]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    } else {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizing]);
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
@@ -115,13 +153,11 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
   };
 
   const handleHide = () => {
-    // Placeholder function for "Hide"
     console.log(`Hide window ${id}`);
     setIsDropdownOpen(false);
   };
 
   const handleDelete = () => {
-    // Placeholder function for "Delete"
     console.log(`Delete window ${id}`);
     onClose(id);
     setIsDropdownOpen(false);
@@ -132,41 +168,25 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     setIsDropdownOpen(false);
   };
 
-  // Function to update position in the database
-  const updatePositionInDatabase = async (x, y) => {
-    console.log(`Updating position in the database for window ${id} to (${x}, ${y})`);
-    try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_position/`, { x_axis: x, y_axis: y });
-      console.log('Position updated successfully:', response.data);
-      if (response.data.x_axis !== x || response.data.y_axis !== y) {
-        console.error(`API did not update the position correctly. Expected (${x}, ${y}) but got (${response.data.x_axis}, ${response.data.y_axis})`);
-      }
-    } catch (error) {
-      console.error('Error updating position:', error);
-    }
-  };
-
-  const handleResizeMouseDown = (e) => {
-    setIsResizing(true);
-    document.body.classList.add('disable-select');
-  };
-
   return (
     <div
       id={`window-${id}`}
       ref={windowRef}
-      className={`${styles.window} ${isDragging ? styles.dragging : ''} ${isResizing ? styles.resizing : ''}`} // Updated class name
+      className={`${styles.window} ${isDragging ? styles.dragging : ''}`}
       style={{
         top: `${position.y * scale}px`,
         left: `${position.x * scale}px`,
-        width: `${size.width * scale}px`,
-        height: `${size.height * scale}px`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
         transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
         transformOrigin: 'top left',
-        zIndex: zIndex + 500 // Add a base zIndex to keep windows above other components
+        zIndex: zIndex + 500
       }}
     >
-      <div className={styles.taskbar} onMouseDown={handleMouseDown}>
+      <div
+        className={styles.taskbar}
+        onMouseDown={handleDragStart}
+      >
         <span className={styles.title}>{title}</span>
         <div className={styles.bottomBar}>
           <span className={styles.id}>ID: {id}</span>
@@ -187,10 +207,14 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
       <div className={styles.content}>
         {/* Window content here */}
       </div>
-      <div
-        className={styles.resizeHandle}
-        onMouseDown={handleResizeMouseDown}
-      ></div>
+      <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>
+      <div className={`${styles.resizeHandle} ${styles.left}`} onMouseDown={(e) => handleResizeStart(e, 'left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.top}`} onMouseDown={(e) => handleResizeStart(e, 'top')}></div>
+      <div className={`${styles.resizeHandle} ${styles.topLeft}`} onMouseDown={(e) => handleResizeStart(e, 'top-left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
     </div>
   );
 };

@@ -56,8 +56,6 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
   };
 
   const handleWheel = (e) => {
-
-
     const scaleFactor = 0.1;
     const delta = e.deltaY > 0 ? -scaleFactor : scaleFactor;
 
@@ -179,6 +177,8 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
       title: taskList.list_name,
       initialX: taskList.x_axis,
       initialY: taskList.y_axis,
+      initialWidth: taskList.size_horizontal, // Include the initial width
+      initialHeight: taskList.size_vertical // Include the initial height
     }));
     // Update the windows state with the new windows
     setWindows(newWindows);
@@ -206,6 +206,16 @@ const handleDragWindow = (id, x, y) => {
   setWindows((prevWindows) =>
     prevWindows.map((window) =>
       window.id === id ? { ...window, initialX: x, initialY: y } : window
+    )
+  );
+};
+
+const handleResizeWindow = (id, width, height) => {
+  console.log(`Resizing window ${id} to width=${width}, height=${height}`);
+  // Update the window state with the new size
+  setWindows((prevWindows) =>
+    prevWindows.map((window) =>
+      window.id === id ? { ...window, initialWidth: width, initialHeight: height } : window
     )
   );
 };
@@ -255,6 +265,9 @@ const handleDragWindow = (id, x, y) => {
             initialWidth={taskList.size_horizontal}
             initialHeight={taskList.size_vertical}
             onDrag={handleDragWindow} // Pass the handleDragWindow function
+            onResize={handleResizeWindow} // Pass the handleResizeWindow function
+            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)} // New callback for updating position
+            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)} // New callback for updating size
           />
         ))}
         {renamePopup.isOpen && (

@@ -1,66 +1,151 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './window.module.css';
 import axios from 'axios';
 
-const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight }) => {
+const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight, onResize }) => {
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const [resizeDirection, setResizeDirection] = useState('');
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const windowRef = useRef(null);
 
-  const handleMouseDown = (e) => {
+  const positionRef = useRef(position);
+  const sizeRef = useRef(size);
+
+  useEffect(() => {
+    positionRef.current = position;
+    sizeRef.current = size;
+  }, [position, size]);
+
+  const handleDragStart = (e) => {
     setIsDragging(true);
     setStartPos({
       x: e.clientX / scale - position.x,
       y: e.clientY / scale - position.y,
     });
     onClick();
-    document.body.classList.add('disable-select'); // Apply disable-select class to prevent text selection
+    document.body.classList.add('disable-select');
   };
 
-  const handleMouseMove = (e) => {
+  const handleDragMove = (e) => {
     if (isDragging) {
       const mouseX = e.clientX / scale;
       const mouseY = e.clientY / scale;
-
-      const newX = mouseX - startPos.x;
-      const newY = mouseY - startPos.y;
-
-      setPosition({ x: newX, y: newY });
+      setPosition({ x: mouseX - startPos.x, y: mouseY - startPos.y });
     }
   };
 
-  const handleMouseUp = (e) => {
-    setIsDragging(false);
-    document.body.classList.remove('disable-select'); // Remove disable-select class when dragging ends
+  const handleDragEnd = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      document.body.classList.remove('disable-select');
+      updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
+    }
+  };
 
-    // Capture the final position on mouse up
-    const mouseX = e.clientX / scale;
-    const mouseY = e.clientY / scale;
-    const newX = mouseX - startPos.x;
-    const newY = mouseY - startPos.y;
+  const handleResizeStart = (e, direction) => {
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeDirection(direction);
+    setStartPos({
+      x: e.clientX / scale,
+      y: e.clientY / scale,
+    });
+    document.body.classList.add('disable-select');
+  };
 
-    // Update the position state to the final values
-    setPosition({ x: newX, y: newY });
+  const handleResizeMove = (e) => {
+    if (isResizing) {
+      const dx = (e.clientX / scale - startPos.x);
+      const dy = (e.clientY / scale - startPos.y);
 
-    // Update the database with the final position
-    updatePositionInDatabase(newX, newY);
+      let newWidth = size.width;
+      let newHeight = size.height;
+      let newX = position.x;
+      let newY = position.y;
+
+      if (resizeDirection.includes('right')) newWidth += dx;
+      if (resizeDirection.includes('bottom')) newHeight += dy;
+      if (resizeDirection.includes('left')) {
+        newWidth -= dx;
+        newX += dx;
+      }
+      if (resizeDirection.includes('top')) {
+        newHeight -= dy;
+        newY += dy;
+      }
+
+      setSize({ width: newWidth, height: newHeight });
+      setPosition({ x: newX, y: newY });
+      setStartPos({
+        x: e.clientX / scale,
+        y: e.clientY / scale,
+      });
+    }
+  };
+
+  const handleResizeEnd = () => {
+    if (isResizing) {
+      setIsResizing(false);
+      document.body.classList.remove('disable-select');
+      setSize((prevSize) => {
+        const updatedSize = { ...prevSize };
+        updateSizeInDatabase(updatedSize.width, updatedSize.height);
+        updatePositionInDatabase(positionRef.current.x, positionRef.current.y); // Update position after resizing
+        onResize(id, updatedSize.width, updatedSize.height);
+        return updatedSize;
+      });
+    }
+  };
+
+  const updateSizeInDatabase = async (width, height) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: width, size_vertical: height });
+      console.log('Size updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating size:', error);
+    }
+  };
+
+  const updatePositionInDatabase = async (x, y) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { x_axis: x, y_axis: y });
+      console.log('Position updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating position:', error);
+    }
   };
 
   useEffect(() => {
     if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleDragMove);
+      document.addEventListener('mouseup', handleDragEnd);
     } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
     }
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleDragMove);
+      document.removeEventListener('mouseup', handleDragEnd);
     };
   }, [isDragging]);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+    } else {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    }
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+    };
+  }, [isResizing]);
 
   const toggleDropdown = (e) => {
     e.stopPropagation();
@@ -68,13 +153,11 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
   };
 
   const handleHide = () => {
-    // Placeholder function for "Hide"
     console.log(`Hide window ${id}`);
     setIsDropdownOpen(false);
   };
 
   const handleDelete = () => {
-    // Placeholder function for "Delete"
     console.log(`Delete window ${id}`);
     onClose(id);
     setIsDropdownOpen(false);
@@ -85,41 +168,25 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     setIsDropdownOpen(false);
   };
 
-  // Function to update position in the database
-  const updatePositionInDatabase = async (x, y) => {
-    console.log(`Updating position in the database for window ${id} to (${x}, ${y})`);
-  
-    // Example using localStorage
-    const windows = JSON.parse(localStorage.getItem('windows')) || {};
-    windows[id] = { x, y };
-    localStorage.setItem('windows', JSON.stringify(windows));
-  
-    // Example API call:
-    try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_position/`, { x_axis: x, y_axis: y });
-      console.log('Position updated successfully:', response.data);
-      if (response.data.x_axis !== x || response.data.y_axis !== y) {
-        console.error(`API did not update the position correctly. Expected (${x}, ${y}) but got (${response.data.x_axis}, ${response.data.y_axis})`);
-      }
-    } catch (error) {
-      console.error('Error updating position:', error);
-    }
-  };
-
   return (
     <div
+      id={`window-${id}`}
+      ref={windowRef}
       className={`${styles.window} ${isDragging ? styles.dragging : ''}`}
       style={{
         top: `${position.y * scale}px`,
         left: `${position.x * scale}px`,
-        width: `${size.width * scale}px`,
-        height: `${size.height * scale}px`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
         transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
         transformOrigin: 'top left',
-        zIndex: zIndex + 500 // Add a base zIndex to keep windows above other components
+        zIndex: zIndex + 500
       }}
     >
-      <div className={styles.taskbar} onMouseDown={handleMouseDown}>
+      <div
+        className={styles.taskbar}
+        onMouseDown={handleDragStart}
+      >
         <span className={styles.title}>{title}</span>
         <div className={styles.bottomBar}>
           <span className={styles.id}>ID: {id}</span>
@@ -138,8 +205,16 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         </div>
       </div>
       <div className={styles.content}>
-          {/* Window content here */}
+        {/* Window content here */}
       </div>
+      <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>
+      <div className={`${styles.resizeHandle} ${styles.left}`} onMouseDown={(e) => handleResizeStart(e, 'left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.top}`} onMouseDown={(e) => handleResizeStart(e, 'top')}></div>
+      <div className={`${styles.resizeHandle} ${styles.topLeft}`} onMouseDown={(e) => handleResizeStart(e, 'top-left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
     </div>
   );
 };

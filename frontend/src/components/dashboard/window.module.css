@@ -10,12 +10,90 @@
     border-radius: 4px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     transition: box-shadow 0.2s;
-    resize: both;
+    resize: none;
+}
+
+.disable-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+  
+
+.resizeHandle {
+    position: absolute;
+    background-color: transparent;
+    z-index: 1000;
+    width: 10px;
+    height: 10px;
+    user-select: none;
+}
+
+.resizeHandle.top {
+    top: -10px; /* Adjusted position */
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+    width: calc(100% - 30px); /* Full width except for corners */
+}
+
+.resizeHandle.bottom {
+    bottom: -10px; /* Adjusted position */
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+    width: calc(100% - 30px); /* Full width except for corners */
+}
+
+.resizeHandle.left {
+    top: 50%;
+    left: -10px; /* Adjusted position */
+    transform: translateY(-50%);
+    cursor: ew-resize;
+    height: calc(100% - 30px); /* Full height except for corners */
+}
+
+.resizeHandle.right {
+    top: 50%;
+    right: -10px; /* Adjusted position */
+    transform: translateY(-50%);
+    cursor: ew-resize;
+    height: calc(100% - 30px); /* Full height except for corners */
+}
+
+.resizeHandle.topLeft {
+    top: -5px; /* Adjusted position */
+    left: -5px; /* Adjusted position */
+    cursor: nwse-resize;
+}
+
+.resizeHandle.topRight {
+    top: -5px; /* Adjusted position */
+    right: -5px; /* Adjusted position */
+    cursor: nesw-resize;
+}
+
+.resizeHandle.bottomLeft {
+    bottom: -5px; /* Adjusted position */
+    left: -5px; /* Adjusted position */
+    cursor: nesw-resize;
+}
+
+.resizeHandle.bottomRight {
+    bottom: -5px; /* Adjusted position */
+    right: -5px; /* Adjusted position */
+    cursor: nwse-resize;
 }
 
 .dragging {
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
     cursor: move; /* Set cursor to indicate dragging */
+    user-select: none;
+}
+
+.resizing {
+    cursor: nwse-resize; /* Set cursor to indicate resizing */
     user-select: none;
 }
 
@@ -76,6 +154,7 @@
     padding: 10px;
     overflow: auto;
     height: calc(100% - 30px); /* Adjust height to exclude taskbar */
+    resize: both;
 }
 
 .disable-select {
@@ -100,4 +179,14 @@
 
 .content {
   padding: 20px;
+}
+
+.resizeHandle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    cursor: nwse-resize;
 }

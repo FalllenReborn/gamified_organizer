@@ -8,7 +8,7 @@ import Window from './Window';
 import RenamePopup from './RenamePopup';
 import axios from 'axios';
 
-const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
+const Dashboard = ({ onReturnHome }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const [scale, setScale] = useState(1);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
@@ -95,22 +95,6 @@ const Dashboard = ({ onReturnHome, createNewList, onCreateNewList }) => {
 
     fetchTaskLists(); // Call the fetchTaskLists function
   }, []); // Ensure the effect runs only once when the component mounts
-
-  useEffect(() => {
-    if (createNewList) {
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const newWindow = {
-        id: windows.length,
-        title: `New List [${windows.length + 1}]`,
-        initialX: (viewportWidth / 2 - 150 + sidebarWidth / 2) / scale - translate.x / scale, // Centering and adjusting for scale and translation
-        initialY: (viewportHeight / 2 - 75) / scale - translate.y / scale // Centering and adjusting for scale and translation
-      };
-      setWindows((prevWindows) => [...prevWindows, newWindow]);
-      setWindowOrder((prevOrder) => [...prevOrder, newWindow.id]);
-      setRenamePopup({ isOpen: true, id: newWindow.id, defaultValue: newWindow.title }); // Open rename popup for the new window
-    }
-  }, [createNewList]);
 
   useEffect(() => {
     window.addEventListener('mouseup', handleMouseUp);
@@ -202,6 +186,23 @@ const handleSaveRename = async (id, newName) => {
   setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
 };
 
+const handleCreateNewList = async () => {
+  try {
+    // Create a new list in the backend
+    const response = await axios.post('http://localhost:8000/api/tasklists/', {});
+    const newList = response.data;
+
+    // Add the new list to the taskLists state
+    setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
+
+    // Open rename popup for the newly created list
+    setRenamePopup({ isOpen: true, id: newList.list_id, defaultValue: newList.list_name || 'New List' });
+
+  } catch (error) {
+    console.error('Error creating new task list:', error);
+  }
+};
+
 const handleDragWindow = (id, x, y) => {
   setWindows((prevWindows) =>
     prevWindows.map((window) =>
@@ -246,7 +247,7 @@ const handleResizeWindow = (id, width, height) => {
         onMouseDown={(e) => e.stopPropagation()} // Prevent clicks on the sidebar from reaching the dashboard
       >
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
-        {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={onCreateNewList} />}
+        {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={handleCreateNewList} />}
         <ResetButton onClick={handleReset} />
         {taskLists.map((taskList) => (
           <Window 
@@ -295,7 +296,6 @@ const handleResizeWindow = (id, width, height) => {
           }}
         />
       </div>
-      
     </div>
   );
 };

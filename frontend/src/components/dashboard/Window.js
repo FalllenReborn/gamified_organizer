@@ -119,6 +119,15 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     }
   };
 
+  const deleteWindowFromDatabase = async (windowId) => {
+    try {
+      const response = await axios.delete(`http://localhost:8000/api/tasklists/${windowId}/`);
+      console.log('Window deleted successfully:', response.data);
+    } catch (error) {
+      console.error('Error deleting window:', error);
+    }
+  };
+
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleDragMove);
@@ -157,9 +166,10 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     setIsDropdownOpen(false);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     console.log(`Delete window ${id}`);
-    onClose(id);
+    await deleteWindowFromDatabase(id); // Delete the window from the database
+    onClose(id); // Close the window after deletion
     setIsDropdownOpen(false);
   };
 

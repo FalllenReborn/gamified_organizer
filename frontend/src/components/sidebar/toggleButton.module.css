@@ -12,5 +12,5 @@
     justify-content: center;
     width: 35px;  /* Adjust the size as needed */
     height: 35px; /* Adjust the size as needed */
-    z-index: 2000;
+    z-index: 10000000;
   }

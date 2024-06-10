@@ -10,7 +10,7 @@
     flex-direction: column;
     justify-content: space-between;
     padding: 10px;
-    z-index: 1000;
+    z-index: 9000000;
 }
 
 .sidebar.lightMode {

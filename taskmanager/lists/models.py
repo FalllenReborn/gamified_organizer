@@ -12,6 +12,7 @@ class TaskList(models.Model):
     hidden = models.BooleanField(default=False)
     size_vertical = models.FloatField(default=200)
     size_horizontal = models.FloatField(default=300)
+    zindex = models.FloatField(default=500)
 
     def __str__(self):
         return self.list_name or f"List {self.list_id}"

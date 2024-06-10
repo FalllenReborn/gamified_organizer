@@ -16,13 +16,14 @@ const Dashboard = ({ onReturnHome }) => {
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [windows, setWindows] = useState([]);
-  const [windowOrder, setWindowOrder] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [renamePopup, setRenamePopup] = useState({ isOpen: false, id: null, defaultValue: '' });
   const [taskLists, setTaskLists] = useState([]);
+  const [largestZIndex, setLargestZIndex] = useState(5000001);
+  const [maxQueZIndex, setMaxQueZIndex] = useState(5000000);
   const dashboardRef = useRef(null);
   const sidebarWidth = 250;
-
+  
   const getInitialTranslate = () => {
     const dashboardRect = dashboardRef.current.getBoundingClientRect();
     const centerX = (dashboardRect.width / 2) - (sidebarWidth / 2);
@@ -37,7 +38,7 @@ const Dashboard = ({ onReturnHome }) => {
       x: e.clientX - translate.x,
       y: e.clientY - translate.y,
     });
-    document.body.classList.add('disable-select'); // Apply disable-select class to prevent text selection
+    document.body.classList.add('disable-select');
   };
 
   const handleMouseMove = (e) => {
@@ -52,27 +53,23 @@ const Dashboard = ({ onReturnHome }) => {
   const handleMouseUp = () => {
     setIsDraggingSidebar(false);
     setIsDragging(false);
-    document.body.classList.remove('disable-select'); // Apply disable-select class to prevent text selection
+    document.body.classList.remove('disable-select');
   };
 
   const handleWheel = (e) => {
     const scaleFactor = 0.1;
     const delta = e.deltaY > 0 ? -scaleFactor : scaleFactor;
 
-    // Calculate mouse position relative to the dashboard
     const rect = dashboardRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Calculate the new scale
     const newScale = Math.max(0.33, scale + delta);
-
-    // Calculate the translation adjustments
+   
     const scaleRatio = newScale / scale;
     const newTranslateX = mouseX - scaleRatio * (mouseX - translate.x);
     const newTranslateY = mouseY - scaleRatio * (mouseY - translate.y);
 
-    // Update the state
     setTranslate({
       x: newTranslateX,
       y: newTranslateY,
@@ -81,20 +78,8 @@ const Dashboard = ({ onReturnHome }) => {
   };
 
   useEffect(() => {
-    // Fetch task lists from the backend API when the component mounts
-    const fetchTaskLists = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/tasklists/'); // Adjust the endpoint as per your Django URL configuration
-        setTaskLists(response.data); // Update taskLists state with fetched data
-        console.log('Fetched task lists:', response.data); // Log fetched data in console
-
-      } catch (error) {
-        console.error('Error fetching task lists:', error);
-      }
-    };
-
-    fetchTaskLists(); // Call the fetchTaskLists function
-  }, []); // Ensure the effect runs only once when the component mounts
+    fetchTaskLists();
+  }, []);
 
   useEffect(() => {
     window.addEventListener('mouseup', handleMouseUp);
@@ -116,35 +101,107 @@ const Dashboard = ({ onReturnHome }) => {
     setScale(1);
   };
 
-  const handleSidebarDragStart = (e) => {
-    e.stopPropagation();
-  };
-
   const handleToggle = () => {
     setIsSidebarVisible(!isSidebarVisible);
   };
 
-  const handleCloseWindow = (id) => {
-    setWindows((prevWindows) => prevWindows.filter(window => window.id !== id));
-    setWindowOrder((prevOrder) => prevOrder.filter(windowId => windowId !== id));
+  const handleCloseWindow = async (id) => {
+    try {
+      await handleListDeletion(id);
+      await fetchTaskLists();
+    } catch (error) {
+      console.error('Error deleting task list:', error);
+    }
+  };
+  
+  const fetchTaskLists = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/tasklists/');
+      const fetchedTaskLists = response.data;
+  
+      const sortedTaskLists = fetchedTaskLists.sort((a, b) => a.zindex - b.zindex);
+      setTaskLists(sortedTaskLists);
+
+      const highestZIndex = Math.max(...sortedTaskLists.map(taskList => taskList.zindex));
+      setLargestZIndex(highestZIndex > 5000000 && highestZIndex < 6000000 ? highestZIndex : 5000001);
+      setMaxQueZIndex(5000000 + 1 * sortedTaskLists.length);
+      
+    } catch (error) {
+      console.error('Error fetching task lists:', error);
+    }
   };
 
-  const bringWindowToFront = (id) => {
-    setWindowOrder((prevOrder) => [...prevOrder.filter(windowId => windowId !== id), id]);
-    setWindows((prevWindows) => {
-      const windowIndex = prevWindows.findIndex((win) => win.id === id);
-      if (windowIndex === -1) return prevWindows;
-      const updatedWindows = [...prevWindows];
-      const [broughtToFront] = updatedWindows.splice(windowIndex, 1);
-      updatedWindows.push(broughtToFront);
-      return updatedWindows;
-    });
+  const updateMaxQueZIndex = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/tasklists/');
+      const count = response.data.length;
+      setMaxQueZIndex(500 + count);
+    } catch (error) {
+      console.error('Error updating maxQueZIndex:', error);
+    }
+  };
+  
+  const bringWindowToFront = async (id) => {
+    const clickedWindow = taskLists.find(window => window.list_id === id);
+    const clickedZIndex = clickedWindow.zindex;
+    console.log(`Clicked zIndex ${clickedZIndex}`)
+    console.log(`Largest zIndex ${largestZIndex}`)
+    console.log(`Max zIndex ${maxQueZIndex}`)
+
+    if (clickedZIndex < largestZIndex) {
+      if (largestZIndex < maxQueZIndex) {
+        const newZIndex = largestZIndex + 1;
+        setLargestZIndex(newZIndex);
+        await updateZIndexInDatabase(clickedWindow.list_id, newZIndex);
+      } else if (largestZIndex === maxQueZIndex) {
+        for (const window of taskLists) {
+          if (window.zindex > clickedZIndex) {
+            const newZIndex = window.zindex - 1;
+            await updateZIndexInDatabase(window.list_id, newZIndex);
+          }
+        }
+        await updateZIndexInDatabase(clickedWindow.list_id, maxQueZIndex);
+      }
+    }
+
+    await fetchTaskLists();
+  };
+
+  const handleListDeletion = async (id) => {
+    try {
+      const deletedList = taskLists.find(taskList => taskList.list_id === id);
+      const deletedZIndex = deletedList.zindex;
+  
+      await axios.delete(`http://localhost:8000/api/tasklists/${id}/`);
+  
+      for (const taskList of taskLists) {
+        if (taskList.zindex > deletedZIndex) {
+          const newZIndex = taskList.zindex - 1;
+          await updateZIndexInDatabase(taskList.list_id, newZIndex);
+        }
+      }
+
+      setLargestZIndex(prev => prev - 1);
+      await updateMaxQueZIndex();
+  
+     } catch (error) {
+      console.error('Error deleting list:', error);
+    }
+  };
+  
+  useEffect(() => {
+    updateMaxQueZIndex();
+  }, []);
+  
+  const updateZIndexInDatabase = async (id, zIndex) => {
+    try {
+      await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { zindex: zIndex });
+    } catch (error) {
+      console.error('Error updating z-index:', error);
+    }
   };
 
   const handleRename = (id) => {
-    console.log(`Trying to rename window with id: ${id}`);
-    console.log('Current windows:', windows);
-  
     const windowToUpdate = windows.find(w => w.id === id);
     if (windowToUpdate) {
       setRenamePopup({ isOpen: true, id, defaultValue: windowToUpdate.title });
@@ -153,73 +210,61 @@ const Dashboard = ({ onReturnHome }) => {
     }
   };
 
-  useEffect(() => {
-  if (taskLists.length > 0) {
-    // Map over the task lists and create window objects
-    const newWindows = taskLists.map((taskList) => ({
-      id: taskList.list_id,
-      title: taskList.list_name,
-      initialX: taskList.x_axis,
-      initialY: taskList.y_axis,
-      initialWidth: taskList.size_horizontal, // Include the initial width
-      initialHeight: taskList.size_vertical // Include the initial height
-    }));
-    // Update the windows state with the new windows
-    setWindows(newWindows);
-  }
-}, [taskLists]);
+    useEffect(() => {
+    if (taskLists.length > 0) {
+      const newWindows = taskLists.map((taskList) => ({
+        id: taskList.list_id,
+        title: taskList.list_name,
+        initialX: taskList.x_axis,
+        initialY: taskList.y_axis,
+        initialWidth: taskList.size_horizontal,
+        initialHeight: taskList.size_vertical,
+        zIndex: taskList.zindex
+      }));
+      setWindows(newWindows);
+    }
+  }, [taskLists]);
 
-const handleSaveRename = async (id, newName) => {
-  try {
-    // Make an API request to rename the task list
-    await axios.put(`http://localhost:8000/api/tasklists/${id}/update_name/`, { list_name: newName });
-    // Fetch the updated task lists
-    const response = await axios.get('http://localhost:8000/api/tasklists/');
-    setTaskLists(response.data); // Update taskLists state with fetched data
-    console.log('Fetched updated task lists:', response.data); // Log fetched data in console
+  const handleSaveRename = async (id, newName) => {
+    try {
+      await axios.put(`http://localhost:8000/api/tasklists/${id}/update_name/`, { list_name: newName });
+      await fetchTaskLists();
+    } catch (error) {
+      console.error('Error renaming task list or fetching updated task lists:', error);
+    }
 
-  } catch (error) {
-    console.error('Error renaming task list or fetching updated task lists:', error);
-  }
+    setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
+  };
 
-  // Close the rename popup
-  setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
-};
+  const handleCreateNewList = async () => {
+    try {
+      const response = await axios.post('http://localhost:8000/api/tasklists/', {});
+      const newList = response.data;
 
-const handleCreateNewList = async () => {
-  try {
-    // Create a new list in the backend
-    const response = await axios.post('http://localhost:8000/api/tasklists/', {});
-    const newList = response.data;
+      setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
 
-    // Add the new list to the taskLists state
-    setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
+      setRenamePopup({ isOpen: true, id: newList.list_id, defaultValue: newList.list_name || 'New List' });
 
-    // Open rename popup for the newly created list
-    setRenamePopup({ isOpen: true, id: newList.list_id, defaultValue: newList.list_name || 'New List' });
+    } catch (error) {
+      console.error('Error creating new task list:', error);
+    }
+  };
 
-  } catch (error) {
-    console.error('Error creating new task list:', error);
-  }
-};
+  const handleDragWindow = (id, x, y) => {
+    setWindows((prevWindows) =>
+      prevWindows.map((window) =>
+        window.id === id ? { ...window, initialX: x, initialY: y } : window
+      )
+    );
+  };
 
-const handleDragWindow = (id, x, y) => {
-  setWindows((prevWindows) =>
-    prevWindows.map((window) =>
-      window.id === id ? { ...window, initialX: x, initialY: y } : window
-    )
-  );
-};
-
-const handleResizeWindow = (id, width, height) => {
-  console.log(`Resizing window ${id} to width=${width}, height=${height}`);
-  // Update the window state with the new size
-  setWindows((prevWindows) =>
-    prevWindows.map((window) =>
-      window.id === id ? { ...window, initialWidth: width, initialHeight: height } : window
-    )
-  );
-};
+  const handleResizeWindow = (id, width, height) => {
+    setWindows((prevWindows) =>
+      prevWindows.map((window) =>
+        window.id === id ? { ...window, initialWidth: width, initialHeight: height } : window
+      )
+    );
+  };
 
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
@@ -244,7 +289,7 @@ const handleResizeWindow = (id, width, height) => {
       />
       <div
         className={styles.sidebarArea}
-        onMouseDown={(e) => e.stopPropagation()} // Prevent clicks on the sidebar from reaching the dashboard
+        onMouseDown={(e) => e.stopPropagation()}
       >
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
         {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={handleCreateNewList} />}
@@ -260,15 +305,15 @@ const handleResizeWindow = (id, width, height) => {
             translate={translate} 
             scale={scale} 
             onClick={() => bringWindowToFront(taskList.list_id)}
-            zIndex={windowOrder.indexOf(taskList.list_id) + 1}
-            initialX={taskList.x_axis} // Use values from the fetched task list
-            initialY={taskList.y_axis} // Use values from the fetched task list
+            zIndex={taskList.zindex}
+            initialX={taskList.x_axis}
+            initialY={taskList.y_axis}
             initialWidth={taskList.size_horizontal}
             initialHeight={taskList.size_vertical}
-            onDrag={handleDragWindow} // Pass the handleDragWindow function
-            onResize={handleResizeWindow} // Pass the handleResizeWindow function
-            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)} // New callback for updating position
-            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)} // New callback for updating size
+            onDrag={handleDragWindow}
+            onResize={handleResizeWindow}
+            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)}
+            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)}
           />
         ))}
         {renamePopup.isOpen && (

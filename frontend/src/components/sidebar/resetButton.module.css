@@ -2,7 +2,7 @@
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 1000; /* Ensure button stays on top */
+    z-index: 10000000; /* Ensure button stays on top */
     display: flex; /* Use flexbox */
     align-items: center; /* Vertically center the content */
 }

@@ -144,9 +144,6 @@ const Dashboard = ({ onReturnHome }) => {
   const bringWindowToFront = async (id) => {
     const clickedWindow = taskLists.find(window => window.list_id === id);
     const clickedZIndex = clickedWindow.zindex;
-    console.log(`Clicked zIndex ${clickedZIndex}`)
-    console.log(`Largest zIndex ${largestZIndex}`)
-    console.log(`Max zIndex ${maxQueZIndex}`)
 
     if (clickedZIndex < largestZIndex) {
       if (largestZIndex < maxQueZIndex) {

@@ -3,6 +3,7 @@ import styles from './window.module.css';
 import axios from 'axios';
 
 const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight, onResize }) => {
+  const [tasks, setTasks] = useState([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
@@ -19,6 +20,19 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
     positionRef.current = position;
     sizeRef.current = size;
   }, [position, size]);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      try {
+        const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
+        setTasks(response.data);
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    };
+  
+    fetchTasks();
+  }, [id]);
 
   const handleDragStart = (e) => {
     setIsDragging(true);
@@ -206,7 +220,12 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         </div>
       </div>
       <div className={styles.content}>
-        {/* Window content here */}
+        {tasks.map(task => (
+          <div key={task.task_id}>
+            <input type="checkbox" /> {/* Checkbox */}
+            <span>{task.task_name}</span> {/* Task name */}
+          </div>
+        ))}
       </div>
       <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
       <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>

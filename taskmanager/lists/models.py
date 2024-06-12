@@ -19,3 +19,42 @@ class TaskList(models.Model):
 
     class Meta:
         db_table = 'task_lists'
+
+
+class Task(models.Model):
+    task_id = models.AutoField(primary_key=True)
+    list_task = models.ForeignKey(TaskList, on_delete=models.CASCADE, db_column='list_id')
+    task_name = models.CharField(max_length=255)
+    created_date_time = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.task_name
+
+    class Meta:
+        db_table = 'tasks'
+
+
+class Reward(models.Model):
+    task_reward = models.OneToOneField(
+        Task,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name='reward',
+        db_column='task_id'
+    )
+
+    class Meta:
+        db_table = 'rewards'
+
+
+class Property(models.Model):
+    task_property = models.OneToOneField(
+        Task,
+        on_delete=models.CASCADE,
+        primary_key=True,
+        related_name='property',
+        db_column='task_id'
+    )
+
+    class Meta:
+        db_table = 'properties'

@@ -1,8 +1,8 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import TaskList
-from .serializers import TaskListSerializer
+from .models import TaskList, Task
+from .serializers import TaskListSerializer, TaskSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
@@ -45,3 +45,14 @@ class TaskListViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+
+class TaskViewSet(viewsets.ModelViewSet):
+    queryset = Task.objects.all()
+    serializer_class = TaskSerializer
+
+    def get_queryset(self):
+        window_id = self.request.query_params.get('window_id')
+        if window_id:
+            return Task.objects.filter(list_task_id=window_id)
+        return Task.objects.all()

@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import styles from './window.module.css';
 import axios from 'axios';
 
-const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight, onResize }) => {
+const Window = ({
+  id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight, onResize, openPopup
+}) => {
   const [tasks, setTasks] = useState([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
@@ -12,7 +14,6 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const windowRef = useRef(null);
-
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
 
@@ -198,17 +199,13 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         zIndex: zIndex
       }}
     >
-      <div
-        className={styles.taskbar}
-        onMouseDown={handleDragStart}
-      >
+      <div className={styles.taskbar} onMouseDown={handleDragStart}>
         <span className={styles.title}>{title}</span>
         <div className={styles.bottomBar}>
           <span className={styles.id}>ID: {id}</span>
-          <div className={styles.dropdownContainer}>
-            <button className={styles.dropdownButton} onClick={toggleDropdown}>
-              ↓
-            </button>
+          <div className={styles.buttons}>
+            <button className={styles.addButton}onClick={() => openPopup(id)}>+</button>
+            <button className={styles.dropdownButton}onClick={toggleDropdown}>⋮</button>
             {isDropdownOpen && (
               <div className={styles.dropdownMenu}>
                 <button onClick={handleHide}>Hide</button>
@@ -220,10 +217,10 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
         </div>
       </div>
       <div className={styles.content}>
-        {tasks.map(task => (
-          <div key={task.task_id}>
-            <input type="checkbox" /> {/* Checkbox */}
-            <span>{task.task_name}</span> {/* Task name */}
+        {tasks.map((task) => (
+          <div key={task.id} className={styles.task}>
+            <span>{task.task_name}</span>
+            <input type="checkbox" className={styles.checkbox} />
           </div>
         ))}
       </div>
@@ -235,6 +232,10 @@ const Window = ({ id, title, onClose, onRename, translate, scale, onClick, zInde
       <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
       <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
       <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
+      <div
+        className={styles.resizer}
+        onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+      />
     </div>
   );
 };

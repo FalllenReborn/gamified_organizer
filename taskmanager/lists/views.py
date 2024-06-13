@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
 from django.http import JsonResponse
+from django.utils import timezone
 
 
 class TaskListViewSet(viewsets.ModelViewSet):
@@ -53,6 +54,29 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         window_id = self.request.query_params.get('window_id')
-        if window_id:
-            return Task.objects.filter(list_task_id=window_id)
-        return Task.objects.all()
+        queryset = Task.objects.filter(list_task_id=window_id)
+        return queryset
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_task')
+    def create_task(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            list_id = data.get('list_id')
+            task_name = data.get('task_name')
+
+            if not list_id or not task_name:
+                return JsonResponse({'error': 'list_id and task_name are required'}, status=400)
+
+            task = Task.objects.create(
+                list_task_id=list_id,
+                task_name=task_name,
+                created_date_time=timezone.now()
+            )
+            serializer = TaskSerializer(task)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

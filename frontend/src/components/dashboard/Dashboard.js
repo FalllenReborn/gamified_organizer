@@ -6,6 +6,7 @@ import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
 import RenamePopup from './RenamePopup';
+import CreateTaskPopup from './CreateTaskPopup';
 import axios from 'axios';
 
 const Dashboard = ({ onReturnHome }) => {
@@ -21,8 +22,32 @@ const Dashboard = ({ onReturnHome }) => {
   const [taskLists, setTaskLists] = useState([]);
   const [largestZIndex, setLargestZIndex] = useState(5000001);
   const [maxQueZIndex, setMaxQueZIndex] = useState(5000000);
+  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [currentWindowId, setCurrentWindowId] = useState(null);
   const dashboardRef = useRef(null);
   const sidebarWidth = 250;
+
+  const openPopup = (windowId) => {
+    setCurrentWindowId(windowId);
+    setIsPopupOpen(true);
+  };
+
+  const closePopup = () => {
+    setIsPopupOpen(false);
+  };
+
+  const handleConfirm = async (taskName) => {
+    try {
+      console.log(`ID: ${currentWindowId}`)
+      console.log(`Name: ${taskName}`)
+      const response = await axios.post('http://localhost:8000/api/tasks/create_task/', { list_id: currentWindowId, task_name: taskName });
+      console.log('Task created successfully:', response.data);
+      // Optionally update the tasks state here if needed
+      closePopup();
+    } catch (error) {
+      console.error('Error creating task:', error);
+    }
+  };
   
   const getInitialTranslate = () => {
     const dashboardRect = dashboardRef.current.getBoundingClientRect();
@@ -311,6 +336,7 @@ const Dashboard = ({ onReturnHome }) => {
             onResize={handleResizeWindow}
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)}
             onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)}
+            openPopup={openPopup}
           />
         ))}
         {renamePopup.isOpen && (
@@ -321,7 +347,13 @@ const Dashboard = ({ onReturnHome }) => {
           onSave={handleSaveRename}
           onClose={() => setRenamePopup({ isOpen: false, id: null, defaultValue: '' })}
         />
-      )}
+        )}
+        {isPopupOpen && (
+          <CreateTaskPopup
+            onClose={closePopup}
+            onConfirm={handleConfirm}
+          />
+        )}
       </div>
       <div
         className={styles.dashboardContent}

@@ -59,6 +59,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 250;
 
+  const taskUpdateCallbacks = useRef<{ [key: number]: () => void }>({});
+
+  const registerTaskUpdateCallback = (id: number, callback: () => void) => {
+    taskUpdateCallbacks.current[id] = callback;
+  };
+
   const openPopup = (windowId: number) => {
     setCurrentWindowId(windowId);
     setIsPopupOpen(true);
@@ -75,6 +81,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       const response = await axios.post('http://localhost:8000/api/tasks/create_task/', { list_id: currentWindowId, task_name: taskName });
       console.log('Task created successfully:', response.data);
       closePopup();
+      if (currentWindowId in taskUpdateCallbacks.current) {
+        taskUpdateCallbacks.current[currentWindowId]();
+      }
     } catch (error) {
       console.error('Error creating task:', error);
     }
@@ -370,6 +379,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)}
             onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)}
             openPopup={openPopup}
+            registerTaskUpdateCallback={registerTaskUpdateCallback}
           />
           </div>
         ))}

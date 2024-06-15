@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './window.module.css';
 import axios from 'axios';
 
@@ -20,6 +20,7 @@ interface WindowProps {
   openPopup: (windowId: number) => void;
   onPositionUpdate?: (id: number, x: number, y: number) => void;
   onSizeUpdate?: (id: number, width: number, height: number) => void;
+  registerTaskUpdateCallback: (id: number, callback: () => void) => void;
 }
 
 interface Task {
@@ -29,7 +30,21 @@ interface Task {
 }
 
 const Window: React.FC<WindowProps> = ({
-  id, title, onClose, onRename, translate, scale, onClick, zIndex, initialX, initialY, initialWidth, initialHeight, onResize, openPopup
+  id, 
+  title, 
+  onClose, 
+  onRename, 
+  translate, 
+  scale, 
+  onClick, 
+  zIndex, 
+  initialX, 
+  initialY, 
+  initialWidth, 
+  initialHeight, 
+  onResize, 
+  openPopup, 
+  registerTaskUpdateCallback
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
@@ -42,6 +57,24 @@ const Window: React.FC<WindowProps> = ({
   const windowRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
+
+  const updateSizeInDatabase = useCallback(async (width: number, height: number) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: width, size_vertical: height });
+      console.log('Size updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating size:', error);
+    }
+  }, [id]);
+
+  const updatePositionInDatabase = useCallback(async (x: number, y: number) => {
+    try {
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { x_axis: x, y_axis: y });
+      console.log('Position updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating position:', error);
+    }
+  }, [id]);
 
   useEffect(() => {
     positionRef.current = position;
@@ -61,7 +94,21 @@ const Window: React.FC<WindowProps> = ({
     fetchTasks();
   }, [id]);
 
-  const handleDragStart = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  const fetchTasks = useCallback(async () => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  }, [id]);
+
+  useEffect(() => {
+    fetchTasks();
+    registerTaskUpdateCallback(id, fetchTasks); // Register the task update callback
+  }, [fetchTasks, id, registerTaskUpdateCallback]);
+
+  const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     setIsDragging(true);
     setStartPos({
       x: e.clientX / scale - position.x,
@@ -69,23 +116,23 @@ const Window: React.FC<WindowProps> = ({
     });
     onClick();
     document.body.classList.add('disable-select');
-  };
+  }, [position, scale, onClick]);
 
-  const handleDragMove = (e: MouseEvent) => {
+  const handleDragMove = useCallback((e: MouseEvent) => {
     if (isDragging) {
       const mouseX = e.clientX / scale;
       const mouseY = e.clientY / scale;
       setPosition({ x: mouseX - startPos.x, y: mouseY - startPos.y });
     }
-  };
+  }, [isDragging, scale, startPos]);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
       document.body.classList.remove('disable-select');
       updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
     }
-  };
+  }, [isDragging, updatePositionInDatabase]);
 
   const handleResizeStart = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, direction: string) => {
     e.stopPropagation();
@@ -142,24 +189,6 @@ const Window: React.FC<WindowProps> = ({
     }
   };
 
-  const updateSizeInDatabase = async (width: number, height: number) => {
-    try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: width, size_vertical: height });
-      console.log('Size updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating size:', error);
-    }
-  };
-
-  const updatePositionInDatabase = async (x: number, y: number) => {
-    try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { x_axis: x, y_axis: y });
-      console.log('Position updated successfully:', response.data);
-    } catch (error) {
-      console.error('Error updating position:', error);
-    }
-  };
-
   useEffect(() => {
     if (isDragging) {
       document.addEventListener('mousemove', handleDragMove);
@@ -172,8 +201,8 @@ const Window: React.FC<WindowProps> = ({
       document.removeEventListener('mousemove', handleDragMove);
       document.removeEventListener('mouseup', handleDragEnd);
     };
-  }, [isDragging]);
-
+  }, [isDragging, handleDragMove, handleDragEnd]);
+  
   useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleResizeMove);
@@ -186,7 +215,7 @@ const Window: React.FC<WindowProps> = ({
       document.removeEventListener('mousemove', handleResizeMove);
       document.removeEventListener('mouseup', handleResizeEnd);
     };
-  }, [isResizing]);
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
 
   const toggleDropdown = () => {
     setIsDropdownOpen((prevState) => !prevState);

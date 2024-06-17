@@ -56,6 +56,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [maxQueZIndex, setMaxQueZIndex] = useState(5000000);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
+  const [nest, setNest] = useState<number | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 250;
 
@@ -65,8 +66,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     taskUpdateCallbacks.current[id] = callback;
   };
 
-  const openPopup = (windowId: number) => {
+  const openPopup = (windowId: number, nest_id: number | null) => {
     setCurrentWindowId(windowId);
+    setNest(nest_id);
     setIsPopupOpen(true);
   };
 
@@ -77,8 +79,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const handleConfirm = async (taskName: string) => {
     try {
       if (currentWindowId === null) return;
-
-      const response = await axios.post('http://localhost:8000/api/tasks/create_task/', { list_id: currentWindowId, task_name: taskName });
+      console.log(`Nest: ${nest}`)
+      const response = await axios.post('http://localhost:8000/api/tasks/create_task/', { list_id: currentWindowId, task_name: taskName, nested_id: nest });
       console.log('Task created successfully:', response.data);
       closePopup();
       if (currentWindowId in taskUpdateCallbacks.current) {

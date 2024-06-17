@@ -26,6 +26,8 @@ class Task(models.Model):
     list_task = models.ForeignKey(TaskList, on_delete=models.CASCADE, db_column='list_id')
     task_name = models.CharField(max_length=255)
     created_date_time = models.DateTimeField(auto_now_add=True)
+    nested_id = models.IntegerField(null=True, blank=True)
+    expanded = models.BooleanField(default=False)
 
     def __str__(self):
         return self.task_name

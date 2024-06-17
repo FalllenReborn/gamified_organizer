@@ -17,16 +17,18 @@ interface WindowProps {
   initialWidth: number;
   initialHeight: number;
   onResize: (id: number, width: number, height: number) => void;
-  openPopup: (windowId: number) => void;
+  openPopup: (windowId: number, nest_id: number | null) => void;
   onPositionUpdate?: (id: number, x: number, y: number) => void;
   onSizeUpdate?: (id: number, width: number, height: number) => void;
   registerTaskUpdateCallback: (id: number, callback: () => void) => void;
 }
 
 interface Task {
-  id: number;
+  task_id: number;
   task_name: string;
   list_task: number;
+  nested_id: number | null;
+  expanded: boolean;
 }
 
 const Window: React.FC<WindowProps> = ({
@@ -81,22 +83,10 @@ const Window: React.FC<WindowProps> = ({
     sizeRef.current = size;
   }, [position, size]);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
-        setTasks(response.data);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    };
-  
-    fetchTasks();
-  }, [id]);
-
   const fetchTasks = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
+      console.log('Retrieved tasks data:', response.data);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -105,7 +95,7 @@ const Window: React.FC<WindowProps> = ({
 
   useEffect(() => {
     fetchTasks();
-    registerTaskUpdateCallback(id, fetchTasks); // Register the task update callback
+    registerTaskUpdateCallback(id, fetchTasks);
   }, [fetchTasks, id, registerTaskUpdateCallback]);
 
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
@@ -179,13 +169,10 @@ const Window: React.FC<WindowProps> = ({
     if (isResizing) {
       setIsResizing(false);
       document.body.classList.remove('disable-select');
-      setSize((prevSize) => {
-        const updatedSize = { ...prevSize };
-        updateSizeInDatabase(updatedSize.width, updatedSize.height);
-        updatePositionInDatabase(positionRef.current.x, positionRef.current.y); // Update position after resizing
-        onResize(id, updatedSize.width, updatedSize.height);
-        return updatedSize;
-      });
+      const updatedSize = sizeRef.current;
+      updateSizeInDatabase(updatedSize.width, updatedSize.height);
+      updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
+      onResize(id, updatedSize.width, updatedSize.height);
     }
   };
 
@@ -202,7 +189,7 @@ const Window: React.FC<WindowProps> = ({
       document.removeEventListener('mouseup', handleDragEnd);
     };
   }, [isDragging, handleDragMove, handleDragEnd]);
-  
+
   useEffect(() => {
     if (isResizing) {
       document.addEventListener('mousemove', handleResizeMove);
@@ -228,14 +215,54 @@ const Window: React.FC<WindowProps> = ({
 
   const handleDelete = async () => {
     console.log(`Delete window ${id}`);
-    // await deleteWindowFromDatabase(id); // Uncomment if needed in the future
-    onClose(id); // Close the window after deletion
+    onClose(id);
     setIsDropdownOpen(false);
   };
 
   const handleRename = () => {
     onRename(id);
     setIsDropdownOpen(false);
+  };
+
+  const toggleExpand = async (taskId: number, currentState: boolean) => {
+    const newExpandedState = !currentState;
+    try {
+      await axios.patch(`http://localhost:8000/api/tasks/${taskId}/update_task/`, { expanded: newExpandedState });
+      setTasks((prevTasks) => 
+        prevTasks.map((task) => 
+          task.task_id === taskId ? { ...task, expanded: newExpandedState } : task
+        )
+      );
+    } catch (error) {
+      console.error('Error updating task state:', error);
+    }
+  };
+
+  const renderNestedTasks = (outerTaskId: number) => {
+    console.log(`Outer ID: ${outerTaskId}`)
+    return tasks
+      .filter((task) => task.nested_id === outerTaskId)
+      .map((task) => (
+        <div key={task.task_id} className={styles.taskContainer}>
+          <div className={styles.taskRow}>
+            <div className={styles.taskCell}>
+              <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                {task.expanded ? '▲' : '▼'}
+              </button>
+              <div className={styles.taskText}>{task.task_name}</div>
+              <div className={styles.checkbox}>
+                <input type="checkbox" />
+              </div>
+            </div>
+          </div>
+          {task.expanded && (
+            <div className={styles.nestedTasks}>
+              {renderNestedTasks(task.task_id)}
+              <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id)}>+ Create new task</button>
+            </div>
+          )}
+        </div>
+      ));
   };
 
   return (
@@ -258,7 +285,7 @@ const Window: React.FC<WindowProps> = ({
         <div className={styles.bottomBar}>
           <span className={styles.id}>ID: {id}</span>
           <div className={styles.buttons}>
-            <button className={styles.addButton} onClick={() => openPopup(id)}>+</button>
+            <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
             <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
             {isDropdownOpen && (
               <div className={styles.dropdownMenu}>
@@ -271,10 +298,27 @@ const Window: React.FC<WindowProps> = ({
         </div>
       </div>
       <div className={styles.content}>
-        {tasks.map((task) => (
-          <div key={task.id} className={styles.task}>
-            <span>{task.task_name}</span>
-            <input type="checkbox" className={styles.checkbox} />
+        {tasks
+          .filter((task) => task.nested_id === null)
+          .map((task) => (
+          <div key={task.task_id} className={styles.taskContainer}>
+            <div className={styles.taskRow}>
+              <div className={styles.taskCell}>
+                <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                  {task.expanded ? '▲' : '▼'}
+                </button>
+                <div className={styles.taskText}>{task.task_name}</div>
+                <div className={styles.checkbox}>
+                  <input type="checkbox" />
+                </div>
+              </div>
+            </div>
+            {task.expanded && (
+              <div className={styles.nestedTasks}>
+                {renderNestedTasks(task.task_id)}
+                <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id)}>+ Create new task</button>
+              </div>
+            )}
           </div>
         ))}
       </div>

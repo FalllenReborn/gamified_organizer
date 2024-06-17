@@ -19,114 +19,111 @@
     -moz-user-select: none;
     -ms-user-select: none;
 }
-  
 
 .resizeHandle {
     position: absolute;
     background-color: transparent;
-    z-index: 1000;
     width: 10px;
     height: 10px;
     user-select: none;
 }
 
 .resizeHandle.top {
-    top: -10px; /* Adjusted position */
+    top: -10px;
     left: 50%;
     transform: translateX(-50%);
     cursor: ns-resize;
-    width: calc(100% - 30px); /* Full width except for corners */
+    width: calc(100% - 30px);
 }
 
 .resizeHandle.bottom {
-    bottom: -10px; /* Adjusted position */
+    bottom: -10px;
     left: 50%;
     transform: translateX(-50%);
     cursor: ns-resize;
-    width: calc(100% - 30px); /* Full width except for corners */
+    width: calc(100% - 30px);
 }
 
 .resizeHandle.left {
     top: 50%;
-    left: -10px; /* Adjusted position */
+    left: -10px;
     transform: translateY(-50%);
     cursor: ew-resize;
-    height: calc(100% - 30px); /* Full height except for corners */
+    height: calc(100% - 30px);
 }
 
 .resizeHandle.right {
     top: 50%;
-    right: -10px; /* Adjusted position */
+    right: -10px;
     transform: translateY(-50%);
     cursor: ew-resize;
-    height: calc(100% - 30px); /* Full height except for corners */
+    height: calc(100% - 30px);
 }
 
 .resizeHandle.topLeft {
-    top: -5px; /* Adjusted position */
-    left: -5px; /* Adjusted position */
+    top: -5px;
+    left: -5px;
     cursor: nwse-resize;
 }
 
 .resizeHandle.topRight {
-    top: -5px; /* Adjusted position */
-    right: -5px; /* Adjusted position */
+    top: -5px;
+    right: -5px;
     cursor: nesw-resize;
 }
 
 .resizeHandle.bottomLeft {
-    bottom: -5px; /* Adjusted position */
-    left: -5px; /* Adjusted position */
+    bottom: -5px;
+    left: -5px;
     cursor: nesw-resize;
 }
 
 .resizeHandle.bottomRight {
-    bottom: -5px; /* Adjusted position */
-    right: -5px; /* Adjusted position */
+    bottom: -5px;
+    right: -5px;
     cursor: nwse-resize;
 }
 
 .dragging {
     box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
-    cursor: move; /* Set cursor to indicate dragging */
+    cursor: move;
     user-select: none;
 }
 
 .resizing {
-    cursor: nwse-resize; /* Set cursor to indicate resizing */
+    cursor: nwse-resize;
     user-select: none;
 }
 
 .taskbar {
     display: flex;
-    flex-direction: column; /* Stack items vertically */
+    flex-direction: column;
     background-color: #2f2f2f;
     border-bottom: 1px solid #aaa;
     cursor: grab;
-    min-height: auto; /* Remove fixed height */
+    min-height: auto;
 }
 
 .title {
     flex-grow: 1;
-    text-align: center; /* Center the title text */
-    word-wrap: break-word; /* Allow long titles to break */
+    text-align: center;
+    word-wrap: break-word;
 }
 
 .bottomBar {
     display: flex;
-    justify-content: space-between; /* Space between ID and dropdown */
-    padding-top: 5px; /* Add some space between the title and bottom bar */
+    justify-content: space-between;
+    padding-top: 5px;
 }
 
 .id {
-    align-self: flex-start; /* Align ID to the left */
+    align-self: flex-start;
 }
 
 .buttons {
     position: relative;
     display: flex;
-    justify-content: flex-end; /* Align dropdown to the right */
-    
+    justify-content: flex-end;
 }
 
 .dropdownButton {
@@ -135,6 +132,8 @@
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    width: 25px;
+    height: 25px;
 }
 
 .dropdownButton:hover {
@@ -157,27 +156,26 @@
     background: #007bff;
     color: white;
     border: none;
-    border-radius: 3px;
+    border-radius: 5px;
     cursor: pointer;
+    width: 25px;
+    height: 25px;
 }
   
 .addButton:hover {
     background: #0056b3;
 }
-  
 
 .content {
-    padding: 10px;
     overflow: auto;
-    height: calc(100% - 30px); /* Adjust height to exclude taskbar */
-    resize: both;
+    height: calc(100% - 30px);
 }
 
 .disable-select {
-    user-select: none; /* Standard syntax */
-    -webkit-user-select: none; /* Webkit browsers */
-    -moz-user-select: none; /* Mozilla Firefox */
-    -ms-user-select: none; /* Internet Explorer/Edge */
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .dropdownMenu button {
@@ -193,10 +191,6 @@
     background: #007bff;
 }
 
-.content {
-  padding: 20px;
-}
-
 .resizeHandle {
     position: absolute;
     bottom: 0;
@@ -206,8 +200,72 @@
     background: transparent;
     cursor: nwse-resize;
 }
+  
+.taskRow {
+    display: flex;
+    align-items: center;
+}
+
+.taskCell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 2px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #bbb;
+    color: white;
+    word-wrap: break-word;
+}
+
+.task-cell:last-child {
+    border-bottom: none;
+}
+
+.taskText {
+    flex-grow: 1;
+    margin-left: 5px;
+}
+  
+.expandButton {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem; /* Adjust size as needed */
+  }
+  
+  .expandButton:focus {
+    outline: none;
+  }
+  
+  .addNestedTaskButton {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem; /* Adjust size as needed */
+  }
+  
+  .addNestedTaskButton:focus {
+    outline: none;
+  }
+  
+.nestedTasks {
+    padding-left: 20px;
+}
 
 .checkbox {
     float: right;
-  }
+}
+
+.task-text {
+    flex-grow: 1;
+}
+
+.checkbox input[type="checkbox"] {
+    vertical-align: middle; /* Center the checkbox */
+}
   

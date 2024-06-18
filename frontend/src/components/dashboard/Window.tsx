@@ -5,6 +5,8 @@ import axios from 'axios';
 interface WindowProps {
   id: number;
   title: string;
+  checkedTasks: number[];
+  toggleTaskChecked: (taskId: number) => void;
   onClose: (id: number) => void;
   onRename: (id: number) => void;
   onDrag?: (id: number, x: number, y: number) => void;
@@ -47,7 +49,9 @@ const Window: React.FC<WindowProps> = ({
   initialHeight, 
   onResize, 
   openPopup, 
-  registerTaskUpdateCallback
+  registerTaskUpdateCallback,
+  checkedTasks, 
+  toggleTaskChecked,
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
@@ -87,7 +91,6 @@ const Window: React.FC<WindowProps> = ({
   const fetchTasks = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
-      console.log('Retrieved tasks data:', response.data);
       setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -253,7 +256,11 @@ const Window: React.FC<WindowProps> = ({
               </button>
               <div className={styles.taskText}>{task.task_name}</div>
               <div className={styles.checkbox}>
-                <input type="checkbox" />
+              <input
+                  type="checkbox"
+                  onChange={() => toggleTaskChecked(task.task_id)}
+                  checked={checkedTasks.includes(task.task_id)}
+                />
               </div>
             </div>
           </div>
@@ -319,7 +326,11 @@ const Window: React.FC<WindowProps> = ({
                   </button>
                   <div className={styles.taskText}>{task.task_name}</div>
                   <div className={styles.checkbox}>
-                    <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    onChange={() => toggleTaskChecked(task.task_id)}
+                    checked={checkedTasks.includes(task.task_id)}
+                  />
                   </div>
                 </div>
               </div>

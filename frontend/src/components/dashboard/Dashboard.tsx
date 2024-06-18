@@ -39,6 +39,7 @@ interface DashboardProps {
   onReturnHome: () => void;
   createNewList: boolean;
   onCreateNewList: () => void;
+  onCompleteTasks: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
@@ -57,6 +58,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
+  const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 250;
 
@@ -64,6 +66,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
   const registerTaskUpdateCallback = (id: number, callback: () => void) => {
     taskUpdateCallbacks.current[id] = callback;
+  };
+
+  const toggleTaskChecked = (taskId: number) => {
+    setCheckedTasks((prev) =>
+      prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
+    );
+    console.log(`Checked: ${checkedTasks}`)
+  };
+
+  const handleCompleteTasks = async () => {
+    try {
+      await Promise.all(
+        checkedTasks.map((taskId) =>
+          axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
+        )
+      );
+      setCheckedTasks([]);
+      // Optionally, refresh the task list or handle state updates
+    } catch (error) {
+      console.error('Error deleting tasks:', error);
+    }
   };
 
   const openPopup = (windowId: number, nest_id: number | null) => {
@@ -359,7 +382,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
-        {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={handleCreateNewList} />}
+        {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={handleCreateNewList} onCompleteTasks={handleCompleteTasks}/>}
         <ResetButton onClick={handleReset} />
         {taskLists.map((taskList) => (
           <div key={taskList.list_id} className={`${styles.window} window`}>
@@ -376,6 +399,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             initialY={taskList.y_axis}
             initialWidth={taskList.size_horizontal}
             initialHeight={taskList.size_vertical}
+            checkedTasks={checkedTasks}
+            toggleTaskChecked={toggleTaskChecked}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)}

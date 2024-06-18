@@ -10,10 +10,11 @@ import classNames from 'classnames';
 
 interface SidebarProps {
   onCreateNewList: () => void;
+  onCompleteTasks: () => void;
   onReturnHome: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks }) => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const currentDateTime = useContext(ClockContext); // Use ClockContext
@@ -26,6 +27,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList }) => {
       createList: 'Create new list',
       createShop: 'Create new shop',
       createXP: 'Create new XP bar',
+      completed: 'Delete completed tasks',
       login: 'Login',
       register: 'Register',
       returnHome: 'Home page',
@@ -36,6 +38,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList }) => {
       createList: 'Stwórz nową listę',
       createShop: 'Stwórz nowy sklep',
       createXP: 'Stwórz nowy licznik doświadczenia',
+      completed: 'Usuń ukończone zadania',
       login: 'Zaloguj się',
       register: 'Zarejestruj się',
       returnHome: 'Strona Główna',
@@ -93,6 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList }) => {
         <button className={styles.sidebarButton} onClick={onCreateNewList}>{t.createList}</button>
         <button className={styles.sidebarButton}>{t.createShop}</button>
         <button className={styles.sidebarButton}>{t.createXP}</button>
+        <button className={styles.sidebarButton} onClick={onCompleteTasks}>{t.completed}</button>
       </div>
       <div className={styles.sidebarBottomButtons}>
         <div className={styles.settingsButton}>

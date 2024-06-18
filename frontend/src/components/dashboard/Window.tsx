@@ -27,6 +27,7 @@ interface Task {
   task_id: number;
   task_name: string;
   list_task: number;
+  created_date_time: string;
   nested_id: number | null;
   expanded: boolean;
 }
@@ -242,6 +243,7 @@ const Window: React.FC<WindowProps> = ({
     console.log(`Outer ID: ${outerTaskId}`)
     return tasks
       .filter((task) => task.nested_id === outerTaskId)
+      .sort((a, b) => new Date(a.created_date_time).getTime() - new Date(b.created_date_time).getTime())
       .map((task) => (
         <div key={task.task_id} className={styles.taskContainer}>
           <div className={styles.taskRow}>
@@ -269,71 +271,80 @@ const Window: React.FC<WindowProps> = ({
     <div
       id={`window-${id}`}
       ref={windowRef}
-      className={`${styles.window} ${isDragging ? styles.dragging : ''}`}
+      className={`${styles.outerWrapper} ${isDragging ? styles.dragging : ''}`}
       style={{
         top: `${position.y * scale}px`,
         left: `${position.x * scale}px`,
-        width: `${size.width}px`,
-        height: `${size.height}px`,
+        width: `${size.width + 10}px`,
+        height: `${size.height + 10}px`,
         transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
         transformOrigin: 'top left',
         zIndex: zIndex
       }}
     >
-      <div className={styles.taskbar} onMouseDown={handleDragStart}>
-        <span className={styles.title}>{title}</span>
-        <div className={styles.bottomBar}>
-          <span className={styles.id}>ID: {id}</span>
-          <div className={styles.buttons}>
-            <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
-            <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
-            {isDropdownOpen && (
-              <div className={styles.dropdownMenu}>
-                <button onClick={handleHide}>Hide</button>
-                <button onClick={handleDelete}>Delete</button>
-                <button onClick={handleRename}>Rename</button>
-              </div>
-            )}
+      <div 
+      id={`window-${id}`}
+      ref={windowRef}
+      className={styles.window}
+      style={{
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+      }}>
+        <div className={styles.taskbar} onMouseDown={handleDragStart}>
+          <span className={styles.title}>{title}</span>
+          <div className={styles.bottomBar}>
+            <span className={styles.id}>ID: {id}</span>
+            <div className={styles.buttons}>
+              <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
+              <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
+              {isDropdownOpen && (
+                <div className={styles.dropdownMenu}>
+                  <button onClick={handleHide}>Hide</button>
+                  <button onClick={handleDelete}>Delete</button>
+                  <button onClick={handleRename}>Rename</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div className={styles.content}>
-        {tasks
-          .filter((task) => task.nested_id === null)
-          .map((task) => (
-          <div key={task.task_id} className={styles.taskContainer}>
-            <div className={styles.taskRow}>
-              <div className={styles.taskCell}>
-                <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
-                  {task.expanded ? '▲' : '▼'}
-                </button>
-                <div className={styles.taskText}>{task.task_name}</div>
-                <div className={styles.checkbox}>
-                  <input type="checkbox" />
+        <div className={styles.content}>
+          {tasks
+            .filter((task) => task.nested_id === null)
+            .map((task) => (
+            <div key={task.task_id} className={styles.taskContainer}>
+              <div className={styles.taskRow}>
+                <div className={styles.taskCell}>
+                  <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                    {task.expanded ? '▲' : '▼'}
+                  </button>
+                  <div className={styles.taskText}>{task.task_name}</div>
+                  <div className={styles.checkbox}>
+                    <input type="checkbox" />
+                  </div>
                 </div>
               </div>
+              {task.expanded && (
+                <div className={styles.nestedTasks}>
+                  {renderNestedTasks(task.task_id)}
+                  <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id)}>+ Create new task</button>
+                </div>
+              )}
             </div>
-            {task.expanded && (
-              <div className={styles.nestedTasks}>
-                {renderNestedTasks(task.task_id)}
-                <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id)}>+ Create new task</button>
-              </div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-      <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
-      <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>
-      <div className={`${styles.resizeHandle} ${styles.left}`} onMouseDown={(e) => handleResizeStart(e, 'left')}></div>
-      <div className={`${styles.resizeHandle} ${styles.top}`} onMouseDown={(e) => handleResizeStart(e, 'top')}></div>
-      <div className={`${styles.resizeHandle} ${styles.topLeft}`} onMouseDown={(e) => handleResizeStart(e, 'top-left')}></div>
-      <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
-      <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
-      <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
-      <div
-        className={styles.resizer}
-        onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
-      />
+        <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
+        <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>
+        <div className={`${styles.resizeHandle} ${styles.left}`} onMouseDown={(e) => handleResizeStart(e, 'left')}></div>
+        <div className={`${styles.resizeHandle} ${styles.top}`} onMouseDown={(e) => handleResizeStart(e, 'top')}></div>
+        <div className={`${styles.resizeHandle} ${styles.topLeft}`} onMouseDown={(e) => handleResizeStart(e, 'top-left')}></div>
+        <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
+        <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
+        <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
+        <div
+          className={styles.resizer}
+          onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+        />
     </div>
   );
 };

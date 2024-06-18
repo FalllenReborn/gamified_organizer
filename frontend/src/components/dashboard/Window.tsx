@@ -275,8 +275,8 @@ const Window: React.FC<WindowProps> = ({
       style={{
         top: `${position.y * scale}px`,
         left: `${position.x * scale}px`,
-        width: `${size.width + 10}px`,
-        height: `${size.height + 10}px`,
+        width: `${size.width + 20}px`,
+        height: `${size.height + 20}px`,
         transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
         transformOrigin: 'top left',
         zIndex: zIndex

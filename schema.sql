@@ -56,6 +56,27 @@ $$;
 
 ALTER FUNCTION public.delete_nested_tasks() OWNER TO postgres;
 
+--
+-- Name: update_bars_on_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.update_bars_on_delete() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Update the Bars table by adding the points to the row with the matching bar_id
+    UPDATE Bars
+    SET total_points = total_points + OLD.points
+    WHERE bar_id = OLD.bar_id;
+
+    -- Return the old row (standard practice for AFTER DELETE triggers)
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.update_bars_on_delete() OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -431,8 +452,8 @@ ALTER TABLE public.properties OWNER TO postgres;
 CREATE TABLE public.rewards (
     reward_id integer NOT NULL,
     task_id integer NOT NULL,
-    bar_id integer NOT NULL,
-    points integer DEFAULT 10
+    points integer DEFAULT 10,
+    bar_id integer
 );
 
 
@@ -864,6 +885,13 @@ CREATE TRIGGER delete_nested_tasks_trigger AFTER DELETE ON public.tasks FOR EACH
 
 
 --
+-- Name: rewards update_bars_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER update_bars_trigger AFTER DELETE ON public.rewards FOR EACH ROW EXECUTE FUNCTION public.update_bars_on_delete();
+
+
+--
 -- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: reborn
 --
 
@@ -956,7 +984,7 @@ ALTER TABLE ONLY public.properties
 --
 
 ALTER TABLE ONLY public.rewards
-    ADD CONSTRAINT rewards_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id) ON DELETE CASCADE;
+    ADD CONSTRAINT rewards_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id);
 
 
 --

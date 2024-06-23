@@ -34,6 +34,8 @@ interface BarData {
   size_horizontal: number;
   size_vertical: number;
   zindex: number;
+  full_cycle: number;
+  total_points: number;
 }
 
 interface RenamePopupState {
@@ -115,6 +117,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         )
       );
       setCheckedTasks([]);
+      fetchBars();
       // Optionally, refresh the task list or handle state updates
     } catch (error) {
       console.error('Error deleting tasks:', error);
@@ -579,6 +582,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               onResize={handleResizeWindow}
               onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'bars')}
               onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height, 'bars')}
+              total_points={bar.total_points}
+              full_cycle={bar.full_cycle}
+              xp_name={bar.xp_name}     
             />
           </div>
         ))}

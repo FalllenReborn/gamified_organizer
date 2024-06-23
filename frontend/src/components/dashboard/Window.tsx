@@ -300,9 +300,7 @@ const Window: React.FC<WindowProps> = ({
         <div className={styles.taskbar} onMouseDown={handleDragStart}>
           <span className={styles.title}>{title}</span>
           <div className={styles.bottomBar}>
-            <span className={styles.id}>ID: {id}</span>
             <div className={styles.buttons}>
-              <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
               <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
               {isDropdownOpen && (
                 <div className={styles.dropdownMenu}>
@@ -311,7 +309,9 @@ const Window: React.FC<WindowProps> = ({
                   <button onClick={handleRename}>Rename</button>
                 </div>
               )}
+              <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
             </div>
+            <span className={styles.id}>ID: {id}</span>
           </div>
         </div>
         <div className={styles.content}>

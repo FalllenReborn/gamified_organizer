@@ -1,7 +1,6 @@
 .outerWrapper {
     position: absolute;
     padding: 10px;
-
 }
 
 .window {
@@ -106,6 +105,7 @@
 
 .title {
     flex-grow: 1;
+    font-weight: bold;
     text-align: center;
     word-wrap: break-word;
 }
@@ -117,23 +117,24 @@
 }
 
 .id {
-    align-self: flex-start;
+    justify-content: flex-end;
 }
 
 .buttons {
     position: relative;
     display: flex;
-    justify-content: flex-end;
+    align-self: flex-start;
 }
 
 .dropdownButton {
     background: #007bff;
     color: white;
     border: none;
-    border-radius: 5px;
     cursor: pointer;
     width: 25px;
     height: 25px;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 .dropdownButton:hover {
@@ -142,7 +143,7 @@
 
 .dropdownMenu {
     position: absolute;
-    right: 0;
+    left: 0;
     top: 100%;
     background: #585858;
     border: 1px solid #ccc;
@@ -156,10 +157,11 @@
     background: #007bff;
     color: white;
     border: none;
-    border-radius: 5px;
     cursor: pointer;
     width: 25px;
     height: 25px;
+    font-size: 12px;
+    font-weight: bold;
 }
   
 .addButton:hover {

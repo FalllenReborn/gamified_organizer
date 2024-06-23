@@ -5,6 +5,9 @@ import axios from 'axios';
 interface BarProps {
     id: number;
     title: string;
+    total_points: number;
+    full_cycle: number;
+    xp_name: string;
     onClose: (id: number) => void;
     onRename: (id: number) => void;
     onDrag: (id: number, x: number, y: number, type: string) => void;
@@ -24,6 +27,9 @@ interface BarProps {
 const Bar: React.FC<BarProps> = ({
     id,
     title,
+    total_points,
+    full_cycle,
+    xp_name,
     initialX,
     initialY,
     initialWidth,
@@ -45,6 +51,7 @@ const Bar: React.FC<BarProps> = ({
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState('');
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+    const [dropdownOpen, setDropdownOpen] = useState(false);
     const barRef = useRef<HTMLDivElement>(null);
     const positionRef = useRef(position);
     const sizeRef = useRef(size);
@@ -181,11 +188,15 @@ const Bar: React.FC<BarProps> = ({
     const handleDelete = async () => {
         console.log(`Delete bar ${id}`);
         onClose(id);
+        setDropdownOpen(false);
     };
 
     const handleRename = () => {
         onRename(id);
+        setDropdownOpen(false);
     };
+
+    const progressPercentage = (total_points % full_cycle) / full_cycle * 100;
 
     return (
         <div
@@ -206,17 +217,36 @@ const Bar: React.FC<BarProps> = ({
                 id={`bar-${id}`}
                 ref={barRef}
                 className={styles.bar}
+                onMouseDown={handleDragStart}
                 style={{
                     width: `${size.width}px`,
                     height: `${size.height}px`,
             }}>
-                <div className={styles.taskbar} onMouseDown={handleDragStart}>
-                    <span className={styles.title}>{title}</span>
+                <div className={styles.topLine}>
+                    
+                    <div className={styles.dropdown}>
+                        <button onClick={() => setDropdownOpen(!dropdownOpen)}>Menu</button>
+                        {dropdownOpen && (
+                            <div className={styles.dropdownContent}>
+                                <button onClick={handleDelete}>Delete</button>
+                                <button onClick={handleRename}>Rename</button>
+                            </div>
+                        )}
+                    </div>
                     <span className={styles.id}>ID: {id}</span>
                 </div>
                 <div className={styles.content}>
-                    <button onClick={handleDelete}>Delete</button>
-                    <button onClick={handleRename}>Rename</button>
+                    <span className={styles.title}>{title}</span>
+                    <div className={styles.progressHeader}>Progress bar:</div>
+                    <div className={styles.progressContainer}>
+                        <div className={styles.progressBar} style={{ width: `${progressPercentage}%` }}></div>
+                    </div>
+                    <div className={styles.progressDescription}>
+                        <div className={styles.progressText}>
+                            {total_points % full_cycle}/{full_cycle} ({progressPercentage.toFixed(2)}%)
+                        </div>
+                        <p className={styles.xpName}>{xp_name}</p>
+                    </div>
                 </div>
             </div>
             <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
@@ -227,10 +257,6 @@ const Bar: React.FC<BarProps> = ({
             <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
             <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
             <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
-            <div
-                className={styles.resizer}
-                onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
-            />
         </div>
     );
 };

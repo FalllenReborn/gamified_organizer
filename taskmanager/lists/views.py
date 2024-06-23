@@ -1,8 +1,8 @@
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import TaskList, Task
-from .serializers import TaskListSerializer, TaskSerializer
+from .models import TaskList, Task, Reward, Bar
+from .serializers import TaskListSerializer, TaskSerializer, RewardSerializer, BarSerializer
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
@@ -97,3 +97,40 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
         except Task.DoesNotExist:
             return Response({'error': 'Task not found'}, status=404)
+
+
+class BarViewSet(viewsets.ModelViewSet):
+    queryset = Bar.objects.all()
+    serializer_class = BarSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['put'], url_path='update_name')
+    def update_bar_name(self, request, pk=None):
+        try:
+            bar = self.get_object()
+            data = json.loads(request.body.decode('utf-8'))
+
+            if 'bar_name' in data:
+                bar.bar_name = data['bar_name']
+                bar.save()
+                return JsonResponse({'message': 'Bar updated successfully', 'bar_name': bar.bar_name})
+
+            return JsonResponse({'error': 'bar_name not provided'}, status=400)
+        except Bar.DoesNotExist:
+            return JsonResponse({'error': 'Bar not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    @action(detail=True, methods=['put'], url_path='update_bar')
+    def update_bar(self, request, pk=None):
+        bar = self.get_object()
+        serializer = BarSerializer(bar, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+class RewardViewSet(viewsets.ModelViewSet):
+    queryset = Reward.objects.all()
+    serializer_class = RewardSerializer

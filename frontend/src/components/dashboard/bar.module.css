@@ -1,0 +1,135 @@
+.outerWrapper {
+    position: absolute;
+    padding: 10px;
+}
+
+.bar {
+    position: absolute;
+    border: 2px solid #bbb;
+    overflow: hidden;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    transition: box-shadow 0.2s;
+    border-radius: 4px;
+    background-color: #4a4a4a;
+}
+
+.disable-select {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
+
+.resizeHandle {
+    position: absolute;
+    background-color: transparent;
+
+    /* user-select: none; */
+}
+
+.resizeHandle.top {
+    top: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+    width: calc(100% - 30px);
+}
+
+.resizeHandle.bottom {
+    bottom: -3px;
+    left: 50%;
+    transform: translateX(-50%);
+    cursor: ns-resize;
+    width: calc(100% - 30px);
+}
+
+.resizeHandle.left {
+    top: 50%;
+    left: -3px;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+    height: calc(100% - 30px);
+}
+
+.resizeHandle.right {
+    top: 50%;
+    right: -3px;
+    transform: translateY(-50%);
+    cursor: ew-resize;
+    height: calc(100% - 30px);
+}
+
+.resizeHandle.topLeft {
+    top: 0px;
+    left: 0px;
+    cursor: nwse-resize;
+}
+
+.resizeHandle.topRight {
+    top: 0px;
+    right: 0px;
+    cursor: nesw-resize;
+}
+
+.resizeHandle.bottomLeft {
+    bottom: 0px;
+    left: 0px;
+    cursor: nesw-resize;
+}
+
+.resizeHandle.bottomRight {
+    bottom: 0px;
+    right: 0px;
+    cursor: nwse-resize;
+}
+
+.dragging {
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+    cursor: move;
+    user-select: none;
+}
+
+.resizing {
+    cursor: nwse-resize;
+    user-select: none;
+}
+
+.taskbar {
+    display: flex;
+    flex-direction: column;
+    background-color: #2f2f2f;
+    border-bottom: 1px solid #aaa;
+    cursor: grab;
+    min-height: auto;
+}
+
+.title {
+    flex-grow: 1;
+    text-align: center;
+    word-wrap: break-word;
+}
+
+.bottomBar {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 5px;
+}
+
+.id {
+    align-self: flex-start;
+}
+
+.content {
+    overflow: auto;
+    height: calc(100% - 30px);
+}
+
+.resizeHandle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    cursor: nwse-resize;
+}

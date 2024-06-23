@@ -36,14 +36,36 @@ class Task(models.Model):
         db_table = 'tasks'
 
 
+class Bar(models.Model):
+    bar_id = models.AutoField(primary_key=True)
+    bar_name = models.CharField(max_length=255, null=True, blank=True)
+    xp_name = models.CharField(max_length=255, null=True, blank=True)
+    x_axis = models.FloatField(default=0)
+    y_axis = models.FloatField(default=0)
+    size_vertical = models.FloatField(default=200)
+    size_horizontal = models.FloatField(default=300)
+    zindex = models.FloatField(default=5000000)
+    total_points = models.IntegerField(default=0)
+    full_cycle = models.IntegerField(default=200)
+    partial_cycle1 = models.IntegerField(null=True, blank=True)
+    partial_cycle2 = models.IntegerField(null=True, blank=True)
+    partial_cycle3 = models.IntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return self.bar_name if self.bar_name else f'Bar {self.bar_id}'
+
+    class Meta:
+        db_table = 'bars'
+
+
 class Reward(models.Model):
-    task_reward = models.OneToOneField(
-        Task,
-        on_delete=models.CASCADE,
-        primary_key=True,
-        related_name='reward',
-        db_column='task_id'
-    )
+    reward_id = models.AutoField(primary_key=True)
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, db_column='task_id')
+    bar = models.ForeignKey(Bar, on_delete=models.CASCADE, db_column='bar_id')
+    points = models.IntegerField(default=10)
+
+    def __str__(self):
+        return f'Reward {self.reward_id}: {self.points} points for task {self.task} and bar {self.bar}'
 
     class Meta:
         db_table = 'rewards'

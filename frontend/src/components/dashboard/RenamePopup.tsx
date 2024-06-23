@@ -5,12 +5,13 @@ import axios, { AxiosError } from 'axios';
 interface RenamePopupProps {
   isOpen: boolean;
   id: number | null;
+  endpoint: string;
   defaultValue: string;
   onSave: (id: number, newName: string) => Promise<void>;
   onClose: () => void;
 }
 
-const RenamePopup: FC<RenamePopupProps> = ({ isOpen, id, defaultValue, onSave, onClose }) => {
+const RenamePopup: FC<RenamePopupProps> = ({ isOpen, id, endpoint, defaultValue, onSave, onClose }) => {
   const [name, setName] = useState(defaultValue);
 
   useEffect(() => {
@@ -22,7 +23,7 @@ const RenamePopup: FC<RenamePopupProps> = ({ isOpen, id, defaultValue, onSave, o
   const handleSave = async () => {
     if (id === null) return;
     try {
-      const response = await axios.patch(`http://localhost:8000/api/tasklists/${id}/`, { list_name: name });
+      const response = await axios.patch(`http://localhost:8000/api/${endpoint}/${id}/`, { list_name: name });
       console.log('Response:', response);
       onSave(id, name); // Call onSave after successful API request
       onClose();

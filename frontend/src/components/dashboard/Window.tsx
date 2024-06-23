@@ -9,7 +9,7 @@ interface WindowProps {
   toggleTaskChecked: (taskId: number) => void;
   onClose: (id: number) => void;
   onRename: (id: number) => void;
-  onDrag?: (id: number, x: number, y: number) => void;
+  onDrag: (id: number, x: number, y: number, type: string) => void;
   translate: { x: number; y: number };
   scale: number;
   onClick: () => void;
@@ -20,8 +20,8 @@ interface WindowProps {
   initialHeight: number;
   onResize: (id: number, width: number, height: number) => void;
   openPopup: (windowId: number, nest_id: number | null) => void;
-  onPositionUpdate?: (id: number, x: number, y: number) => void;
-  onSizeUpdate?: (id: number, width: number, height: number) => void;
+  onPositionUpdate: (id: number, x: number, y: number) => void;
+  onSizeUpdate: (id: number, width: number, height: number) => void;
   registerTaskUpdateCallback: (id: number, callback: () => void) => void;
 }
 
@@ -344,18 +344,18 @@ const Window: React.FC<WindowProps> = ({
           ))}
         </div>
       </div>
-        <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
-        <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>
-        <div className={`${styles.resizeHandle} ${styles.left}`} onMouseDown={(e) => handleResizeStart(e, 'left')}></div>
-        <div className={`${styles.resizeHandle} ${styles.top}`} onMouseDown={(e) => handleResizeStart(e, 'top')}></div>
-        <div className={`${styles.resizeHandle} ${styles.topLeft}`} onMouseDown={(e) => handleResizeStart(e, 'top-left')}></div>
-        <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
-        <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
-        <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
-        <div
-          className={styles.resizer}
-          onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
-        />
+      <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>
+      <div className={`${styles.resizeHandle} ${styles.left}`} onMouseDown={(e) => handleResizeStart(e, 'left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.top}`} onMouseDown={(e) => handleResizeStart(e, 'top')}></div>
+      <div className={`${styles.resizeHandle} ${styles.topLeft}`} onMouseDown={(e) => handleResizeStart(e, 'top-left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.topRight}`} onMouseDown={(e) => handleResizeStart(e, 'top-right')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottomLeft}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}></div>
+      <div className={`${styles.resizeHandle} ${styles.bottomRight}`} onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}></div>
+      <div
+        className={styles.resizer}
+        onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+      />
     </div>
   );
 };

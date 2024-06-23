@@ -5,6 +5,7 @@ import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
+import Bar from './Bar';
 import RenamePopup from './RenamePopup';
 import CreateTaskPopup from './CreateTaskPopup';
 import axios from 'axios';
@@ -17,15 +18,42 @@ interface TaskList {
   size_horizontal: number;
   size_vertical: number;
   zindex: number;
+  total_points: number;
+  full_cycle: number;
+  partial_cycle1: number;
+  partial_cycle2: number;
+  partial_cycle3: number;
+}
+
+interface BarData {
+  bar_id: number;
+  bar_name: string;
+  xp_name: string;
+  x_axis: number;
+  y_axis: number;
+  size_horizontal: number;
+  size_vertical: number;
+  zindex: number;
 }
 
 interface RenamePopupState {
   isOpen: boolean;
   id: number | null;
+  endpoint: string;
   defaultValue: string;
 }
 
 interface WindowState {
+  id: number;
+  title: string;
+  initialX: number;
+  initialY: number;
+  initialWidth: number;
+  initialHeight: number;
+  zIndex: number;
+}
+
+interface BarState {
   id: number;
   title: string;
   initialX: number;
@@ -50,11 +78,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [windows, setWindows] = useState<WindowState[]>([]);
+  const [bars, setBars] = useState<BarState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
-  const [renamePopup, setRenamePopup] = useState<RenamePopupState>({ isOpen: false, id: null, defaultValue: '' });
+  const [renamePopup, setRenamePopup] = useState<RenamePopupState>({ isOpen: false, id: null, endpoint: '', defaultValue: '' });
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
-  const [largestZIndex, setLargestZIndex] = useState(5000001);
-  const [maxQueZIndex, setMaxQueZIndex] = useState(5000000);
+  const [barsData, setBarsData] = useState<BarData[]>([]);
+  const [largestListZIndex, setLargestListZIndex] = useState(5000001);
+  const [largestBarZIndex, setLargestBarZIndex] = useState(5000001);
+  const [maxListZIndex, setMaxListZIndex] = useState(5000000);
+  const [maxBarZIndex, setMaxBarZIndex] = useState(5000000);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
@@ -72,7 +104,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setCheckedTasks((prev) =>
       prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
     );
-    console.log(`Checked: ${checkedTasks}`)
+    console.log(`Checked: ${checkedTasks}`);
   };
 
   const handleCompleteTasks = async () => {
@@ -102,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const handleConfirm = async (taskName: string) => {
     try {
       if (currentWindowId === null) return;
-      console.log(`Nest: ${nest}`)
+      console.log(`Nest: ${nest}`);
       const response = await axios.post('http://localhost:8000/api/tasks/create_task/', { list_id: currentWindowId, task_name: taskName, nested_id: nest });
       console.log('Task created successfully:', response.data);
       closePopup();
@@ -171,6 +203,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
   useEffect(() => {
     fetchTaskLists();
+    fetchBars();
   }, []);
 
   useEffect(() => {
@@ -206,6 +239,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleCloseBar = async (id: number) => {
+    try {
+      await handleBarDeletion(id);
+      await fetchBars();
+    } catch (error) {
+      console.error('Error deleting bar:', error);
+    }
+  };
+
   const fetchTaskLists = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/tasklists/');
@@ -215,20 +257,46 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       setTaskLists(sortedTaskLists);
 
       const highestZIndex = Math.max(...sortedTaskLists.map(taskList => taskList.zindex));
-      setLargestZIndex(highestZIndex > 5000000 && highestZIndex < 6000000 ? highestZIndex : 5000001);
-      setMaxQueZIndex(5000000 + 1 * sortedTaskLists.length);
+      setLargestListZIndex(highestZIndex > 5000000 && highestZIndex < 6000000 ? highestZIndex : 5000001);
+      setMaxListZIndex(5000000 + 1 * sortedTaskLists.length);
     } catch (error) {
       console.error('Error fetching task lists:', error);
     }
   };
 
-  const updateMaxQueZIndex = async () => {
+  const fetchBars = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/bars/');
+      const fetchedBars: BarData[] = response.data;
+
+      const sortedBars = fetchedBars.sort((a, b) => a.zindex - b.zindex);
+      setBarsData(sortedBars);
+
+      const highestBarZIndex = Math.max(...sortedBars.map(bar => bar.zindex));
+      setLargestBarZIndex(highestBarZIndex > 5000000 && highestBarZIndex < 6000000 ? highestBarZIndex : 5000001);
+      setMaxBarZIndex(5000000 + 1 * sortedBars.length);
+    } catch (error) {
+      console.error('Error fetching bars:', error);
+    }
+  };
+
+  const updateMaxListZIndex = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/tasklists/');
       const count = response.data.length;
-      setMaxQueZIndex(500 + count);
+      setMaxListZIndex(5000000 + count);
     } catch (error) {
-      console.error('Error updating maxQueZIndex:', error);
+      console.error('Error updating maxListZIndex:', error);
+    }
+  };
+
+  const updateMaxBarZIndex = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/bars/');
+      const count = response.data.length;
+      setMaxBarZIndex(5000000 + count);
+    } catch (error) {
+      console.error('Error updating maxListZIndex:', error);
     }
   };
 
@@ -238,53 +306,74 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
     const clickedZIndex = clickedWindow.zindex;
 
-    if (clickedZIndex < largestZIndex) {
-      if (largestZIndex < maxQueZIndex) {
-        const newZIndex = largestZIndex + 1;
-        setLargestZIndex(newZIndex);
-        await updateZIndexInDatabase(clickedWindow.list_id, newZIndex);
-      } else if (largestZIndex === maxQueZIndex) {
+    if (clickedZIndex < largestListZIndex) {
+      if (largestListZIndex < maxListZIndex) {
+        const newZIndex = largestListZIndex + 1;
+        setLargestListZIndex(newZIndex);
+        await updateZIndexInList(clickedWindow.list_id, newZIndex);
+      } else if (largestListZIndex === maxListZIndex) {
         for (const window of taskLists) {
           if (window.zindex > clickedZIndex) {
             const newZIndex = window.zindex - 1;
-            await updateZIndexInDatabase(window.list_id, newZIndex);
+            await updateZIndexInList(window.list_id, newZIndex);
           }
         }
-        await updateZIndexInDatabase(clickedWindow.list_id, maxQueZIndex);
+        await updateZIndexInList(clickedWindow.list_id, maxListZIndex);
       }
     }
 
     await fetchTaskLists();
   };
 
+  const bringBarToFront = async (id: number) => {
+    const clickedBar = barsData.find(bar => bar.bar_id === id);
+    if (!clickedBar) return;
+
+    const clickedBarZIndex = clickedBar.zindex;
+
+    if (clickedBarZIndex < largestBarZIndex) {
+      if (largestBarZIndex < maxBarZIndex) {
+        const newZIndex = largestBarZIndex + 1;
+        setLargestBarZIndex(newZIndex);
+        await updateZIndexInBar(clickedBar.bar_id, newZIndex);
+      } else if (largestBarZIndex === maxBarZIndex) {
+        for (const bar of barsData) {
+          if (bar.zindex > clickedBarZIndex) {
+            const newZIndex = bar.zindex - 1;
+            await updateZIndexInBar(bar.bar_id, newZIndex);
+          }
+        }
+        await updateZIndexInBar(clickedBar.bar_id, maxBarZIndex);
+      }
+    }
+
+    await fetchBars();
+  };
+
   const handleListDeletion = async (id: number) => {
     try {
-      const deletedList = taskLists.find(taskList => taskList.list_id === id);
-      if (!deletedList) return;
-
-      const deletedZIndex = deletedList.zindex;
-
       await axios.delete(`http://localhost:8000/api/tasklists/${id}/`);
-
-      for (const taskList of taskLists) {
-        if (taskList.zindex > deletedZIndex) {
-          const newZIndex = taskList.zindex - 1;
-          await updateZIndexInDatabase(taskList.list_id, newZIndex);
-        }
-      }
-
-      setLargestZIndex(prev => prev - 1);
-      await updateMaxQueZIndex();
+      setTaskLists((prevTaskLists) => prevTaskLists.filter((list) => list.list_id !== id));
     } catch (error) {
-      console.error('Error deleting list:', error);
+      console.error('Error deleting task list:', error);
+    }
+  };
+
+  const handleBarDeletion = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/bars/${id}/`);
+      setBarsData((prevBars) => prevBars.filter((bar) => bar.bar_id !== id));
+    } catch (error) {
+      console.error('Error deleting bar:', error);
     }
   };
 
   useEffect(() => {
-    updateMaxQueZIndex();
+    updateMaxListZIndex();
+    updateMaxBarZIndex();
   }, []);
 
-  const updateZIndexInDatabase = async (id: number, zIndex: number) => {
+  const updateZIndexInList = async (id: number, zIndex: number) => {
     try {
       await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { zindex: zIndex });
     } catch (error) {
@@ -292,12 +381,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleRename = (id: number) => {
+  const updateZIndexInBar = async (id: number, zIndex: number) => {
+    try {
+      await axios.put(`http://localhost:8000/api/bars/${id}/update_bar/`, { zindex: zIndex });
+    } catch (error) {
+      console.error('Error updating z-index:', error);
+    }
+  };
+
+  const handleRenameList = (id: number) => {
     const windowToUpdate = windows.find(w => w.id === id);
     if (windowToUpdate) {
-      setRenamePopup({ isOpen: true, id, defaultValue: windowToUpdate.title });
+      setRenamePopup({ isOpen: true, id, endpoint: 'tasklists', defaultValue: windowToUpdate.title });
     } else {
-      console.error(`Window with id ${id} not found.`);
+      console.error(`List with id ${id} not found.`);
+    }
+  };
+
+  const handleRenameBar = (id: number) => {
+    const barToUpdate = bars.find(w => w.id === id);
+    if (barToUpdate) {
+      setRenamePopup({ isOpen: true, id, endpoint: 'bars', defaultValue: barToUpdate.title });
+    } else {
+      console.error(`Bar with id ${id} not found.`);
     }
   };
 
@@ -316,6 +422,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   }, [taskLists]);
 
+  useEffect(() => {
+    if (barsData.length > 0) {
+      const newBars = barsData.map((barsData) => ({
+        id: barsData.bar_id,
+        title: barsData.bar_name,
+        initialX: barsData.x_axis,
+        initialY: barsData.y_axis,
+        initialWidth: barsData.size_horizontal,
+        initialHeight: barsData.size_vertical,
+        zIndex: barsData.zindex,
+      }));
+      setBars(newBars);
+    }
+  }, [taskLists]);
+
   const handleSaveRename = async (id: number, newName: string) => {
     try {
       await axios.put(`http://localhost:8000/api/tasklists/${id}/update_name/`, { list_name: newName });
@@ -324,7 +445,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error renaming task list or fetching updated task lists:', error);
     }
 
-    setRenamePopup({ isOpen: false, id: null, defaultValue: '' });
+    setRenamePopup({ isOpen: false, id: null, endpoint: '', defaultValue: '' });
   };
 
   const handleCreateNewList = async () => {
@@ -334,18 +455,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
       setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
 
-      setRenamePopup({ isOpen: true, id: newList.list_id, defaultValue: newList.list_name || 'New List' });
+      setRenamePopup({ isOpen: true, id: newList.list_id, endpoint: 'tasklists', defaultValue: newList.list_name || 'New List' });
     } catch (error) {
       console.error('Error creating new task list:', error);
     }
   };
 
-  const handleDragWindow = (id: number, x: number, y: number) => {
-    setWindows((prevWindows) =>
-      prevWindows.map((window) =>
-        window.id === id ? { ...window, initialX: x, initialY: y } : window
-      )
-    );
+  const handleDragWindow = (id: number, x: number, y: number, type: string) => {
+    if (type === 'taskList') {
+      setTaskLists((prevTaskLists) =>
+        prevTaskLists.map((taskList) =>
+          taskList.list_id === id ? { ...taskList, x_axis: x, y_axis: y } : taskList
+        )
+      );
+    } else if (type === 'bars') {
+      setBarsData((prevBarsData) =>
+        prevBarsData.map((bar) =>
+          bar.bar_id === id ? { ...bar, x_axis: x, y_axis: y } : bar
+        )
+      );
+    }
   };
 
   const handleResizeWindow = (id: number, width: number, height: number) => {
@@ -355,6 +484,34 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       )
     );
   };
+
+  const handleResizeBars = (id: number, width: number, height: number) => {
+    setBars((prevBars) =>
+      prevBars.map((bar) =>
+        bar.id === id ? { ...bar, initialWidth: width, initialHeight: height } : bar
+      )
+    );
+  };
+
+  // const handleResizeWindow = (id: number, width: number, height: number, type: string) => {
+  //   if (type === 'taskList') {
+  //     setTaskLists((prevTaskLists) =>
+  //       prevTaskLists.map((taskList) =>
+  //         taskList.list_id === id
+  //           ? { ...taskList, size_horizontal: width, size_vertical: height }
+  //           : taskList
+  //       )
+  //     );
+  //   } else if (type === 'bars') {
+  //     setBarsData((prevBarsData) =>
+  //       prevBarsData.map((bar) =>
+  //         bar.bar_id === id
+  //           ? { ...bar, size_horizontal: width, size_vertical: height }
+  //           : bar
+  //       )
+  //     );
+  //   }
+  // };
 
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
@@ -389,34 +546,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <Window 
             id={taskList.list_id} 
             title={taskList.list_name}
-            onClose={handleCloseWindow} 
-            onRename={handleRename} 
-            translate={translate} 
-            scale={scale} 
-            onClick={() => bringWindowToFront(taskList.list_id)}
-            zIndex={taskList.zindex}
             initialX={taskList.x_axis}
             initialY={taskList.y_axis}
             initialWidth={taskList.size_horizontal}
             initialHeight={taskList.size_vertical}
-            checkedTasks={checkedTasks}
-            toggleTaskChecked={toggleTaskChecked}
+            translate={translate} 
+            scale={scale} 
+            zIndex={taskList.zindex}
+            onClose={handleCloseWindow} 
+            onRename={handleRenameList}
+            onClick={() => bringWindowToFront(taskList.list_id)}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
-            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y)}
+            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'taskList')}
             onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)}
+            
+            checkedTasks={checkedTasks}
+            toggleTaskChecked={toggleTaskChecked}
             openPopup={openPopup}
             registerTaskUpdateCallback={registerTaskUpdateCallback}
           />
+          </div>
+        ))}
+        {barsData.map((bar) => (
+          <div key={bar.bar_id} className={`${styles.bar} bar`}>
+            <Bar
+              id={bar.bar_id}
+              title={bar.bar_name}
+              initialX={bar.x_axis}
+              initialY={bar.y_axis}
+              initialWidth={bar.size_horizontal}
+              initialHeight={bar.size_vertical}
+              translate={translate} 
+              scale={scale} 
+              zIndex={bar.zindex}
+              onClose={handleCloseBar}
+              onRename={handleRenameBar}
+              onClick={() => bringBarToFront(bar.bar_id)}
+              onDrag={handleDragWindow}
+              onResize={handleResizeBars}
+              onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'bars')}
+              onSizeUpdate={(id, width, height) => handleResizeBars(id, width, height)}
+            />
           </div>
         ))}
         {renamePopup.isOpen && (
           <RenamePopup
             isOpen={renamePopup.isOpen}
             id={renamePopup.id}
+            endpoint={renamePopup.endpoint}
             defaultValue={renamePopup.defaultValue}
             onSave={handleSaveRename}
-            onClose={() => setRenamePopup({ isOpen: false, id: null, defaultValue: '' })}
+            onClose={() => setRenamePopup({ isOpen: false, id: null, endpoint: '', defaultValue: '' })}
           />
         )}
         {isPopupOpen && (

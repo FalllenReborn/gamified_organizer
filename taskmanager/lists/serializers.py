@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TaskList, Task, Reward, Property
+from .models import TaskList, Task, Reward, Bar
 
 
 class TaskListSerializer(serializers.ModelSerializer):
@@ -14,16 +14,13 @@ class RewardSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
-class PropertySerializer(serializers.ModelSerializer):
+class TaskSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Property
+        model = Task
         fields = '__all__'
 
 
-class TaskSerializer(serializers.ModelSerializer):
-    reward = RewardSerializer()
-    property = PropertySerializer()
-
+class BarSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Task
+        model = Bar
         fields = '__all__'

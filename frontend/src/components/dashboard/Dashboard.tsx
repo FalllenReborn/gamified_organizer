@@ -437,15 +437,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   }, [taskLists]);
 
-  const handleSaveRename = async (id: number, newName: string) => {
-    try {
-      await axios.put(`http://localhost:8000/api/tasklists/${id}/update_name/`, { list_name: newName });
-      await fetchTaskLists();
-    } catch (error) {
-      console.error('Error renaming task list or fetching updated task lists:', error);
-    }
+  const handleSaveRename = async (id: number, newName: string, endpoint: string) => {
 
-    setRenamePopup({ isOpen: false, id: null, endpoint: '', defaultValue: '' });
+    if (endpoint === 'taskList') {
+      try {
+        await axios.put(`http://localhost:8000/api/${endpoint}/${id}/update_name/`, { list_name: newName });
+        await fetchTaskLists();
+      } catch (error) {
+        console.error('Error renaming task list or fetching updated task lists:', error);
+      }
+    } else if (endpoint === 'bars') {
+      try {
+        await axios.put(`http://localhost:8000/api/${endpoint}/${id}/update_name/`, { bar_name: newName });
+        await fetchBars();
+      } catch (error) {
+        console.error('Error renaming bar or fetching updated bar:', error);
+      }
+    }
   };
 
   const handleCreateNewList = async () => {
@@ -477,41 +485,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleResizeWindow = (id: number, width: number, height: number) => {
-    setWindows((prevWindows) =>
-      prevWindows.map((window) =>
-        window.id === id ? { ...window, initialWidth: width, initialHeight: height } : window
-      )
-    );
+  const handleResizeWindow = (id: number, width: number, height: number, type: string) => {
+    if (type === 'taskList') {
+      setTaskLists((prevTaskLists) =>
+        prevTaskLists.map((taskList) =>
+          taskList.list_id === id
+            ? { ...taskList, size_horizontal: width, size_vertical: height }
+            : taskList
+        )
+      );
+    } else if (type === 'bars') {
+      setBarsData((prevBarsData) =>
+        prevBarsData.map((bar) =>
+          bar.bar_id === id
+            ? { ...bar, size_horizontal: width, size_vertical: height }
+            : bar
+        )
+      );
+    }
   };
-
-  const handleResizeBars = (id: number, width: number, height: number) => {
-    setBars((prevBars) =>
-      prevBars.map((bar) =>
-        bar.id === id ? { ...bar, initialWidth: width, initialHeight: height } : bar
-      )
-    );
-  };
-
-  // const handleResizeWindow = (id: number, width: number, height: number, type: string) => {
-  //   if (type === 'taskList') {
-  //     setTaskLists((prevTaskLists) =>
-  //       prevTaskLists.map((taskList) =>
-  //         taskList.list_id === id
-  //           ? { ...taskList, size_horizontal: width, size_vertical: height }
-  //           : taskList
-  //       )
-  //     );
-  //   } else if (type === 'bars') {
-  //     setBarsData((prevBarsData) =>
-  //       prevBarsData.map((bar) =>
-  //         bar.bar_id === id
-  //           ? { ...bar, size_horizontal: width, size_vertical: height }
-  //           : bar
-  //       )
-  //     );
-  //   }
-  // };
 
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
@@ -559,7 +551,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'taskList')}
-            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height)}
+            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height, 'taskList')}
             
             checkedTasks={checkedTasks}
             toggleTaskChecked={toggleTaskChecked}
@@ -584,9 +576,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               onRename={handleRenameBar}
               onClick={() => bringBarToFront(bar.bar_id)}
               onDrag={handleDragWindow}
-              onResize={handleResizeBars}
+              onResize={handleResizeWindow}
               onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'bars')}
-              onSizeUpdate={(id, width, height) => handleResizeBars(id, width, height)}
+              onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height, 'bars')}
             />
           </div>
         ))}

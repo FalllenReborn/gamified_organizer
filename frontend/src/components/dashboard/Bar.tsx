@@ -16,7 +16,7 @@ interface BarProps {
     initialY: number;
     initialWidth: number;
     initialHeight: number;
-    onResize: (id: number, width: number, height: number) => void;
+    onResize: (id: number, width: number, height: number, type: string) => void;
     onPositionUpdate: (id: number, x: number, y: number) => void;
     onSizeUpdate: (id: number, width: number, height: number) => void;
 }
@@ -146,7 +146,7 @@ const Bar: React.FC<BarProps> = ({
             const updatedSize = sizeRef.current;
             updateSizeInDatabase(updatedSize.width, updatedSize.height);
             updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
-            onResize(id, updatedSize.width, updatedSize.height);
+            onResize(id, updatedSize.width, updatedSize.height, 'bars');
         }
     };
 

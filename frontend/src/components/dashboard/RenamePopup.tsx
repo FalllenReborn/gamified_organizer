@@ -7,7 +7,7 @@ interface RenamePopupProps {
   id: number | null;
   endpoint: string;
   defaultValue: string;
-  onSave: (id: number, newName: string) => Promise<void>;
+  onSave: (id: number, newName: string, endpoint: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -25,7 +25,7 @@ const RenamePopup: FC<RenamePopupProps> = ({ isOpen, id, endpoint, defaultValue,
     try {
       const response = await axios.patch(`http://localhost:8000/api/${endpoint}/${id}/`, { list_name: name });
       console.log('Response:', response);
-      onSave(id, name); // Call onSave after successful API request
+      onSave(id, name, endpoint); // Call onSave after successful API request
       onClose();
     } catch (error) {
       if (axios.isAxiosError(error)) {

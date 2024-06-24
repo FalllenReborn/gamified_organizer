@@ -38,6 +38,11 @@ interface BarData {
   total_points: number;
 }
 
+interface Bar {
+  bar_id: number;
+  bar_name: string;
+}
+
 interface RenamePopupState {
   isOpen: boolean;
   id: number | null;
@@ -93,6 +98,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
+  const [rewards, setRewards] = useState([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 250;
 
@@ -299,6 +305,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  useEffect(() => {
+    const fetchRewards = async () => {
+      try {
+        const response = await axios.get('http://localhost:8000/api/rewards/');
+        setRewards(response.data);
+      } catch (error) {
+        console.error('Error fetching rewards:', error);
+      }
+    };
+
+    fetchRewards();
+  }, []);
+
   const fetchBars = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/bars/');
@@ -336,9 +355,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const bringWindowToFront = async (id: number) => {
+    console.log(`largest: ${largestListZIndex}`)
     const clickedWindow = taskLists.find(window => window.list_id === id);
     if (!clickedWindow) return;
-
+    
     const clickedZIndex = clickedWindow.zindex;
 
     if (clickedZIndex < largestListZIndex) {
@@ -355,6 +375,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         }
         await updateZIndexInList(clickedWindow.list_id, maxListZIndex);
       }
+    } else if (clickedZIndex > largestListZIndex) {  // statement for debuging if a window is overset
+      console.log('triggered debug')
+      await updateZIndexInList(clickedWindow.list_id, largestListZIndex);
     }
 
     await fetchTaskLists();
@@ -580,6 +603,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             translate={translate} 
             scale={scale} 
             zIndex={taskList.zindex}
+            rewards={rewards}
+            barsData={barsData}
             onClose={handleCloseWindow} 
             onRename={handleRenameList}
             onClick={() => bringWindowToFront(taskList.list_id)}

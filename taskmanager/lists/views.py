@@ -166,3 +166,14 @@ class RewardViewSet(viewsets.ModelViewSet):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['get'], url_path='by_task')
+    def get_rewards_by_task(self, request):
+        task_id = request.query_params.get('task_id')
+        if not task_id:
+            return Response({'error': 'task_id is required'}, status=400)
+
+        rewards = Reward.objects.filter(task_id=task_id)
+        serializer = RewardSerializer(rewards, many=True)
+        return Response(serializer.data, status=200)

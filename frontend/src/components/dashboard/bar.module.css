@@ -62,7 +62,6 @@
 }
 
 .id {
-    
     justify-content: flex-end;
     margin-right: 5;
 }
@@ -90,8 +89,21 @@
     word-wrap: break-word;
 }
 
-.progressHeader {
+.progressTop {
+    display: flex;
+    justify-content: space-between;
     font-size: 14px;
+}
+
+.progressHeader {
+    position: relative;
+    justify-content: flex-end;
+}
+
+.lvl {
+    font-size: 14px;
+    display: flex;
+    justify-content: flex-end;
 }
 
 .progressContainer {

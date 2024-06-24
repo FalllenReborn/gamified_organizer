@@ -18,6 +18,8 @@ interface WindowProps {
   initialY: number;
   initialWidth: number;
   initialHeight: number;
+  rewards: any[];
+  barsData: any[];
   onResize: (id: number, width: number, height: number, type: string) => void;
   openPopup: (windowId: number, nest_id: number | null) => void;
   onPositionUpdate: (id: number, x: number, y: number) => void;
@@ -52,6 +54,8 @@ const Window: React.FC<WindowProps> = ({
   registerTaskUpdateCallback,
   checkedTasks, 
   toggleTaskChecked,
+  rewards,
+  barsData,
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
@@ -242,8 +246,16 @@ const Window: React.FC<WindowProps> = ({
     }
   };
 
+  const getRewardsForTask = (taskId: number) => {
+    return rewards.filter((reward) => reward.task === taskId);
+  };
+
+  const getXPName = (barId: number) => {
+    const bar = barsData.find(bar => bar.bar_id === barId);
+    return bar ? bar.xp_name : 'XP';
+  };
+
   const renderNestedTasks = (outerTaskId: number) => {
-    console.log(`Outer ID: ${outerTaskId}`)
     return tasks
       .filter((task) => task.nested_id === outerTaskId)
       .sort((a, b) => new Date(a.created_date_time).getTime() - new Date(b.created_date_time).getTime())
@@ -254,13 +266,21 @@ const Window: React.FC<WindowProps> = ({
               <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
                 {task.expanded ? '▲' : '▼'}
               </button>
-              <div className={styles.taskText}>{task.task_name}</div>
+              <div className={styles.rewards}>
+                  <div className={styles.taskText}>{task.task_name}<br />
+                    {getRewardsForTask(task.task_id).map((reward) => (
+                      <span key={reward.reward_id} className={styles.reward}>
+                        {getXPName(reward.bar)}: {reward.points} 
+                      </span>
+                    ))}
+                  </div>
+                </div>
               <div className={styles.checkbox}>
-              <input
-                  type="checkbox"
-                  onChange={() => toggleTaskChecked(task.task_id)}
-                  checked={checkedTasks.includes(task.task_id)}
-                />
+                <input
+                    type="checkbox"
+                    onChange={() => toggleTaskChecked(task.task_id)}
+                    checked={checkedTasks.includes(task.task_id)}
+                  />
               </div>
             </div>
           </div>
@@ -324,13 +344,21 @@ const Window: React.FC<WindowProps> = ({
                   <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
                     {task.expanded ? '▲' : '▼'}
                   </button>
-                  <div className={styles.taskText}>{task.task_name}</div>
+                  <div className={styles.rewards}>
+                    <div className={styles.taskText}>{task.task_name}<br />
+                    {getRewardsForTask(task.task_id).map((reward) => (
+                      <span key={reward.reward_id} className={styles.reward}>
+                        {getXPName(reward.bar)}: {reward.points}&nbsp; 
+                      </span>
+                    ))}
+                    </div>
+                  </div>
                   <div className={styles.checkbox}>
-                  <input
-                    type="checkbox"
-                    onChange={() => toggleTaskChecked(task.task_id)}
-                    checked={checkedTasks.includes(task.task_id)}
-                  />
+                    <input
+                      type="checkbox"
+                      onChange={() => toggleTaskChecked(task.task_id)}
+                      checked={checkedTasks.includes(task.task_id)}
+                    />
                   </div>
                 </div>
               </div>

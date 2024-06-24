@@ -224,9 +224,20 @@
     border-bottom: none;
 }
 
+.rewards {
+    margin-left: 5px;
+    flex-grow: 1;
+}
+
 .taskText {
     flex-grow: 1;
-    margin-left: 5px;
+    font-size: 15px;
+    line-height: 1.1;
+}
+
+.reward {
+    font-size: 10px;
+    color: white;
 }
   
 .expandButton {
@@ -263,10 +274,6 @@
 .checkbox {
     float: right;
     margin-right: 3px;
-}
-
-.task-text {
-    flex-grow: 1;
 }
 
 .checkbox input[type="checkbox"] {

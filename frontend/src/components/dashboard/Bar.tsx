@@ -237,7 +237,10 @@ const Bar: React.FC<BarProps> = ({
                 </div>
                 <div className={styles.content}>
                     <span className={styles.title}>{title}</span>
-                    <div className={styles.progressHeader}>Progress bar:</div>
+                    <div className={styles.progressTop}>
+                        <div className={styles.progressHeader}>Progress bar:</div>
+                        <div className={styles.lvl}>Level: {Math.floor(total_points / full_cycle)}</div>
+                    </div>
                     <div className={styles.progressContainer}>
                         <div className={styles.progressBar} style={{ width: `${progressPercentage}%` }}></div>
                     </div>

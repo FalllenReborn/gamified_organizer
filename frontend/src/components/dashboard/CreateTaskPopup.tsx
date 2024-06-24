@@ -1,16 +1,38 @@
 import React, { useState } from 'react';
 import styles from './createTaskPopup.module.css';
 
-interface CreateTaskPopupProps {
-  onClose: () => void;
-  onConfirm: (taskName: string) => void;
+interface bar {
+  bar_id: number;
+  bar_name: string;
+  xp_name: string;
+  x_axis: number;
+  y_axis: number;
+  size_horizontal: number;
+  size_vertical: number;
+  zindex: number;
+  full_cycle: number;
+  total_points: number;
 }
 
-const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm }) => {
+interface CreateTaskPopupProps {
+  onClose: () => void;
+  onConfirm: (taskName: string, rewards: { [barId: number]: number }) => void;
+  bars: bar[];
+}
+
+const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, bars }) => {
   const [taskName, setTaskName] = useState('');
+  const [rewards, setRewards] = useState<{ [barId: number]: number }>({});
+
+  const handleRewardChange = (barId: number, value: string) => {
+    setRewards((prevRewards) => ({
+      ...prevRewards,
+      [barId]: parseInt(value, 10) || 0,
+    }));
+  };
 
   const handleConfirm = () => {
-    onConfirm(taskName);
+    onConfirm(taskName, rewards);
   };
 
   return (
@@ -37,7 +59,19 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm })
           </div>
           <div className={styles.column}>
             <h3>Rewards</h3>
-            {/* Rewards content will go here */}
+            <div className={styles.rewardsBox}>
+              {bars.map((bar) => (
+                <div key={bar.bar_id} className={styles.rewardRow}>
+                  <span className={styles.rewardName}>{bar.bar_name}</span>
+                  <input
+                    className={styles.rewardInput}
+                    type="number"
+                    value={rewards[bar.bar_id] || ''}
+                    onChange={(e) => handleRewardChange(bar.bar_id, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
         <div className={styles.footer}>

@@ -134,3 +134,35 @@ class BarViewSet(viewsets.ModelViewSet):
 class RewardViewSet(viewsets.ModelViewSet):
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_reward')
+    def create_reward(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            task_id = data.get('task_id')
+            bar_id = data.get('bar_id')
+            points = data.get('points', 10)  # Default points to 10 if not provided
+
+            if not task_id or not bar_id:
+                return JsonResponse({'error': 'task_id and bar_id are required'}, status=400)
+
+            task = Task.objects.get(task_id=task_id)
+            bar = Bar.objects.get(bar_id=bar_id)
+
+            reward = Reward.objects.create(
+                task=task,
+                bar=bar,
+                points=points
+            )
+            serializer = RewardSerializer(reward)
+            return JsonResponse(serializer.data, status=201)
+
+        except Task.DoesNotExist:
+            return JsonResponse({'error': 'Task not found'}, status=404)
+        except Bar.DoesNotExist:
+            return JsonResponse({'error': 'Bar not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

@@ -984,7 +984,7 @@ ALTER TABLE ONLY public.properties
 --
 
 ALTER TABLE ONLY public.rewards
-    ADD CONSTRAINT rewards_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id);
+    ADD CONSTRAINT rewards_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id) ON DELETE CASCADE;
 
 
 --

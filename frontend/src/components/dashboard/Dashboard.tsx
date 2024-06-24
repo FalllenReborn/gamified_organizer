@@ -134,18 +134,50 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setIsPopupOpen(false);
   };
 
-  const handleConfirm = async (taskName: string) => {
+  const handleConfirm = async (taskName: string, rewards: { [barId: number]: number }) => {
     try {
-      if (currentWindowId === null) return;
-      console.log(`Nest: ${nest}`);
-      const response = await axios.post('http://localhost:8000/api/tasks/create_task/', { list_id: currentWindowId, task_name: taskName, nested_id: nest });
-      console.log('Task created successfully:', response.data);
-      closePopup();
-      if (currentWindowId in taskUpdateCallbacks.current) {
-        taskUpdateCallbacks.current[currentWindowId]();
-      }
+        if (currentWindowId === null) return;
+        console.log(`Nest: ${nest}`);
+
+        // Step 1: Create the task
+        const response = await axios.post('http://localhost:8000/api/tasks/create_task/', {
+            list_id: currentWindowId,
+            task_name: taskName,
+            nested_id: nest
+        });
+        console.log('Task created successfully:', response.data);
+
+        // Get the created task's ID
+        const taskId = response.data.task_id;
+
+        // Step 2: Create rewards for each bar with assigned value
+        const rewardPromises = Object.entries(rewards).map(([barId, points]) => {
+            if (points > 0) {
+                return axios.post('http://localhost:8000/api/rewards/', {
+                    task: taskId,
+                    bar: parseInt(barId, 10),
+                    points
+                });
+            }
+            return null;
+        });
+
+        // Filter out null promises
+        const validRewardPromises = rewardPromises.filter(promise => promise !== null);
+
+        // Execute all reward creation requests
+        await Promise.all(validRewardPromises);
+
+        console.log('Rewards created successfully');
+
+        // Handle the successful task and reward creation
+        closePopup();
+        if (currentWindowId in taskUpdateCallbacks.current) {
+            taskUpdateCallbacks.current[currentWindowId]();
+        }
+
     } catch (error) {
-      console.error('Error creating task:', error);
+        console.error('Error creating task or rewards:', error);
     }
   };
 
@@ -602,6 +634,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <CreateTaskPopup
             onClose={closePopup}
             onConfirm={handleConfirm}
+            bars={barsData}
           />
         )}
       </div>

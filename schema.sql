@@ -57,17 +57,51 @@ $$;
 ALTER FUNCTION public.delete_nested_tasks() OWNER TO postgres;
 
 --
--- Name: update_bars_on_delete(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_bars_and_distribute_transactions(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_bars_on_delete() RETURNS trigger
+CREATE FUNCTION public.update_bars_and_distribute_transactions() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+DECLARE
+    initial_result FLOAT;
+    final_result FLOAT;
+    division_difference FLOAT;
 BEGIN
+    -- Compute initial division result before the points are added
+    SELECT total_points / full_cycle INTO initial_result
+    FROM Bars
+    WHERE bar_id = OLD.bar_id;
+
     -- Update the Bars table by adding the points to the row with the matching bar_id
     UPDATE Bars
     SET total_points = total_points + OLD.points
+    WHERE bar_id = OLD.bar_id
+    RETURNING total_points INTO final_result;
+
+    -- Compute final division result after the points are added
+    SELECT total_points / full_cycle INTO final_result
+    FROM Bars
     WHERE bar_id = OLD.bar_id;
+
+    -- Calculate the difference in division results
+    division_difference := final_result - initial_result;
+
+    -- Check if final result has increased compared to initial result
+    IF division_difference > 0 THEN
+        -- Loop through the number of complete cycles increased
+        FOR i IN 1..floor(division_difference) LOOP
+            -- Distribute amount to currencies with corresponding currency_id
+            UPDATE Currencies
+            SET owned = owned + Transactions.amount
+            FROM Transactions
+            WHERE Transactions.currency_id = Currencies.currency_id
+              AND Transactions.bar_id = OLD.bar_id
+              AND Transactions.amount > 0;
+
+            RAISE NOTICE 'Distributed amount % to currency_id %', (SELECT amount FROM Transactions WHERE bar_id = OLD.bar_id LIMIT 1), (SELECT currency_id FROM Transactions WHERE bar_id = OLD.bar_id LIMIT 1);
+        END LOOP;
+    END IF;
 
     -- Return the old row (standard practice for AFTER DELETE triggers)
     RETURN OLD;
@@ -75,7 +109,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_bars_on_delete() OWNER TO postgres;
+ALTER FUNCTION public.update_bars_and_distribute_transactions() OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -298,6 +332,41 @@ ALTER SEQUENCE public.bars_bar_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.bars_bar_id_seq OWNED BY public.bars.bar_id;
+
+
+--
+-- Name: currencies; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.currencies (
+    currency_id integer NOT NULL,
+    currency_name character varying(100) NOT NULL,
+    owned numeric(10,2) DEFAULT 0 NOT NULL
+);
+
+
+ALTER TABLE public.currencies OWNER TO postgres;
+
+--
+-- Name: currencies_currency_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.currencies_currency_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.currencies_currency_id_seq OWNER TO postgres;
+
+--
+-- Name: currencies_currency_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.currencies_currency_id_seq OWNED BY public.currencies.currency_id;
 
 
 --
@@ -561,10 +630,56 @@ ALTER SEQUENCE public.tasks_task_id_seq OWNED BY public.tasks.task_id;
 
 
 --
+-- Name: transactions; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.transactions (
+    transaction_id integer NOT NULL,
+    task_id integer,
+    bar_id integer,
+    currency_id integer NOT NULL,
+    amount numeric(10,2) NOT NULL,
+    CONSTRAINT check_task_or_bar_required CHECK ((((task_id IS NOT NULL) AND (bar_id IS NULL)) OR ((task_id IS NULL) AND (bar_id IS NOT NULL)))),
+    CONSTRAINT transactions_amount_check CHECK ((amount > (0)::numeric))
+);
+
+
+ALTER TABLE public.transactions OWNER TO postgres;
+
+--
+-- Name: transactions_transaction_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.transactions_transaction_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.transactions_transaction_id_seq OWNER TO postgres;
+
+--
+-- Name: transactions_transaction_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.transactions_transaction_id_seq OWNED BY public.transactions.transaction_id;
+
+
+--
 -- Name: bars bar_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
 ALTER TABLE ONLY public.bars ALTER COLUMN bar_id SET DEFAULT nextval('public.bars_bar_id_seq'::regclass);
+
+
+--
+-- Name: currencies currency_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.currencies ALTER COLUMN currency_id SET DEFAULT nextval('public.currencies_currency_id_seq'::regclass);
 
 
 --
@@ -586,6 +701,13 @@ ALTER TABLE ONLY public.task_lists ALTER COLUMN list_id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.tasks ALTER COLUMN task_id SET DEFAULT nextval('public.tasks_task_id_seq'::regclass);
+
+
+--
+-- Name: transactions transaction_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions ALTER COLUMN transaction_id SET DEFAULT nextval('public.transactions_transaction_id_seq'::regclass);
 
 
 --
@@ -693,6 +815,14 @@ ALTER TABLE ONLY public.bars
 
 
 --
+-- Name: currencies currencies_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.currencies
+    ADD CONSTRAINT currencies_pkey PRIMARY KEY (currency_id);
+
+
+--
 -- Name: django_admin_log django_admin_log_pkey; Type: CONSTRAINT; Schema: public; Owner: reborn
 --
 
@@ -770,6 +900,14 @@ ALTER TABLE ONLY public.task_lists
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_pkey PRIMARY KEY (task_id);
+
+
+--
+-- Name: transactions transactions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_pkey PRIMARY KEY (transaction_id);
 
 
 --
@@ -885,10 +1023,10 @@ CREATE TRIGGER delete_nested_tasks_trigger AFTER DELETE ON public.tasks FOR EACH
 
 
 --
--- Name: rewards update_bars_trigger; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: rewards update_bars_and_distribute_transactions_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER update_bars_trigger AFTER DELETE ON public.rewards FOR EACH ROW EXECUTE FUNCTION public.update_bars_on_delete();
+CREATE TRIGGER update_bars_and_distribute_transactions_trigger AFTER DELETE ON public.rewards FOR EACH ROW EXECUTE FUNCTION public.update_bars_and_distribute_transactions();
 
 
 --
@@ -1009,6 +1147,30 @@ ALTER TABLE ONLY public.task_lists
 
 ALTER TABLE ONLY public.tasks
     ADD CONSTRAINT tasks_list_id_fkey FOREIGN KEY (list_id) REFERENCES public.task_lists(list_id) ON DELETE CASCADE;
+
+
+--
+-- Name: transactions transactions_bar_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id);
+
+
+--
+-- Name: transactions transactions_currency_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_currency_id_fkey FOREIGN KEY (currency_id) REFERENCES public.currencies(currency_id) ON DELETE CASCADE;
+
+
+--
+-- Name: transactions transactions_task_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.transactions
+    ADD CONSTRAINT transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id) ON DELETE CASCADE;
 
 
 --

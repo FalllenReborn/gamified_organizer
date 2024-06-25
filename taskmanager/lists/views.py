@@ -130,6 +130,37 @@ class BarViewSet(viewsets.ModelViewSet):
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
 
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_bar')
+    def create_bar(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            bar_name = data.get('bar_name')
+            xp_name = data.get('xp_name')
+            full_cycle = data.get('full_cycle')
+            partial_cycle1 = data.get('partial_cycle1')
+            partial_cycle2 = data.get('partial_cycle2')
+            partial_cycle3 = data.get('partial_cycle3')
+
+            if full_cycle is None:
+                return JsonResponse({'error': 'full_cycle is required'}, status=400)
+
+            bar = Bar.objects.create(
+                bar_name=bar_name,
+                xp_name=xp_name,
+                full_cycle=full_cycle,
+                partial_cycle1=partial_cycle1,
+                partial_cycle2=partial_cycle2,
+                partial_cycle3=partial_cycle3
+            )
+            serializer = BarSerializer(bar)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class RewardViewSet(viewsets.ModelViewSet):
     queryset = Reward.objects.all()

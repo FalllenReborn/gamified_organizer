@@ -8,6 +8,7 @@ import Window from './Window';
 import Bar from './Bar';
 import RenamePopup from './RenamePopup';
 import CreateTaskPopup from './CreateTaskPopup';
+import CreateBarPopup from './CreateBarPopup';
 import axios from 'axios';
 
 interface TaskList {
@@ -75,6 +76,7 @@ interface DashboardProps {
   createNewList: boolean;
   onCreateNewList: () => void;
   onCompleteTasks: () => void;
+  onCreateNewBar: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
@@ -138,53 +140,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
   const closePopup = () => {
     setIsPopupOpen(false);
-  };
-
-  const handleConfirm = async (taskName: string, rewards: { [barId: number]: number }) => {
-    try {
-        if (currentWindowId === null) return;
-        console.log(`Nest: ${nest}`);
-
-        // Step 1: Create the task
-        const response = await axios.post('http://localhost:8000/api/tasks/create_task/', {
-            list_id: currentWindowId,
-            task_name: taskName,
-            nested_id: nest
-        });
-        console.log('Task created successfully:', response.data);
-
-        // Get the created task's ID
-        const taskId = response.data.task_id;
-
-        // Step 2: Create rewards for each bar with assigned value
-        const rewardPromises = Object.entries(rewards).map(([barId, points]) => {
-            if (points > 0) {
-                return axios.post('http://localhost:8000/api/rewards/', {
-                    task: taskId,
-                    bar: parseInt(barId, 10),
-                    points
-                });
-            }
-            return null;
-        });
-
-        // Filter out null promises
-        const validRewardPromises = rewardPromises.filter(promise => promise !== null);
-
-        // Execute all reward creation requests
-        await Promise.all(validRewardPromises);
-
-        console.log('Rewards created successfully');
-
-        // Handle the successful task and reward creation
-        closePopup();
-        if (currentWindowId in taskUpdateCallbacks.current) {
-            taskUpdateCallbacks.current[currentWindowId]();
-        }
-
-    } catch (error) {
-        console.error('Error creating task or rewards:', error);
-    }
   };
 
   const getInitialTranslate = () => {
@@ -305,18 +260,68 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const fetchRewards = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/rewards/');
+      setRewards(response.data);
+    } catch (error) {
+      console.error('Error fetching rewards:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchRewards = async () => {
-      try {
-        const response = await axios.get('http://localhost:8000/api/rewards/');
-        setRewards(response.data);
-      } catch (error) {
-        console.error('Error fetching rewards:', error);
-      }
-    };
 
     fetchRewards();
-  }, []);
+  }, []);  // adding handleConfirm loops requests to backend
+
+  const handleConfirm = async (taskName: string, rewards: { [barId: number]: number }) => {
+    try {
+        if (currentWindowId === null) return;
+        console.log(`Nest: ${nest}`);
+
+        // Step 1: Create the task
+        const response = await axios.post('http://localhost:8000/api/tasks/create_task/', {
+            list_id: currentWindowId,
+            task_name: taskName,
+            nested_id: nest
+        });
+        console.log('Task created successfully:', response.data);
+
+        // Get the created task's ID
+        const taskId = response.data.task_id;
+
+        // Step 2: Create rewards for each bar with assigned value
+        const rewardPromises = Object.entries(rewards).map(([barId, points]) => {
+            if (points > 0) {
+                return axios.post('http://localhost:8000/api/rewards/', {
+                    task: taskId,
+                    bar: parseInt(barId, 10),
+                    points
+                });
+            }
+            return null;
+        });
+
+        // Filter out null promises
+        const validRewardPromises = rewardPromises.filter(promise => promise !== null);
+
+        // Execute all reward creation requests
+        await Promise.all(validRewardPromises);
+
+        console.log('Rewards created successfully');
+
+        // Handle the successful task and reward creation
+        closePopup();
+        if (currentWindowId in taskUpdateCallbacks.current) {
+            taskUpdateCallbacks.current[currentWindowId]();
+        }
+
+        fetchRewards();
+
+    } catch (error) {
+        console.error('Error creating task or rewards:', error);
+    }
+  };
 
   const fetchBars = async () => {
     try {
@@ -563,6 +568,38 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleCreateNewBar = () => {
+    setIsCreateBarPopupOpen(true);
+  };
+
+  const handleConfirmNewBar = async (barName: string, xpName: string, fullCycle: number, partialCycle1: number | null, partialCycle2: number | null, partialCycle3: number | null) => {
+    try {
+      const requestBody = {
+        bar_name: barName,
+        xp_name: xpName,
+        full_cycle: fullCycle,
+        partial_cycle1: partialCycle1,
+        partial_cycle2: partialCycle2,
+        partial_cycle3: partialCycle3,
+      };
+  
+      // Make a POST request to the API endpoint
+      const response = await axios.post('http://localhost:8000/api/bars/create_bar/', requestBody);
+  
+      // Assuming the response indicates success or contains new data, handle accordingly
+      console.log('Successfully created bar:', response.data);
+
+      fetchBars();
+  
+      setIsCreateBarPopupOpen(false); // Close the popup after creating the new bar
+    } catch (error) {
+      console.error('Error creating new bar:', error);
+      // Handle error, such as displaying an error message to the user
+    }
+  };
+
+  const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
@@ -589,7 +626,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
-        {isSidebarVisible && <Sidebar onReturnHome={onReturnHome} onCreateNewList={handleCreateNewList} onCompleteTasks={handleCompleteTasks}/>}
+        {isSidebarVisible && <Sidebar 
+          onReturnHome={onReturnHome} 
+          onCreateNewList={handleCreateNewList} 
+          onCompleteTasks={handleCompleteTasks}
+          onCreateNewBar={handleCreateNewBar}
+        />}
         <ResetButton onClick={handleReset} />
         {taskLists.map((taskList) => (
           <div key={taskList.list_id} className={`${styles.window} window`}>
@@ -660,6 +702,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onClose={closePopup}
             onConfirm={handleConfirm}
             bars={barsData}
+          />
+        )}
+        {isCreateBarPopupOpen && (
+          <CreateBarPopup
+            onClose={() => setIsCreateBarPopupOpen(false)}
+            onConfirm={handleConfirmNewBar}
           />
         )}
       </div>

@@ -261,7 +261,7 @@ CREATE TABLE public.bars (
     xp_name character varying(255),
     x_axis double precision DEFAULT 0,
     y_axis double precision DEFAULT 0,
-    size_vertical double precision DEFAULT 200,
+    size_vertical double precision DEFAULT 125,
     size_horizontal double precision DEFAULT 300,
     zindex double precision DEFAULT 5000000,
     total_points integer DEFAULT 0,

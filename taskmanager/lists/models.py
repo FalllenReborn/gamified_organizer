@@ -42,7 +42,7 @@ class Bar(models.Model):
     xp_name = models.CharField(max_length=255, null=True, blank=True)
     x_axis = models.FloatField(default=0)
     y_axis = models.FloatField(default=0)
-    size_vertical = models.FloatField(default=200)
+    size_vertical = models.FloatField(default=125)
     size_horizontal = models.FloatField(default=300)
     zindex = models.FloatField(default=5000000)
     total_points = models.IntegerField(default=0)

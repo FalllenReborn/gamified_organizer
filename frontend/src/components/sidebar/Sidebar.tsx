@@ -12,9 +12,10 @@ interface SidebarProps {
   onCreateNewList: () => void;
   onCompleteTasks: () => void;
   onReturnHome: () => void;
+  onCreateNewBar: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onCreateNewBar }) => {
   const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const currentDateTime = useContext(ClockContext); // Use ClockContext
@@ -95,7 +96,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks }) =
       <div className={styles.sidebarButtons}>
         <button className={styles.sidebarButton} onClick={onCreateNewList}>{t.createList}</button>
         <button className={styles.sidebarButton}>{t.createShop}</button>
-        <button className={styles.sidebarButton}>{t.createXP}</button>
+        <button className={styles.sidebarButton} onClick={onCreateNewBar}>{t.createXP}</button>
         <button className={styles.sidebarButton} onClick={onCompleteTasks}>{t.completed}</button>
       </div>
       <div className={styles.sidebarBottomButtons}>

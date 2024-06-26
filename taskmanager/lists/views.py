@@ -1,8 +1,9 @@
 from rest_framework import viewsets, generics
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import TaskList, Task, Reward, Bar
-from .serializers import TaskListSerializer, TaskSerializer, RewardSerializer, BarSerializer
+from .models import TaskList, Task, Reward, Bar, Currency, Transaction
+from .serializers import (TaskListSerializer, TaskSerializer, RewardSerializer,
+                          BarSerializer, CurrencySerializer, TransactionSerializer)
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
@@ -208,3 +209,71 @@ class RewardViewSet(viewsets.ModelViewSet):
         rewards = Reward.objects.filter(task_id=task_id)
         serializer = RewardSerializer(rewards, many=True)
         return Response(serializer.data, status=200)
+
+
+class CurrencyViewSet(viewsets.ModelViewSet):
+    queryset = Currency.objects.all()
+    serializer_class = CurrencySerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_currency')
+    def create_currency(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            currency_name = data.get('currency_name')
+            owned = data.get('owned', 0)
+
+            if not currency_name:
+                return JsonResponse({'error': 'currency_name is required'}, status=400)
+
+            currency = Currency.objects.create(
+                currency_name=currency_name,
+                owned=owned
+            )
+            serializer = CurrencySerializer(currency)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+class TransactionViewSet(viewsets.ModelViewSet):
+    queryset = Transaction.objects.all()
+    serializer_class = TransactionSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_transaction')
+    def create_transaction(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            task_id = data.get('task_id')
+            bar_id = data.get('bar_id')
+            currency_id = data.get('currency_id')
+            amount = data.get('amount')
+
+            if not currency_id or not amount:
+                return JsonResponse({'error': 'currency_id and amount are required'}, status=400)
+            if task_id and bar_id:
+                return JsonResponse({'error': 'Only one of task_id or bar_id should be provided'}, status=400)
+            if not task_id and not bar_id:
+                return JsonResponse({'error': 'Either task_id or bar_id must be provided'}, status=400)
+
+            currency = Currency.objects.get(currency_id=currency_id)
+
+            transaction = Transaction.objects.create(
+                task_id=task_id,
+                bar_id=bar_id,
+                currency=currency,
+                amount=amount
+            )
+            serializer = TransactionSerializer(transaction)
+            return JsonResponse(serializer.data, status=201)
+
+        except Currency.DoesNotExist:
+            return JsonResponse({'error': 'Currency not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

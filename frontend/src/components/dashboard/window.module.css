@@ -220,6 +220,19 @@
     word-wrap: break-word;
 }
 
+.taskNestedCell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 2px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #bbb;
+    color: white;
+    word-wrap: break-word;
+    border-left: 2px solid #bbb;
+}
+
 .task-cell:last-child {
     border-bottom: none;
 }
@@ -261,6 +274,8 @@
     cursor: pointer;
     padding: 0;
     font-size: 1rem; /* Adjust size as needed */
+    border-bottom: 1px solid #bbb;
+    border-left: 2px solid #bbb;
   }
   
 .addNestedTaskButton:focus {

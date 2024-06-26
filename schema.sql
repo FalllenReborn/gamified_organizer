@@ -57,6 +57,38 @@ $$;
 ALTER FUNCTION public.delete_nested_tasks() OWNER TO postgres;
 
 --
+-- Name: handle_task_deletion(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.handle_task_deletion() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    trans RECORD;
+BEGIN
+    -- Loop through each transaction that has the deleted task_id
+    FOR trans IN
+        SELECT * FROM Transactions
+        WHERE task_id = OLD.task_id
+    LOOP
+        -- Update the Currencies table by adding the transaction amount to the corresponding currency_id
+        UPDATE Currencies
+        SET owned = owned + trans.amount
+        WHERE currency_id = trans.currency_id;
+
+        -- Delete the transaction after processing it
+        DELETE FROM Transactions WHERE transaction_id = trans.transaction_id;
+    END LOOP;
+
+    -- After processing transactions, allow the task to be deleted
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.handle_task_deletion() OWNER TO postgres;
+
+--
 -- Name: update_bars_and_distribute_transactions(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -1016,6 +1048,13 @@ CREATE TRIGGER after_task_insert AFTER INSERT ON public.tasks FOR EACH ROW EXECU
 
 
 --
+-- Name: tasks before_task_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER before_task_delete BEFORE DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.handle_task_deletion();
+
+
+--
 -- Name: tasks delete_nested_tasks_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1170,7 +1209,7 @@ ALTER TABLE ONLY public.transactions
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id) ON DELETE CASCADE;
+    ADD CONSTRAINT transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id);
 
 
 --

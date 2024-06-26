@@ -262,7 +262,7 @@ const Window: React.FC<WindowProps> = ({
       .map((task) => (
         <div key={task.task_id} className={styles.taskContainer}>
           <div className={styles.taskRow}>
-            <div className={styles.taskCell}>
+            <div className={styles.taskNestedCell}>
               <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
                 {task.expanded ? '▲' : '▼'}
               </button>

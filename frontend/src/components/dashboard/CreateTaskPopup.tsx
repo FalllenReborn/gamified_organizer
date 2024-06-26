@@ -14,15 +14,23 @@ interface bar {
   total_points: number;
 }
 
-interface CreateTaskPopupProps {
-  onClose: () => void;
-  onConfirm: (taskName: string, rewards: { [barId: number]: number }) => void;
-  bars: bar[];
+interface currency {
+  currency_id: number;
+  currency_name: string;
+  owned: number;
 }
 
-const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, bars }) => {
+interface CreateTaskPopupProps {
+  onClose: () => void;
+  onConfirm: (taskName: string, rewards: { [barId: number]: number }, transactions: { [currencyId: number]: number }) => void;
+  bars: bar[];
+  currencies: currency[];
+}
+
+const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, bars, currencies }) => {
   const [taskName, setTaskName] = useState('');
   const [rewards, setRewards] = useState<{ [barId: number]: number }>({});
+  const [transactions, setTransactions] = useState<{ [currencyId: number]: number }>({});
 
   const handleRewardChange = (barId: number, value: string) => {
     setRewards((prevRewards) => ({
@@ -31,8 +39,19 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, b
     }));
   };
 
+  const handleTransactionChange = (currencyId: number, value: string) => {
+    // Validate number with up to 2 decimal places
+    const regex = /^\d*\.?\d{0,2}$/;
+    if (regex.test(value) || value === '') {
+      setTransactions((prevTransactions) => ({
+        ...prevTransactions,
+        [currencyId]: parseFloat(value) || 0,
+      }));
+    }
+  };
+
   const handleConfirm = () => {
-    onConfirm(taskName, rewards);
+    onConfirm(taskName, rewards, transactions);
   };
 
   return (
@@ -60,6 +79,7 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, b
           <div className={styles.column}>
             <h3>Rewards</h3>
             <div className={styles.rewardsBox}>
+              <h4>Progress bars</h4>
               {bars.map((bar) => (
                 <div key={bar.bar_id} className={styles.rewardRow}>
                   <span className={styles.rewardName}>{bar.bar_name}</span>
@@ -68,6 +88,20 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, b
                     type="number"
                     value={rewards[bar.bar_id] || ''}
                     onChange={(e) => handleRewardChange(bar.bar_id, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className={styles.rewardsBox}>
+              <h4>Currency transactions</h4>
+              {currencies.map((currency) => (
+                <div key={currency.currency_id} className={styles.rewardRow}>
+                  <span className={styles.rewardName}>{currency.currency_name}</span>
+                  <input
+                    className={styles.rewardInput}
+                    type="text"
+                    value={transactions[currency.currency_id] || ''}
+                    onChange={(e) => handleTransactionChange(currency.currency_id, e.target.value)}
                   />
                 </div>
               ))}

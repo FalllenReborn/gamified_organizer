@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.utils import timezone
+from django.db.models import Q
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 
 
 class TaskList(models.Model):
@@ -82,3 +84,42 @@ class Property(models.Model):
 
     class Meta:
         db_table = 'properties'
+
+
+class Currency(models.Model):
+    currency_id = models.AutoField(primary_key=True)
+    currency_name = models.CharField(max_length=255)
+    owned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return self.currency_name
+
+    class Meta:
+        db_table = 'currencies'
+
+
+class Transaction(models.Model):
+    transaction_id = models.AutoField(primary_key=True)
+    task = models.ForeignKey(Task, on_delete=models.SET_NULL, null=True, blank=True, db_column='task_id')
+    bar = models.ForeignKey(Bar, on_delete=models.SET_NULL, null=True, blank=True, db_column='bar_id')
+    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, db_column='currency_id')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def save(self, *args, **kwargs):
+        if (self.task is None and self.bar is None) or (self.task is not None and self.bar is not None):
+            raise ValueError('Either task or bar must be set, but not both.')
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Transaction {self.transaction_id}'
+
+    class Meta:
+        db_table = 'transactions'
+
+
+@receiver(pre_delete, sender=Task)
+def handle_task_deletion(sender, instance, **kwargs):
+    transactions = Transaction.objects.filter(task_id=instance.task_id)
+    for trans in transactions:
+        Currency.objects.filter(currency_id=trans.currency_id).update(owned=models.F('owned') + trans.amount)
+        trans.delete()

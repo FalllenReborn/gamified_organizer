@@ -22,6 +22,8 @@ interface BarProps {
     onResize: (id: number, width: number, height: number, type: string) => void;
     onPositionUpdate: (id: number, x: number, y: number) => void;
     onSizeUpdate: (id: number, width: number, height: number) => void;
+    transactions: any[];
+    currencies: any[];
 }
 
 const Bar: React.FC<BarProps> = ({
@@ -37,6 +39,8 @@ const Bar: React.FC<BarProps> = ({
     translate,
     scale,
     zIndex,
+    transactions,
+    currencies,
     onClose,
     onRename,
     onClick,
@@ -196,6 +200,15 @@ const Bar: React.FC<BarProps> = ({
         setDropdownOpen(false);
     };
 
+    const getTransactionsForBar = (barId: number) => {
+        return transactions.filter((transaction) => transaction.bar === barId);
+    };
+
+    const getCurrencyName = (currencyId: number) => {
+        const currency = currencies.find(currency => currency.currency_id === currencyId);
+        return currency ? currency.currency_name : 'Currency';
+    };
+
     const progressPercentage = (total_points % full_cycle) / full_cycle * 100;
 
     return (
@@ -213,7 +226,7 @@ const Bar: React.FC<BarProps> = ({
                 zIndex: zIndex
             }}
         >
-            <div 
+            <div
                 id={`bar-${id}`}
                 ref={barRef}
                 className={styles.bar}
@@ -221,9 +234,8 @@ const Bar: React.FC<BarProps> = ({
                 style={{
                     width: `${size.width}px`,
                     height: `${size.height}px`,
-            }}>
+                }}>
                 <div className={styles.topLine}>
-                    
                     <div className={styles.dropdown}>
                         <button onClick={() => setDropdownOpen(!dropdownOpen)}>Menu</button>
                         {dropdownOpen && (
@@ -250,7 +262,18 @@ const Bar: React.FC<BarProps> = ({
                         </div>
                         <p className={styles.xpName}>{xp_name}</p>
                     </div>
+                    <div className={styles.completion}>
+                        Completion:
+                        <ul className={styles.transactions}> 
+                            {getTransactionsForBar(id).map((transaction) => (
+                                <li key={transaction.transaction_id} className={styles.transaction}>
+                                    {getCurrencyName(transaction.currency)}: {transaction.amount}<br />
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
                 </div>
+
             </div>
             <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
             <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>

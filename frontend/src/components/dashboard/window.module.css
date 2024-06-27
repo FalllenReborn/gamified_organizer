@@ -13,11 +13,274 @@
     background-color: #4a4a4a;
 }
 
+.taskbar {
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+    background-color: #2f2f2f;
+    border-bottom: 1px solid #aaa;
+    cursor: grab;
+    min-height: auto;
+}
+
+.classicViewHeader{
+    display: flex;
+    flex-direction: column;
+    min-height: auto;
+}
+
+.topBar {
+    display: flex;
+}
+
+.title {
+    flex-grow: 1;
+    text-align: center;
+    font-weight: bold;
+    word-wrap: break-word;
+  }
+
+.arrow {
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: 10px;
+  }
+
+.bottomBar {
+    display: flex;
+    justify-content: space-between;
+    padding-top: 5px;
+}
+
+.id {
+    justify-content: flex-end;
+}
+
+.buttons {
+    position: relative;
+    display: flex;
+    align-self: flex-start;
+}
+
+.dropdownButton {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.dropdownButton:hover {
+    background: #0056b3;
+}
+
+.dropdownMenu {
+    position: absolute;
+    left: 0;
+    top: 100%;
+    background: #585858;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    z-index: 6000000;
+}
+
+.addButton {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+    font-weight: bold;
+}
+  
+.addButton:hover {
+    background: #0056b3;
+}
+
+.detailViewHeaders {
+    display: flex;
+    width: 60%;
+    flex-shrink: 0;
+}
+
+.columnHeader {
+    flex: 1;
+    text-align: center;
+    border-left: 2px solid #bbb;
+    box-sizing: border-box;
+}
+
+.content {
+    overflow: auto;
+    height: calc(100% - 30px);
+}
+
 .disable-select {
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
+}
+
+.dropdownMenu button {
+    padding: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    color: white;
+}
+
+.dropdownMenu button:hover {
+    background: #007bff;
+}
+
+.resizeHandle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 20px;
+    height: 20px;
+    background: transparent;
+    cursor: nwse-resize;
+}
+
+.classicView {
+    display: flex;
+    align-items: center;
+}
+  
+.taskRow {
+    display: flex;
+    align-items: center;
+}
+
+.taskCell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid #bbb;
+    color: white;
+    word-wrap: break-word;
+}
+
+.taskNestedCell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid #bbb;
+    color: white;
+    word-wrap: break-word;
+    border-left: 2px solid #bbb;
+}
+
+.task-cell:last-child {
+    border-bottom: none;
+}
+
+.rewards {
+    line-height: 0.6em;
+    margin-bottom: 3px;
+    overflow: hidden;
+}
+
+.transactions {
+    line-height: 0.6em;
+    margin-bottom: 3px;
+    overflow: hidden;
+}
+
+.taskText {
+    flex-grow: 1;
+    font-size: 14px;
+    line-height: 1.1;
+    text-align: left;
+}
+
+.reward {
+    font-size: 10px;
+    color: white;
+}
+
+.transaction {
+    font-size: 10px;
+    color: white;
+}
+  
+.expandButton {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem; /* Adjust size as needed */
+    margin-left: 3px;
+    margin-right: 5px;
+}
+
+.expandButton:focus {
+    outline: none;
+}
+
+.addNestedTaskButton {
+    background: none;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    font-size: 1rem; /* Adjust size as needed */
+    border-bottom: 1px solid #bbb;
+    border-left: 2px solid #bbb;
+}
+
+.addNestedTaskButton:focus {
+    outline: none;
+}
+
+.nestedTasks {
+    padding-left: 10px;
+}
+
+.checkbox {
+    display: flex;
+    position: relative;
+    float: right;
+    margin-right: 6px;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+.checkbox input[type="checkbox"] {
+    vertical-align: middle; /* Center the checkbox */
+}
+
+.detailView {
+    display: flex;
+    width: 60%;
+    flex-shrink: 0;
+}
+
+.column {
+    flex: 1;
+    text-align: center;
+    border-left: 2px solid #bbb;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .resizeHandle {
@@ -94,204 +357,10 @@
     user-select: none;
 }
 
-.taskbar {
-    display: flex;
-    flex-direction: column;
-    background-color: #2f2f2f;
-    border-bottom: 1px solid #aaa;
-    cursor: grab;
-    min-height: auto;
-}
-
-.title {
-    flex-grow: 1;
-    font-weight: bold;
-    text-align: center;
-    word-wrap: break-word;
-}
-
-.bottomBar {
-    display: flex;
-    justify-content: space-between;
-    padding-top: 5px;
-}
-
-.id {
-    justify-content: flex-end;
-}
-
-.buttons {
-    position: relative;
-    display: flex;
-    align-self: flex-start;
-}
-
-.dropdownButton {
-    background: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-    width: 25px;
-    height: 25px;
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.dropdownButton:hover {
-    background: #0056b3;
-}
-
-.dropdownMenu {
-    position: absolute;
-    left: 0;
-    top: 100%;
-    background: #585858;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-}
-
-.addButton {
-    background: #007bff;
-    color: white;
-    border: none;
-    cursor: pointer;
-    width: 25px;
-    height: 25px;
-    font-size: 12px;
-    font-weight: bold;
-}
-  
-.addButton:hover {
-    background: #0056b3;
-}
-
-.content {
-    overflow: auto;
-    height: calc(100% - 30px);
-}
-
 .disable-select {
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-}
-
-.dropdownMenu button {
-    padding: 5px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    text-align: left;
-    color: white;
-}
-
-.dropdownMenu button:hover {
-    background: #007bff;
-}
-
-.resizeHandle {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 20px;
-    height: 20px;
-    background: transparent;
-    cursor: nwse-resize;
-}
-  
-.taskRow {
-    display: flex;
-    align-items: center;
-}
-
-.taskCell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 2px;
-    box-sizing: border-box;
-    border-bottom: 1px solid #bbb;
-    color: white;
-    word-wrap: break-word;
-}
-
-.taskNestedCell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 2px;
-    box-sizing: border-box;
-    border-bottom: 1px solid #bbb;
-    color: white;
-    word-wrap: break-word;
-    border-left: 2px solid #bbb;
-}
-
-.task-cell:last-child {
-    border-bottom: none;
-}
-
-.rewards {
-    margin-left: 5px;
-    flex-grow: 1;
-}
-
-.taskText {
-    flex-grow: 1;
-    font-size: 15px;
-    line-height: 1.1;
-}
-
-.reward {
-    font-size: 10px;
-    color: white;
-}
-  
-.expandButton {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    padding: 0;
-    font-size: 1rem; /* Adjust size as needed */
-    margin-left: 3px;
-  }
-  
-.expandButton:focus {
-    outline: none;
-  }
-  
-.addNestedTaskButton {
-    background: none;
-    border: none;
-    color: inherit;
-    cursor: pointer;
-    padding: 0;
-    font-size: 1rem; /* Adjust size as needed */
-    border-bottom: 1px solid #bbb;
-    border-left: 2px solid #bbb;
-  }
-  
-.addNestedTaskButton:focus {
-    outline: none;
-  }
-  
-.nestedTasks {
-    padding-left: 20px;
-}
-
-.checkbox {
-    float: right;
-    margin-right: 3px;
-}
-
-.checkbox input[type="checkbox"] {
-    vertical-align: middle; /* Center the checkbox */
 }
   

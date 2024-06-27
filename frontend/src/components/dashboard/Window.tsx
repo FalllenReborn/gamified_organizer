@@ -19,7 +19,9 @@ interface WindowProps {
   initialWidth: number;
   initialHeight: number;
   rewards: any[];
+  transactions: any[];
   barsData: any[];
+  currencies: any[];
   onResize: (id: number, width: number, height: number, type: string) => void;
   openPopup: (windowId: number, nest_id: number | null) => void;
   onPositionUpdate: (id: number, x: number, y: number) => void;
@@ -55,7 +57,9 @@ const Window: React.FC<WindowProps> = ({
   checkedTasks, 
   toggleTaskChecked,
   rewards,
+  transactions,
   barsData,
+  currencies,
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
@@ -65,6 +69,7 @@ const Window: React.FC<WindowProps> = ({
   const [resizeDirection, setResizeDirection] = useState('');
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDetailView, setIsDetailView] = useState(false);
   const windowRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
@@ -232,6 +237,10 @@ const Window: React.FC<WindowProps> = ({
     setIsDropdownOpen(false);
   };
 
+  const handleDetailViewToggle = () => {
+    setIsDetailView(!isDetailView);
+  };
+
   const toggleExpand = async (taskId: number, currentState: boolean) => {
     const newExpandedState = !currentState;
     try {
@@ -250,9 +259,18 @@ const Window: React.FC<WindowProps> = ({
     return rewards.filter((reward) => reward.task === taskId);
   };
 
+  const getTransactionsForTask = (taskId: number) => {
+    return transactions.filter((transaction) => transaction.task === taskId);
+  };
+
   const getXPName = (barId: number) => {
     const bar = barsData.find(bar => bar.bar_id === barId);
     return bar ? bar.xp_name : 'XP';
+  };
+
+  const getCurrencyName = (currencyId: number) => {
+    const currency = currencies.find(currency => currency.currency_id === currencyId);
+    return currency ? currency.currency_name : 'Currency';
   };
 
   const renderNestedTasks = (outerTaskId: number) => {
@@ -263,25 +281,42 @@ const Window: React.FC<WindowProps> = ({
         <div key={task.task_id} className={styles.taskContainer}>
           <div className={styles.taskRow}>
             <div className={styles.taskNestedCell}>
-              <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
-                {task.expanded ? '▲' : '▼'}
-              </button>
-              <div className={styles.rewards}>
-                  <div className={styles.taskText}>{task.task_name}<br />
-                    {getRewardsForTask(task.task_id).map((reward) => (
-                      <span key={reward.reward_id} className={styles.reward}>
-                        {getXPName(reward.bar)}: {reward.points} 
-                      </span>
-                    ))}
-                  </div>
+              <div className={styles.classicView} style={{ width: isDetailView ? '40%' : '100%' }}>
+                <div className={styles.checkbox}>
+                  <input
+                      type="checkbox"
+                      onChange={() => toggleTaskChecked(task.task_id)}
+                      checked={checkedTasks.includes(task.task_id)}
+                    />
                 </div>
-              <div className={styles.checkbox}>
-                <input
-                    type="checkbox"
-                    onChange={() => toggleTaskChecked(task.task_id)}
-                    checked={checkedTasks.includes(task.task_id)}
-                  />
+                <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                  {task.expanded ? '▲' : '▼'}
+                </button>
+                <div className={styles.taskText}>{task.task_name}</div>
               </div>
+              {isDetailView && (
+                <div className={styles.detailView}>
+                  <div className={styles.column} id={styles.progress}>
+                    <div className={styles.rewards}>
+                      {getRewardsForTask(task.task_id).map((reward) => (
+                        <span key={reward.reward_id} className={styles.reward}>
+                          {getXPName(reward.bar)}: {reward.points}<br />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.column} id={styles.currencies}>
+                    <div className={styles.transactions}>
+                      {getTransactionsForTask(task.task_id).map((transaction) => (
+                        <span key={transaction.transaction_id} className={styles.transaction}>
+                          {getCurrencyName(transaction.currency)}: {transaction.amount}<br />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className={styles.column} id={styles.items}>Items</div>
+                </div>
+              )}
             </div>
           </div>
           {task.expanded && (
@@ -318,21 +353,35 @@ const Window: React.FC<WindowProps> = ({
         height: `${size.height}px`,
       }}>
         <div className={styles.taskbar} onMouseDown={handleDragStart}>
-          <span className={styles.title}>{title}</span>
-          <div className={styles.bottomBar}>
-            <div className={styles.buttons}>
-              <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
-              {isDropdownOpen && (
-                <div className={styles.dropdownMenu}>
-                  <button onClick={handleHide}>Hide</button>
-                  <button onClick={handleDelete}>Delete</button>
-                  <button onClick={handleRename}>Rename</button>
-                </div>
-              )}
-              <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
+          <div className={styles.classicViewHeader} style={{ width: isDetailView ? '40%' : '100%' }}>
+            <div className={styles.topBar}>
+              <span className={styles.title}>{title}</span>
+              <div className={styles.arrow} onClick={handleDetailViewToggle}>
+                {isDetailView ? '«' : '»'}
+              </div>
             </div>
-            <span className={styles.id}>ID: {id}</span>
+            <div className={styles.bottomBar}>
+              <div className={styles.buttons}>
+                <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
+                {isDropdownOpen && (
+                  <div className={styles.dropdownMenu}>
+                    <button onClick={handleHide}>Hide</button>
+                    <button onClick={handleDelete}>Delete</button>
+                    <button onClick={handleRename}>Rename</button>
+                  </div>
+                )}
+                <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
+              </div>
+              <span className={styles.id}>ID: {id}</span>
+            </div>
           </div>
+          {isDetailView && (
+            <div className={styles.detailViewHeaders}>
+              <div className={styles.columnHeader} id={styles.progressHeader}>Progress</div>
+              <div className={styles.columnHeader} id={styles.currenciesHeader}>Currencies</div>
+              <div className={styles.columnHeader} id={styles.itemsHeader}>Items</div>
+            </div>
+          )}
         </div>
         <div className={styles.content}>
           {tasks
@@ -341,25 +390,42 @@ const Window: React.FC<WindowProps> = ({
             <div key={task.task_id} className={styles.taskContainer}>
               <div className={styles.taskRow}>
                 <div className={styles.taskCell}>
-                  <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
-                    {task.expanded ? '▲' : '▼'}
-                  </button>
-                  <div className={styles.rewards}>
-                    <div className={styles.taskText}>{task.task_name}<br />
-                    {getRewardsForTask(task.task_id).map((reward) => (
-                      <span key={reward.reward_id} className={styles.reward}>
-                        {getXPName(reward.bar)}: {reward.points}&nbsp; 
-                      </span>
-                    ))}
+                  <div className={styles.classicView} style={{ width: isDetailView ? '40%' : '100%' }}>
+                    <div className={styles.checkbox}>
+                      <input
+                        type="checkbox"
+                        onChange={() => toggleTaskChecked(task.task_id)}
+                        checked={checkedTasks.includes(task.task_id)}
+                      />
                     </div>
+                    <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                      {task.expanded ? '▲' : '▼'}
+                    </button>
+                    <div className={styles.taskText}>{task.task_name}</div>
                   </div>
-                  <div className={styles.checkbox}>
-                    <input
-                      type="checkbox"
-                      onChange={() => toggleTaskChecked(task.task_id)}
-                      checked={checkedTasks.includes(task.task_id)}
-                    />
-                  </div>
+                  {isDetailView && (
+                    <div className={styles.detailView}>
+                      <div className={styles.column} id={styles.progress}>
+                        <div className={styles.rewards}>
+                          {getRewardsForTask(task.task_id).map((reward) => (
+                            <span key={reward.reward_id} className={styles.reward}>
+                              {getXPName(reward.bar)}: {reward.points}<br />
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={styles.column} id={styles.currencies}>
+                        <div className={styles.transactions}>
+                          {getTransactionsForTask(task.task_id).map((transaction) => (
+                            <span key={transaction.transaction_id} className={styles.transaction}>
+                              {getCurrencyName(transaction.currency)}: {transaction.amount}<br />
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={styles.column} id={styles.items}>Items</div>
+                    </div>
+                  )}
                 </div>
               </div>
               {task.expanded && (
@@ -371,6 +437,7 @@ const Window: React.FC<WindowProps> = ({
             </div>
           ))}
         </div>
+        
       </div>
       <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
       <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>

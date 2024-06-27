@@ -1,7 +1,7 @@
 .resetButton {
     position: fixed;
-    top: 20px;
-    right: 20px;
+    bottom: 30px;
+    right: 30px;
     z-index: 10000000; /* Ensure button stays on top */
     display: flex; /* Use flexbox */
     align-items: center; /* Vertically center the content */

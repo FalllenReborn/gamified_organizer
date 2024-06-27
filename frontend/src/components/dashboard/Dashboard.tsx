@@ -108,6 +108,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [nest, setNest] = useState<number | null>(null);
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
   const [rewards, setRewards] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 250;
 
@@ -279,9 +280,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const fetchTransactions = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/transactions/');
-      setRewards(response.data);
+      setTransactions(response.data);
     } catch (error) {
-      console.error('Error fetching rewards:', error);
+      console.error('Error fetching transactions:', error);
     }
   };
 
@@ -296,11 +297,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   
   useEffect(() => {
     fetchCurrencies();
-  }, []);
-
-  useEffect(() => {
+    fetchTransactions();
     fetchRewards();
-  }, []);  // adding handleConfirm loops requests to backend
+  }, []);
 
   const handleConfirm = async (
     taskName: string,
@@ -338,7 +337,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           return axios.post('http://localhost:8000/api/rewards/', rewardPayload);
         }
         return null;
-      });
+      }).filter(promise => promise !== null);
   
       // Step 3: Create transactions for each currency with assigned amount
       const transactionPromises = Object.entries(transactions).map(([currencyId, amount]) => {
@@ -352,16 +351,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           return axios.post('http://localhost:8000/api/transactions/create_transaction/', transactionPayload);
         }
         return null;
-      });
+      }).filter(promise => promise !== null);
   
       // Combine reward and transaction promises
       const allPromises = [...rewardPromises, ...transactionPromises];
   
-      // Filter out null promises
-      const validPromises = allPromises.filter(promise => promise !== null);
-  
       // Execute all creation requests
-      await Promise.all(validPromises);
+      await Promise.all(allPromises);
   
       console.log('Rewards and transactions created successfully');
   
@@ -702,7 +698,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             scale={scale} 
             zIndex={taskList.zindex}
             rewards={rewards}
+            transactions={transactions}
             barsData={barsData}
+            currencies={currencies}
             onClose={handleCloseWindow} 
             onRename={handleRenameList}
             onClick={() => bringWindowToFront(taskList.list_id)}
@@ -729,6 +727,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               initialHeight={bar.size_vertical}
               translate={translate} 
               scale={scale} 
+              currencies={currencies}
+              transactions={transactions}
               zIndex={bar.zindex}
               onClose={handleCloseBar}
               onRename={handleRenameBar}

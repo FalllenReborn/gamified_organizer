@@ -101,8 +101,8 @@ class Currency(models.Model):
 
 class Transaction(models.Model):
     transaction_id = models.AutoField(primary_key=True)
-    task = models.ForeignKey(Task, on_delete=models.SET_NULL, null=True, blank=True, db_column='task_id')
-    bar = models.ForeignKey(Bar, on_delete=models.SET_NULL, null=True, blank=True, db_column='bar_id')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, null=True, blank=True, db_column='task_id')
+    bar = models.ForeignKey(Bar, on_delete=models.CASCADE, null=True, blank=True, db_column='bar_id')
     currency = models.ForeignKey(Currency, on_delete=models.CASCADE, db_column='currency_id')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
 

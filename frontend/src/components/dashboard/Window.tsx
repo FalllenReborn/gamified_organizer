@@ -114,13 +114,23 @@ const Window: React.FC<WindowProps> = ({
   }, [fetchTasks, id, registerTaskUpdateCallback]);
 
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+    const targetElement = e.target as HTMLElement;
+    if (targetElement.closest(`.${styles.arrow}`)) {
+      return; // Prevent dragging if clicking on taskbar buttons
+    }
+    if (targetElement.closest(`.${styles.dropdownButton}`)) {
+      return; // Prevent dragging if clicking on taskbar buttons
+    }
+    if (targetElement.closest(`.${styles.addButton}`)) {
+      return; // Prevent dragging if clicking on taskbar buttons
+    }
     setIsDragging(true);
     setStartPos({
       x: e.clientX / scale - position.x,
       y: e.clientY / scale - position.y,
     });
     onClick();
-    document.body.classList.add('disable-select');
+    document.body.classList.add(styles.disableSelect);
   }, [position, scale, onClick]);
 
   const handleDragMove = useCallback((e: MouseEvent) => {
@@ -134,7 +144,7 @@ const Window: React.FC<WindowProps> = ({
   const handleDragEnd = useCallback(() => {
     if (isDragging) {
       setIsDragging(false);
-      document.body.classList.remove('disable-select');
+      document.body.classList.remove(styles.disableSelect);
       updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
     }
   }, [isDragging, updatePositionInDatabase]);
@@ -147,7 +157,7 @@ const Window: React.FC<WindowProps> = ({
       x: e.clientX / scale,
       y: e.clientY / scale,
     });
-    document.body.classList.add('disable-select');
+    document.body.classList.add(styles.disableSelect);
   };
 
   const handleResizeMove = (e: MouseEvent) => {
@@ -183,7 +193,7 @@ const Window: React.FC<WindowProps> = ({
   const handleResizeEnd = () => {
     if (isResizing) {
       setIsResizing(false);
-      document.body.classList.remove('disable-select');
+      document.body.classList.remove(styles.disableSelect);
       const updatedSize = sizeRef.current;
       updateSizeInDatabase(updatedSize.width, updatedSize.height);
       updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
@@ -366,13 +376,29 @@ const Window: React.FC<WindowProps> = ({
           <div className={styles.classicViewHeader} style={{ width: isDetailView ? '40%' : '100%' }}>
             <div className={styles.topBar}>
               <span className={styles.title}>{title}</span>
-              <div className={styles.arrow} onClick={handleDetailViewToggle}>
+              <div 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDetailViewToggle();
+                }}
+                draggable={false}
+                className={styles.arrow} 
+              >
                 {isDetailView ? '«' : '»'}
               </div>
             </div>
             <div className={styles.bottomBar}>
               <div className={styles.buttons}>
-                <button className={styles.dropdownButton} onClick={toggleDropdown}>⋮</button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDropdown();
+                  }}
+                  draggable={false}
+                  className={styles.dropdownButton} 
+                >
+                  ⋮
+                </button>
                 {isDropdownOpen && (
                   <div className={styles.dropdownMenu}>
                     <button onClick={handleHide}>Hide</button>
@@ -380,7 +406,16 @@ const Window: React.FC<WindowProps> = ({
                     <button onClick={handleRename}>Rename</button>
                   </div>
                 )}
-                <button className={styles.addButton} onClick={() => openPopup(id, null)}>+</button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openPopup(id, null)
+                  }}
+                  draggable={false}
+                  className={styles.addButton}
+                >
+                  +
+                </button>
               </div>
               <span className={styles.id}>ID: {id}</span>
             </div>

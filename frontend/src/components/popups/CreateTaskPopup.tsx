@@ -22,7 +22,10 @@ interface currency {
 
 interface CreateTaskPopupProps {
   onClose: () => void;
-  onConfirm: (taskName: string, rewards: { [barId: number]: number }, transactions: { [currencyId: number]: number }) => void;
+  onConfirm: (
+    taskName: string, 
+    rewards: { [barId: number]: number }, 
+    transactions: { [currencyId: number]: number }) => void;
   bars: bar[];
   currencies: currency[];
 }

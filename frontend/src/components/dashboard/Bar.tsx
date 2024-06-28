@@ -84,13 +84,16 @@ const Bar: React.FC<BarProps> = ({
     }, [position, size]);
 
     const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+        if ((e.target as HTMLElement).closest(`.${styles.dropdown}`)) {
+            return;
+        }
         setIsDragging(true);
         setStartPos({
             x: e.clientX / scale - position.x,
             y: e.clientY / scale - position.y,
         });
         onClick();
-        document.body.classList.add('disable-select');
+        document.body.classList.add(styles.disableSelect);
     }, [position, scale, onClick]);
 
     const handleDragMove = useCallback((e: MouseEvent) => {
@@ -104,7 +107,7 @@ const Bar: React.FC<BarProps> = ({
     const handleDragEnd = useCallback(() => {
         if (isDragging) {
             setIsDragging(false);
-            document.body.classList.remove('disable-select');
+            document.body.classList.remove(styles.disableSelect);
             updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
         }
     }, [isDragging, updatePositionInDatabase]);
@@ -117,7 +120,7 @@ const Bar: React.FC<BarProps> = ({
             x: e.clientX / scale,
             y: e.clientY / scale,
         });
-        document.body.classList.add('disable-select');
+        document.body.classList.add(styles.disableSelect);
     };
 
     const handleResizeMove = (e: MouseEvent) => {
@@ -153,7 +156,7 @@ const Bar: React.FC<BarProps> = ({
     const handleResizeEnd = () => {
         if (isResizing) {
             setIsResizing(false);
-            document.body.classList.remove('disable-select');
+            document.body.classList.remove(styles.disableSelect);
             const updatedSize = sizeRef.current;
             updateSizeInDatabase(updatedSize.width, updatedSize.height);
             updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
@@ -237,7 +240,16 @@ const Bar: React.FC<BarProps> = ({
                 }}>
                 <div className={styles.topLine}>
                     <div className={styles.dropdown}>
-                        <button onClick={() => setDropdownOpen(!dropdownOpen)}>Menu</button>
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setDropdownOpen(!dropdownOpen);
+                            }}
+                            draggable={false}
+                            className={styles.dropdownButton}
+                        >
+                            Menu
+                        </button>
                         {dropdownOpen && (
                             <div className={styles.dropdownContent}>
                                 <button onClick={handleDelete}>Delete</button>
@@ -273,7 +285,6 @@ const Bar: React.FC<BarProps> = ({
                         </ul>
                     </div>
                 </div>
-
             </div>
             <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>
             <div className={`${styles.resizeHandle} ${styles.bottom}`} onMouseDown={(e) => handleResizeStart(e, 'bottom')}></div>

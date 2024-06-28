@@ -15,6 +15,8 @@ const Currencies: React.FC<CurrenciesProps> = ({
     const handleHide = async () => {
         setIsHidden(!isHidden);
     };
+    
+    const sortedCurrencies = [...currencies].sort((a, b) => a.currency_name.localeCompare(b.currency_name));
 
     return (
         <div className={styles.currenciesBase} style={{ 
@@ -35,7 +37,7 @@ const Currencies: React.FC<CurrenciesProps> = ({
             {!isHidden && (
                 <div className={styles.content}>
                     <ul>
-                        {currencies.map((currency, index) => (
+                        {sortedCurrencies.map((currency, index) => (
                         <React.Fragment key={index}>
                             <li>{currency.currency_name}: {currency.owned}</li>
                         </React.Fragment>

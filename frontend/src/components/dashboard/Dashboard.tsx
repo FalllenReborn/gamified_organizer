@@ -140,6 +140,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       );
       setCheckedTasks([]);
       fetchBars();
+      fetchCurrencies();
       // Optionally, refresh the task list or handle state updates
     } catch (error) {
       console.error('Error deleting tasks:', error);
@@ -644,7 +645,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setIsCreateBarPopupOpen(true);
   };
 
-  const handleConfirmNewBar = async (barName: string, xpName: string, fullCycle: number, partialCycle1: number | null, partialCycle2: number | null, partialCycle3: number | null) => {
+  const handleConfirmNewBar = async (
+    barName: string, 
+    xpName: string, 
+    fullCycle: number, 
+    partialCycle1: number | null, 
+    partialCycle2: number | null, 
+    partialCycle3: number | null,
+    transactions: { [currencyId: number]: number }
+  ) => {
     try {
       const requestBody = {
         bar_name: barName,
@@ -661,7 +670,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       // Assuming the response indicates success or contains new data, handle accordingly
       console.log('Successfully created bar:', response.data);
 
+      const barId = response.data.bar_id;
+
+      const transactionPromises = Object.entries(transactions).map(([currencyId, amount]) => {
+        if (amount !== 0) {
+          const transactionPayload = {
+            bar_id: barId,
+            currency_id: parseInt(currencyId, 10),
+            amount
+          };
+          console.log('Transaction Payload:', transactionPayload);
+          return axios.post('http://localhost:8000/api/transactions/create_transaction/', transactionPayload);
+        }
+        return null;
+      }).filter(promise => promise !== null);
+
+      await Promise.all(transactionPromises);
+
       fetchBars();
+      fetchTransactions();
   
       setIsCreateBarPopupOpen(false); // Close the popup after creating the new bar
     } catch (error) {
@@ -800,6 +827,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <CreateBarPopup
             onClose={() => setIsCreateBarPopupOpen(false)}
             onConfirm={handleConfirmNewBar}
+            currencies={currencies}
           />
         )}
       </div>

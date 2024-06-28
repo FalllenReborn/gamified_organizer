@@ -6,9 +6,11 @@ import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
 import Bar from './Bar';
-import RenamePopup from './RenamePopup';
-import CreateTaskPopup from './CreateTaskPopup';
-import CreateBarPopup from './CreateBarPopup';
+import Currencies from './Currencies';
+import RenamePopup from '../popups/RenamePopup';
+import CreateTaskPopup from '../popups/CreateTaskPopup';
+import CreateBarPopup from '../popups/CreateBarPopup';
+import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
 import axios from 'axios';
 
 interface TaskList {
@@ -20,10 +22,7 @@ interface TaskList {
   size_vertical: number;
   zindex: number;
   total_points: number;
-  full_cycle: number;
-  partial_cycle1: number;
-  partial_cycle2: number;
-  partial_cycle3: number;
+  detail_view: boolean;
 }
 
 interface BarData {
@@ -48,6 +47,11 @@ interface Currency {
   currency_id: number;
   currency_name: string;
   owned: number;
+}
+
+interface CreateCurrencyState {
+  isOpen: boolean;
+  defaultValue: string;
 }
 
 interface RenamePopupState {
@@ -83,6 +87,7 @@ interface DashboardProps {
   onCreateNewList: () => void;
   onCompleteTasks: () => void;
   onCreateNewBar: () => void;
+  onCreateNewCurrency: () => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
@@ -95,6 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [windows, setWindows] = useState<WindowState[]>([]);
   const [bars, setBars] = useState<BarState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '' });
   const [renamePopup, setRenamePopup] = useState<RenamePopupState>({ isOpen: false, id: null, endpoint: '', defaultValue: '' });
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
@@ -571,6 +577,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleCreateCurrency = async () => {
+    setCreateCurrencyPopup({ isOpen: true, defaultValue: 'New Currency' });
+  };
+
+  const handleSaveNewCurrency = async (newName: string) => {
+      try {
+        await axios.post(`http://localhost:8000/api/currencies/create_currency/`, { currency_name: newName });
+        await fetchCurrencies();
+      } catch (error) {
+        console.error('Error renaming task list or fetching updated task lists:', error);
+      }
+
+  };
+
   const handleCreateNewList = async () => {
     try {
       const response = await axios.post('http://localhost:8000/api/tasklists/', {});
@@ -685,6 +705,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           onCreateNewBar={handleCreateNewBar}
         />}
         <ResetButton onClick={handleReset} />
+        <div className={styles.currencies}>
+          <Currencies 
+            currencies={currencies}
+            onCreateNewCurrency={handleCreateCurrency}
+          /> 
+        </div>
         {taskLists.map((taskList) => (
           <div key={taskList.list_id} className={`${styles.window} window`}>
           <Window 
@@ -701,6 +727,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             transactions={transactions}
             barsData={barsData}
             currencies={currencies}
+            detailView={taskList.detail_view}
             onClose={handleCloseWindow} 
             onRename={handleRenameList}
             onClick={() => bringWindowToFront(taskList.list_id)}
@@ -743,6 +770,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             />
           </div>
         ))}
+        {createCurrencyPopup.isOpen && (
+          <CreateCurrencyPopup
+            isOpen={createCurrencyPopup.isOpen}
+            defaultValue={createCurrencyPopup.defaultValue}
+            onCreate={handleSaveNewCurrency}
+            onQuit={() => setCreateCurrencyPopup({ isOpen: false, defaultValue: '' })}
+          />
+        )}
         {renamePopup.isOpen && (
           <RenamePopup
             isOpen={renamePopup.isOpen}

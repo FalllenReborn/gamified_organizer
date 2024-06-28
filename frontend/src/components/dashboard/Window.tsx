@@ -22,6 +22,7 @@ interface WindowProps {
   transactions: any[];
   barsData: any[];
   currencies: any[];
+  detailView: boolean;
   onResize: (id: number, width: number, height: number, type: string) => void;
   openPopup: (windowId: number, nest_id: number | null) => void;
   onPositionUpdate: (id: number, x: number, y: number) => void;
@@ -60,6 +61,7 @@ const Window: React.FC<WindowProps> = ({
   transactions,
   barsData,
   currencies,
+  detailView,
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
@@ -69,7 +71,7 @@ const Window: React.FC<WindowProps> = ({
   const [resizeDirection, setResizeDirection] = useState('');
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [isDetailView, setIsDetailView] = useState(false);
+  const [isDetailView, setIsDetailView] = useState(detailView);
   const windowRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
@@ -237,8 +239,16 @@ const Window: React.FC<WindowProps> = ({
     setIsDropdownOpen(false);
   };
 
-  const handleDetailViewToggle = () => {
-    setIsDetailView(!isDetailView);
+  const handleDetailViewToggle = async () => {
+    const newDetailState = !isDetailView;
+    try {
+      await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { detail_view: newDetailState });
+      setIsDetailView(newDetailState);
+      console.log(`Detail: ${newDetailState}`)
+    } catch (error) {
+      console.error('Error updating task state:', error);
+    }
+    
   };
 
   const toggleExpand = async (taskId: number, currentState: boolean) => {

@@ -4,6 +4,7 @@ import { getSettings, saveSettings } from '../utils/localStorageUtils';
 interface ThemeContextProps {
   isDarkMode: boolean;
   toggleDarkMode: () => void;
+  toggleLightMode: () => void;
   selectedLanguage: string;
   handleLanguageChange: (language: string) => void;
 }
@@ -11,6 +12,7 @@ interface ThemeContextProps {
 export const ThemeContext = createContext<ThemeContextProps>({
   isDarkMode: false,
   toggleDarkMode: () => {},
+  toggleLightMode: () => {},
   selectedLanguage: '',
   handleLanguageChange: () => {},
 });
@@ -28,7 +30,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }, [isDarkMode, selectedLanguage]);
 
   const toggleDarkMode = () => {
-    setIsDarkMode(prevMode => !prevMode);
+    setIsDarkMode(true);
+  };
+
+  const toggleLightMode = () => {
+    setIsDarkMode(false);
   };
 
   const handleLanguageChange = (language: string) => {
@@ -36,7 +42,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   };
 
   return (
-    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange }}>
+    <ThemeContext.Provider value={{ isDarkMode, toggleDarkMode, toggleLightMode, selectedLanguage, handleLanguageChange }}>
       {children}
     </ThemeContext.Provider>
   );

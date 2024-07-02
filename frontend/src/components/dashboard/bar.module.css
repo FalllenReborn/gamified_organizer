@@ -11,6 +11,7 @@
     transition: box-shadow 0.2s;
     border-radius: 4px;
     background-color: #4a4a4a;
+    cursor: default;
 }
 
 .topLine {

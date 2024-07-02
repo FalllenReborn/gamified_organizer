@@ -116,7 +116,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [rewards, setRewards] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const dashboardRef = useRef<HTMLDivElement>(null);
-  const sidebarWidth = 250;
+  const sidebarWidth = 0;
 
   const taskUpdateCallbacks = useRef<{ [key: number]: () => void }>({});
 

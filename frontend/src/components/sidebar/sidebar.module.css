@@ -1,35 +1,80 @@
 .sidebar {
     position: fixed;
-    left: 0;
-    top: 0;
-    width: 250px;
-    height: 100vh;
-    background-color: var(--sidebar-background-color);
-    color: var(--sidebar-text-color);
+    left: 55px;
+    top: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    z-index: 9000000;
+    user-select: none;
+}
+
+.dropdownContainer {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    padding: 10px;
-    z-index: 9000000;
+    margin-right: 10px;
+    position: relative;
+}
+
+.openDropdown {
+    background-color: var(--sidebar-background-color);
+    color: var(--sidebar-text-color);
+    padding: 5px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+}
+
+.openDropdown:hover {
+    background-color: var(--sidebar-hover-background-color);
+    color: var(--sidebar-hover-text-color);
+}
+
+.openDropdown.active {
+    background-color: var(--sidebar-active-background-color);
+    color: var(--sidebar-active-text-color);
+}
+
+.dropdownContent {
+    display: flex;
+    flex-direction: column;
+    margin-top: 5px;
+    background-color: var(--sidebar-background-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: absolute;
+    left: 0;
+    top: 40px;
+}
+
+.dropdownButton {
+    padding: 5px;
+    border: 1px solid #ccc;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.dropdownButton:hover {
+    background-color: var(--sidebar-hover-background-color);
+    color: var(--sidebar-hover-text-color);
 }
 
 .sidebar.lightMode {
     --sidebar-background-color: #f8f9fa;
     --sidebar-text-color: #000;
+    --sidebar-hover-background-color: #e0e0e0;
+    --sidebar-hover-text-color: #000;
+    --sidebar-active-background-color: #c0c0c0;
+    --sidebar-active-text-color: #000;
 }
 
 .sidebar.darkMode {
     --sidebar-background-color: #2c2c2c;
     --sidebar-text-color: #fff;
-}
-
-.sidebarTop {
-    position: absolute;
-    top: 10px;
-    left: 70px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    --sidebar-hover-background-color: #444;
+    --sidebar-hover-text-color: #fff;
+    --sidebar-active-background-color: #666;
+    --sidebar-active-text-color: #fff;
 }
 
 .dateTime {
@@ -41,134 +86,11 @@
     color: black; /* Change to the color you want */
     font-size: 14px; /* Example styling */
 }
-  
+
 .darkMode .dateTime {
-color: white; /* Change to the color you want in dark mode */
+    color: white; /* Change to the color you want in dark mode */
 }
 
 .lightMode .dateTime {
-color: black; /* Change to the color you want in light mode */
-}
-
-.sidebarButtons {
-    display: flex;
-    flex-direction: column;
-    margin-top: 125%;
-}
-
-.sidebarButton {
-    padding: 10px;
-    font-size: 16px;
-    background: none;
-    border: none;
-    color: var(--sidebar-text-color);
-    font-weight: bold;
-    cursor: pointer;
-    text-align: left;
-}
-
-.sidebarBottomButtons {
-    position: absolute;
-    bottom: 20px;
-    left: 0;
-    width: 100%;
-    text-align: center;
-    font-size: 14px;
-  }
-  
-  .returnHome,
-  .settingsButton,
-  .logoutButton,
-  .authButtons {
-    display: inline-block;
-    width: 200px; /* Set the width for all buttons */
-  }
-  
-  .settingsButton button,
-  .returnHome button{
-    margin-right: 25px;
-    width: 100%; 
-  }
-
-  .authButtons {
-    display: flex;
-    align-items: center;
-    margin-left: 25px;
-    gap: 10px;
-    width: 100%; 
-  }
-  
-  .authButtons button {
-    width: calc(50% - 30px); /* Set width for login/register buttons */
-    
-  }
-
-  .logoutButton button {
-    width: 100%;
-  }
-
-.sidebarButton:hover,
-.sidebarBottomButtons .sidebarButton:hover {
-    color: #186eca;
-}
-
-.languageDropdown {
-    font-size: 14px;
-    padding: 5px;
-}
-
-.switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-    margin-right: 10px;
-}
-
-.switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    transition: .4s;
-}
-
-.slider:before {
-    position: absolute;
-    content: "";
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    transition: .4s;
-}
-
-input:checked + .slider {
-    background-color: #2196F3;
-}
-
-input:focus + .slider {
-    box-shadow: 0 0 1px #2196F3;
-}
-
-input:checked + .slider:before {
-    transform: translateX(26px);
-}
-
-.slider.round {
-    border-radius: 34px;
-}
-
-.slider.round:before {
-    border-radius: 50%;
+    color: black; /* Change to the color you want in light mode */
 }

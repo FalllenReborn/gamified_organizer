@@ -57,6 +57,7 @@ const Bar: React.FC<BarProps> = ({
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const barRef = useRef<HTMLDivElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const positionRef = useRef(position);
     const sizeRef = useRef(size);
 
@@ -83,10 +84,25 @@ const Bar: React.FC<BarProps> = ({
         sizeRef.current = size;
     }, [position, size]);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node) &&
+                barRef.current &&
+                !barRef.current.contains(event.target as Node)
+            ) {
+                setDropdownOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
     const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        if ((e.target as HTMLElement).closest(`.${styles.dropdown}`)) {
-            return;
-        }
+        if ((e.target as HTMLElement).closest(`.${styles.dropdown}`)) return;
         setIsDragging(true);
         setStartPos({
             x: e.clientX / scale - position.x,
@@ -125,8 +141,8 @@ const Bar: React.FC<BarProps> = ({
 
     const handleResizeMove = (e: MouseEvent) => {
         if (isResizing) {
-            const dx = (e.clientX / scale - startPos.x);
-            const dy = (e.clientY / scale - startPos.y);
+            const dx = e.clientX / scale - startPos.x;
+            const dy = e.clientY / scale - startPos.y;
 
             let newWidth = size.width;
             let newHeight = size.height;
@@ -239,7 +255,7 @@ const Bar: React.FC<BarProps> = ({
                     height: `${size.height}px`,
                 }}>
                 <div className={styles.topLine}>
-                    <div className={styles.dropdown}>
+                    <div className={styles.dropdown} ref={dropdownRef}>
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();

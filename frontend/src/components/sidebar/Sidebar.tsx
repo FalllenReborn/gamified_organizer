@@ -15,40 +15,54 @@ interface SidebarProps {
   onCreateNewBar: () => void;
 }
 
+type Language = 'english' | 'polish';
+
+const translations: Record<Language, { [key: string]: string }> = {
+  english: {
+    createList: 'Create new list',
+    createShop: 'Create new shop',
+    createXP: 'Create new XP bar',
+    completed: 'Delete completed tasks',
+    login: 'Login',
+    register: 'Register',
+    returnHome: 'Home page',
+    logout: 'Logout',
+    settings: 'Settings',
+  },
+  polish: {
+    createList: 'Stwórz nową listę',
+    createShop: 'Stwórz nowy sklep',
+    createXP: 'Stwórz nowy licznik doświadczenia',
+    completed: 'Usuń ukończone zadania',
+    login: 'Zaloguj się',
+    register: 'Zarejestruj się',
+    returnHome: 'Strona Główna',
+    logout: 'Wyloguj się',
+    settings: 'Ustawienia',
+  },
+};
+
+type DropdownState = 'createDropdown' | 'actionsDropdown' | 'languageDropdown' | 'themeDropdown' | 'accountDropdown' | 'navigateDropdown';
+
 const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onCreateNewBar }) => {
-  const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
+  const { isDarkMode, toggleDarkMode, toggleLightMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const currentDateTime = useContext(ClockContext); // Use ClockContext
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
+  const [dropdownStates, setDropdownStates] = useState<DropdownState | null>(null);
+  const t = translations[selectedLanguage as Language];
   const navigate = useNavigate();
 
-  const translations: { [key: string]: { [key: string]: string } } = {
-    english: {
-      createList: 'Create new list',
-      createShop: 'Create new shop',
-      createXP: 'Create new XP bar',
-      completed: 'Delete completed tasks',
-      login: 'Login',
-      register: 'Register',
-      returnHome: 'Home page',
-      logout: 'Logout',
-      settings: 'Settings',
-    },
-    polish: {
-      createList: 'Stwórz nową listę',
-      createShop: 'Stwórz nowy sklep',
-      createXP: 'Stwórz nowy licznik doświadczenia',
-      completed: 'Usuń ukończone zadania',
-      login: 'Zaloguj się',
-      register: 'Zarejestruj się',
-      returnHome: 'Strona Główna',
-      logout: 'Wyloguj się',
-      settings: 'Ustawienia',
-    },
+  const handleDropdownToggle = (dropdown: DropdownState) => {
+    setDropdownStates(prevState => (prevState === dropdown ? null : dropdown));
   };
 
-  const t = translations[selectedLanguage];
+  const handleMouseEnter = (dropdown: DropdownState) => {
+    if (dropdownStates) {
+      setDropdownStates(dropdown);
+    }
+  };
 
   const handleLoginClick = () => {
     setShowRegisterPopup(false); // Close the register popup
@@ -79,44 +93,77 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onC
 
   return (
     <div className={`${styles.sidebar} ${isDarkMode ? styles.darkMode : styles.lightMode}`} onDragStart={handleDragStart}>
-      {/* {isVisible && <ToggleButton onClick={handleToggle} isVisible={isVisible} />} */}
-      <div className={styles.sidebarTop}>
-        <label className={styles.switch}>
-          <input type="checkbox" checked={isDarkMode} onChange={toggleDarkMode} />
-          <span className={classNames(styles.slider, styles.round)}></span>
-        </label>
-        <select className={styles.languageDropdown} value={selectedLanguage} onChange={(e) => handleLanguageChange(e.target.value)}>
-          <option value="english">🇺🇸 English</option>
-          <option value="polish">🇵🇱 Polish</option>
-        </select>
-      </div>
-      <div className={styles.dateTime}>
-        {currentDateTime && <p>{currentDateTime}</p>}
-      </div>
-      <div className={styles.sidebarButtons}>
-        <button className={styles.sidebarButton} onClick={onCreateNewList}>{t.createList}</button>
-        <button className={styles.sidebarButton}>{t.createShop}</button>
-        <button className={styles.sidebarButton} onClick={onCreateNewBar}>{t.createXP}</button>
-        <button className={styles.sidebarButton} onClick={onCompleteTasks}>{t.completed}</button>
-      </div>
-      <div className={styles.sidebarBottomButtons}>
-        <div className={styles.settingsButton}>
-          <button className="btn btn-primary mt-2">{t.settings}</button>
-        </div>
-        <div className={styles.returnHome}>
-          <button className="btn btn-primary mt-2" onClick={handleReturnHome}>{t.returnHome}</button>
-        </div>
-        {isAuthenticated ? (
-          <div className={styles.logoutButton}>
-            <button className="btn btn-secondary mt-2" onClick={handleLogout}>{t.logout}</button>
-          </div>
-        ) : (
-          <div className={styles.authButtons}>
-            <button className="btn btn-secondary mt-2 mr-2" onClick={handleLoginClick}>{t.login}</button>
-            <button className="btn btn-secondary mt-2" onClick={handleRegisterClick}>{t.register}</button>
+      <div className={styles.dropdownContainer} onMouseEnter={() => handleMouseEnter('createDropdown')} onClick={() => handleDropdownToggle('createDropdown')}>
+        <div id={styles.createDropdown} className={classNames(styles.openDropdown, { [styles.active]: dropdownStates === 'createDropdown' })}>Create</div>
+        {dropdownStates === 'createDropdown' && (
+          <div className={styles.dropdownContent}>
+            <div id={styles.createListButton} className={styles.dropdownButton} onClick={onCreateNewList}>{t.createList}</div>
+            <div id={styles.createShopButton} className={styles.dropdownButton}>{t.createShop}</div>
+            <div id={styles.createBarButton} className={styles.dropdownButton} onClick={onCreateNewBar}>{t.createXP}</div>
           </div>
         )}
       </div>
+          
+      <div className={styles.dropdownContainer} onMouseEnter={() => handleMouseEnter('actionsDropdown')} onClick={() => handleDropdownToggle('actionsDropdown')}>
+        <div id={styles.actionsDropdown} className={classNames(styles.openDropdown, { [styles.active]: dropdownStates === 'actionsDropdown' })}>Actions</div>
+        {dropdownStates === 'actionsDropdown' && (
+          <div className={styles.dropdownContent}>
+            <div id={styles.completeButton} className={styles.dropdownButton} onClick={onCompleteTasks}>{t.completed}</div>
+            <div id={styles.deleteButton} className={styles.dropdownButton}>Delete</div>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.dropdownContainer} onMouseEnter={() => handleMouseEnter('languageDropdown')} onClick={() => handleDropdownToggle('languageDropdown')}>
+        <div id={styles.languageDropdown} className={classNames(styles.openDropdown, { [styles.active]: dropdownStates === 'languageDropdown' })}>Language</div>
+        {dropdownStates === 'languageDropdown' && (
+          <div className={styles.dropdownContent}>
+            <div id={styles.englishButton} className={styles.dropdownButton} onClick={() => handleLanguageChange('english')}>English</div>
+            <div id={styles.polishButton} className={styles.dropdownButton} onClick={() => handleLanguageChange('polish')}>Polish</div>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.dropdownContainer} onMouseEnter={() => handleMouseEnter('themeDropdown')} onClick={() => handleDropdownToggle('themeDropdown')}>
+        <div id={styles.themeDropdown} className={classNames(styles.openDropdown, { [styles.active]: dropdownStates === 'themeDropdown' })}>Theme</div>
+        {dropdownStates === 'themeDropdown' && (
+          <div className={styles.dropdownContent}>
+            <div id={styles.lightModeButton} className={classNames(styles.dropdownButton, { [styles.activeTheme]: !isDarkMode })} onClick={toggleLightMode}>
+              Light {isDarkMode ? '' : '✔'}
+            </div>
+            <div id={styles.darkModeButton} className={classNames(styles.dropdownButton, { [styles.activeTheme]: isDarkMode })} onClick={toggleDarkMode}>
+              Dark {isDarkMode ? '✔' : ''}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.dropdownContainer} onMouseEnter={() => handleMouseEnter('accountDropdown')} onClick={() => handleDropdownToggle('accountDropdown')}>
+        <div id={styles.accountDropdown} className={classNames(styles.openDropdown, { [styles.active]: dropdownStates === 'accountDropdown' })}>Account</div>
+        {dropdownStates === 'accountDropdown' && (
+          <div className={styles.dropdownContent}>
+            {isAuthenticated ? (
+              <div id={styles.logoutButton} className={styles.dropdownButton} onClick={handleLogout}>{t.logout}</div>
+            ) : (
+              <>
+                <div id={styles.loginButton} className={styles.dropdownButton} onClick={handleLoginClick}>{t.login}</div>
+                <div id={styles.registerButton} className={styles.dropdownButton} onClick={handleRegisterClick}>{t.register}</div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className={styles.dropdownContainer} onMouseEnter={() => handleMouseEnter('navigateDropdown')} onClick={() => handleDropdownToggle('navigateDropdown')}>
+        <div id={styles.navigateDropdown} className={classNames(styles.openDropdown, { [styles.active]: dropdownStates === 'navigateDropdown' })}>Navigate</div>
+        {dropdownStates === 'navigateDropdown' && (
+          <div className={styles.dropdownContent}>
+            <div id={styles.homeButton} className={styles.dropdownButton} onClick={handleReturnHome}>Home</div>
+            <div id={styles.settingsButton} className={styles.dropdownButton}>Settings</div>
+          </div>
+        )}
+      </div>
+
       {showLoginPopup && <LoginPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenRegister={handleRegisterClick} />}
       {showRegisterPopup && <RegisterPopup show={true} isOpen={true} onClose={handleClosePopups} onOpenLogin={handleLoginClick} />}
     </div>

@@ -84,7 +84,7 @@ const Bar: React.FC<BarProps> = ({
         sizeRef.current = size;
     }, [position, size]);
 
-    useEffect(() => {
+    useEffect(() => {  // works only when clicking on dashboard
         const handleClickOutside = (event: MouseEvent) => {
             if (
                 dropdownRef.current &&

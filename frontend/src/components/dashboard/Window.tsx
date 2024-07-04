@@ -365,13 +365,15 @@ const Window: React.FC<WindowProps> = ({
       }}
     >
       <div 
-      id={`window-${id}`}
-      ref={windowRef}
-      className={styles.window}
-      style={{
-        width: `${size.width}px`,
-        height: `${size.height}px`,
-      }}>
+        id={`window-${id}`}
+        ref={windowRef}
+        className={styles.window}
+        style={{
+          width: `${size.width}px`,
+          height: `${size.height}px`,
+        }}
+        onMouseDown={onClick}
+      >
         <div className={styles.taskbar} onMouseDown={handleDragStart}>
           <div className={styles.classicViewHeader} style={{ width: isDetailView ? '40%' : '100%' }}>
             <div className={styles.topBar}>

@@ -105,10 +105,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const [largestListZIndex, setLargestListZIndex] = useState(5000001);
-  const [largestBarZIndex, setLargestBarZIndex] = useState(5000001);
-  const [maxListZIndex, setMaxListZIndex] = useState(5000000);
-  const [maxBarZIndex, setMaxBarZIndex] = useState(5000000);
+  const largestZIndex = useRef(5000001);
+  const maxZIndex = useRef(5000001);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
@@ -259,22 +257,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const fetchTaskLists = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/tasklists/');
-      const fetchedTaskLists: TaskList[] = response.data;
-
-      const sortedTaskLists = fetchedTaskLists.sort((a, b) => a.zindex - b.zindex);
-      setTaskLists(sortedTaskLists);
-
-      const highestZIndex = Math.max(...sortedTaskLists.map(taskList => taskList.zindex));
-      setLargestListZIndex(highestZIndex > 5000000 && highestZIndex < 6000000 ? highestZIndex : 5000001);
-      setMaxListZIndex(5000000 + 1 * sortedTaskLists.length);
-    } catch (error) {
-      console.error('Error fetching task lists:', error);
-    }
-  };
-
   const fetchRewards = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/rewards/');
@@ -382,96 +364,134 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const fetchTaskLists = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/tasklists/');
+      const fetchedTaskLists: TaskList[] = response.data;
+      const sortedTaskLists = fetchedTaskLists.sort((a, b) => a.zindex - b.zindex);
+      setTaskLists(sortedTaskLists);
+      updateMaxZIndex(sortedTaskLists, barsData);
+    } catch (error) {
+      console.error('Error fetching task lists:', error);
+    }
+    updateMaxZIndex(taskLists, barsData);
+  };
+
   const fetchBars = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/bars/');
       const fetchedBars: BarData[] = response.data;
-
       const sortedBars = fetchedBars.sort((a, b) => a.zindex - b.zindex);
       setBarsData(sortedBars);
-
-      const highestBarZIndex = Math.max(...sortedBars.map(bar => bar.zindex));
-      setLargestBarZIndex(highestBarZIndex > 5000000 && highestBarZIndex < 6000000 ? highestBarZIndex : 5000001);
-      setMaxBarZIndex(5000000 + 1 * sortedBars.length);
+      updateMaxZIndex(taskLists, sortedBars);
     } catch (error) {
       console.error('Error fetching bars:', error);
     }
+    updateMaxZIndex(taskLists, barsData);
   };
 
-  const updateMaxListZIndex = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/tasklists/');
-      const count = response.data.length;
-      setMaxListZIndex(5000000 + count);
-    } catch (error) {
-      console.error('Error updating maxListZIndex:', error);
-    }
+  const updateMaxZIndex = (taskLists: TaskList[], barsData: BarData[]) => {
+    const allItems = [...taskLists, ...barsData];
+    const highestZIndex = Math.max(...allItems.map(item => item.zindex));
+    largestZIndex.current = highestZIndex > 5000000 && highestZIndex < 6000000 ? highestZIndex : 5000001;
+    maxZIndex.current = (5000000 + allItems.length);
   };
 
-  const updateMaxBarZIndex = async () => {
-    try {
-      const response = await axios.get('http://localhost:8000/api/bars/');
-      const count = response.data.length;
-      setMaxBarZIndex(5000000 + count);
-    } catch (error) {
-      console.error('Error updating maxListZIndex:', error);
-    }
-  };
-
-  const bringWindowToFront = async (id: number) => {
-    console.log(`largest: ${largestListZIndex}`)
-    const clickedWindow = taskLists.find(window => window.list_id === id);
-    if (!clickedWindow) return;
+  const bringItemToFront = async (id: number, type: 'taskList' | 'bar') => {
+    updateMaxZIndex(taskLists, barsData);
+    const items = [
+      ...taskLists.map(item => ({ zindex: item.zindex, id: item.list_id, type: 'taskList' as const })),
+      ...barsData.map(item => ({ zindex: item.zindex, id: item.bar_id, type: 'bar' as const })),
+    ];
     
-    const clickedZIndex = clickedWindow.zindex;
+    const clickedItem = items.find(item => item.id === id && item.type === type);
+    if (!clickedItem) return;
 
-    if (clickedZIndex < largestListZIndex) {
-      if (largestListZIndex < maxListZIndex) {
-        const newZIndex = largestListZIndex + 1;
-        setLargestListZIndex(newZIndex);
-        await updateZIndexInList(clickedWindow.list_id, newZIndex);
-      } else if (largestListZIndex === maxListZIndex) {
-        for (const window of taskLists) {
-          if (window.zindex > clickedZIndex) {
-            const newZIndex = window.zindex - 1;
-            await updateZIndexInList(window.list_id, newZIndex);
+    const clickedZIndex = clickedItem.zindex;
+
+    if (clickedZIndex < largestZIndex.current) {
+      if (largestZIndex.current < maxZIndex.current) {
+        const newZIndex = largestZIndex.current + 1;
+        largestZIndex.current = newZIndex;
+        await updateZIndex(id, newZIndex, type);
+      } else if (largestZIndex.current === maxZIndex.current) {
+        for (const item of items) {
+          if (item.zindex >= clickedZIndex) {
+            const newZIndex = item.zindex - 1;
+            console.log(`New zindex: ${newZIndex}`);
+            await updateZIndex(item.id, newZIndex, item.type);
           }
         }
-        await updateZIndexInList(clickedWindow.list_id, maxListZIndex);
+        await updateZIndex(id, maxZIndex.current, type);
+      } else if (largestZIndex.current > maxZIndex.current) {
+        console.log('triggered debug');
+        for (const item of items) {
+          if (item.zindex >= 5000001) {
+            const newZIndex = item.zindex - 1;
+            console.log(`New zindex: ${newZIndex}`);
+            await updateZIndex(item.id, newZIndex, item.type);
+          } 
+        }
+        largestZIndex.current = maxZIndex.current;
+        await updateZIndex(id, maxZIndex.current, type);
       }
-    } else if (clickedZIndex > largestListZIndex) {  // statement for debuging if a window is overset
-      console.log('triggered debug')
-      await updateZIndexInList(clickedWindow.list_id, largestListZIndex);
+    } else if (clickedZIndex > largestZIndex.current) {
+      console.log('triggered debug');
+      if (clickedZIndex == maxZIndex.current) {
+        largestZIndex.current = maxZIndex.current;
+      } else if (clickedZIndex < maxZIndex.current) {
+        largestZIndex.current = clickedZIndex;
+      } else if (clickedZIndex > maxZIndex.current) {
+        for (const item of items) {
+          if (item.zindex >= 5000001) {
+            const newZIndex = item.zindex - 1;
+            console.log(`New zindex: ${newZIndex}, previous zindex ${item.zindex}`);
+            await updateZIndex(item.id, newZIndex, item.type);
+          } 
+        }
+        largestZIndex.current = maxZIndex.current;
+        await updateZIndex(id, maxZIndex.current, type);
+      }
+    } else if (clickedZIndex == largestZIndex.current) {
+      if (largestZIndex.current > maxZIndex.current) {
+        console.log('triggered debug');
+        for (const item of items) {
+          if (item.zindex >= 5000001) {
+            const newZIndex = item.zindex - 1;
+            console.log(`New zindex: ${newZIndex}`);
+            await updateZIndex(item.id, newZIndex, item.type);
+          } 
+        }
+        largestZIndex.current = maxZIndex.current;
+        await updateZIndex(id, maxZIndex.current, type);
+      }
     }
 
     await fetchTaskLists();
-  };
-
-  const bringBarToFront = async (id: number) => {
-    const clickedBar = barsData.find(bar => bar.bar_id === id);
-    if (!clickedBar) return;
-
-    const clickedBarZIndex = clickedBar.zindex;
-
-    if (clickedBarZIndex < largestBarZIndex) {
-      if (largestBarZIndex < maxBarZIndex) {
-        const newZIndex = largestBarZIndex + 1;
-        setLargestBarZIndex(newZIndex);
-        await updateZIndexInBar(clickedBar.bar_id, newZIndex);
-      } else if (largestBarZIndex === maxBarZIndex) {
-        for (const bar of barsData) {
-          if (bar.zindex > clickedBarZIndex) {
-            const newZIndex = bar.zindex - 1;
-            await updateZIndexInBar(bar.bar_id, newZIndex);
-          }
-        }
-        await updateZIndexInBar(clickedBar.bar_id, maxBarZIndex);
-      }
-    }
-
     await fetchBars();
+
+    
   };
 
+  const updateZIndex = async (id: number, zIndex: number, type: 'taskList' | 'bar') => {
+    const url = type === 'taskList'
+      ? `http://localhost:8000/api/tasklists/${id}/update_lists/`
+      : `http://localhost:8000/api/bars/${id}/update_bar/`;
+    try {
+      await axios.put(url, { zindex: zIndex });
+    } catch (error) {
+      console.error('Error updating z-index:', error);
+    }
+    console.log(`put: ${zIndex}`);
+    console.log(`max: ${maxZIndex.current}`);
+    console.log(`largest: ${largestZIndex.current}`);
+  };
+
+  useEffect(() => {
+    fetchTaskLists();
+    fetchBars();
+  }, []);
+  
   const handleListDeletion = async (id: number) => {
     try {
       await axios.delete(`http://localhost:8000/api/tasklists/${id}/`);
@@ -487,27 +507,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       setBarsData((prevBars) => prevBars.filter((bar) => bar.bar_id !== id));
     } catch (error) {
       console.error('Error deleting bar:', error);
-    }
-  };
-
-  useEffect(() => {
-    updateMaxListZIndex();
-    updateMaxBarZIndex();
-  }, []);
-
-  const updateZIndexInList = async (id: number, zIndex: number) => {
-    try {
-      await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { zindex: zIndex });
-    } catch (error) {
-      console.error('Error updating z-index:', error);
-    }
-  };
-
-  const updateZIndexInBar = async (id: number, zIndex: number) => {
-    try {
-      await axios.put(`http://localhost:8000/api/bars/${id}/update_bar/`, { zindex: zIndex });
-    } catch (error) {
-      console.error('Error updating z-index:', error);
     }
   };
 
@@ -757,7 +756,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             detailView={taskList.detail_view}
             onClose={handleCloseWindow} 
             onRename={handleRenameList}
-            onClick={() => bringWindowToFront(taskList.list_id)}
+            onClick={() => bringItemToFront(taskList.list_id, 'taskList')}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'taskList')}
@@ -786,7 +785,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               zIndex={bar.zindex}
               onClose={handleCloseBar}
               onRename={handleRenameBar}
-              onClick={() => bringBarToFront(bar.bar_id)}
+              onClick={() => bringItemToFront(bar.bar_id, 'bar')}
               onDrag={handleDragWindow}
               onResize={handleResizeWindow}
               onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'bars')}

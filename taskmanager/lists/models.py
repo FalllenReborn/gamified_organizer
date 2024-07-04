@@ -50,9 +50,7 @@ class Bar(models.Model):
     zindex = models.FloatField(default=5000000)
     total_points = models.IntegerField(default=0)
     full_cycle = models.IntegerField(default=200)
-    partial_cycle1 = models.IntegerField(null=True, blank=True)
-    partial_cycle2 = models.IntegerField(null=True, blank=True)
-    partial_cycle3 = models.IntegerField(null=True, blank=True)
+    hidden = models.BooleanField(default=False)
 
     def __str__(self):
         return self.bar_name if self.bar_name else f'Bar {self.bar_id}'

@@ -332,12 +332,7 @@ CREATE TABLE public.bars (
     zindex double precision DEFAULT 5000000,
     total_points integer DEFAULT 0,
     full_cycle integer DEFAULT 200 NOT NULL,
-    partial_cycle1 integer,
-    partial_cycle2 integer,
-    partial_cycle3 integer,
-    CONSTRAINT bars_check CHECK ((partial_cycle1 < full_cycle)),
-    CONSTRAINT bars_check1 CHECK ((partial_cycle2 < full_cycle)),
-    CONSTRAINT bars_check2 CHECK ((partial_cycle3 < full_cycle)),
+    hidden boolean DEFAULT false,
     CONSTRAINT bars_full_cycle_check CHECK ((full_cycle > 0))
 );
 
@@ -595,7 +590,8 @@ CREATE TABLE public.task_lists (
     hidden boolean,
     size_vertical double precision,
     size_horizontal double precision,
-    zindex double precision DEFAULT 500.0000
+    zindex double precision DEFAULT 500.0000,
+    detail_view boolean DEFAULT true
 );
 
 
@@ -1193,7 +1189,7 @@ ALTER TABLE ONLY public.tasks
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id);
+    ADD CONSTRAINT transactions_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id) ON DELETE CASCADE;
 
 
 --

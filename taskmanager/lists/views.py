@@ -1,19 +1,43 @@
-from rest_framework import viewsets, generics
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import TaskList, Task, Reward, Bar, Currency, Transaction
+from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer
 from .serializers import (TaskListSerializer, TaskSerializer, RewardSerializer,
-                          BarSerializer, CurrencySerializer, TransactionSerializer)
+                          BarSerializer, CurrencySerializer, TransactionSerializer, LayerSerializer)
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
 from django.http import JsonResponse
 from django.utils import timezone
+from django.db import connection
+
+
+class LayerViewSet(viewsets.ModelViewSet):
+    queryset = Layer.objects.all()
+    serializer_class = LayerSerializer
+
+    @action(detail=False, methods=['post'], url_path='move_to_highest')
+    def move_to_highest(self, request):
+        bar_id = request.data.get('bar_id')
+        list_id = request.data.get('list_id')
+
+        if not bar_id and not list_id:
+            return Response({'error': 'Either bar_id or list_id must be provided'}, status=400)
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.callproc('move_to_highest', [bar_id, list_id])
+            return Response({'message': 'Layer moved to highest successfully'}, status=200)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
 
 
 class TaskListViewSet(viewsets.ModelViewSet):
     queryset = TaskList.objects.all()
     serializer_class = TaskListSerializer
+
+    def get_queryset(self):
+        return TaskList.objects.all().select_related('layer')
 
     @action(detail=False, methods=['GET'])
     def visible_lists(self, request):
@@ -47,6 +71,66 @@ class TaskListViewSet(viewsets.ModelViewSet):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=400)
+
+
+class BarViewSet(viewsets.ModelViewSet):
+    queryset = Bar.objects.all()
+    serializer_class = BarSerializer
+
+    def get_queryset(self):
+        return Bar.objects.all().select_related('layer')
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['put'], url_path='update_name')
+    def update_bar_name(self, request, pk=None):
+        try:
+            bar = self.get_object()
+            data = json.loads(request.body.decode('utf-8'))
+
+            if 'bar_name' in data:
+                bar.bar_name = data['bar_name']
+                bar.save()
+                return JsonResponse({'message': 'Bar updated successfully', 'bar_name': bar.bar_name})
+
+            return JsonResponse({'error': 'bar_name not provided'}, status=400)
+        except Bar.DoesNotExist:
+            return JsonResponse({'error': 'Bar not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    @action(detail=True, methods=['put'], url_path='update_bar')
+    def update_bar(self, request, pk=None):
+        bar = self.get_object()
+        serializer = BarSerializer(bar, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_bar')
+    def create_bar(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            bar_name = data.get('bar_name')
+            xp_name = data.get('xp_name')
+            full_cycle = data.get('full_cycle')
+
+            if full_cycle is None:
+                return JsonResponse({'error': 'full_cycle is required'}, status=400)
+
+            bar = Bar.objects.create(
+                bar_name=bar_name,
+                xp_name=xp_name,
+                full_cycle=full_cycle
+            )
+            serializer = BarSerializer(bar)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -98,69 +182,6 @@ class TaskViewSet(viewsets.ModelViewSet):
             return Response(serializer.errors, status=400)
         except Task.DoesNotExist:
             return Response({'error': 'Task not found'}, status=404)
-
-
-class BarViewSet(viewsets.ModelViewSet):
-    queryset = Bar.objects.all()
-    serializer_class = BarSerializer
-
-    @method_decorator(csrf_exempt)
-    @action(detail=True, methods=['put'], url_path='update_name')
-    def update_bar_name(self, request, pk=None):
-        try:
-            bar = self.get_object()
-            data = json.loads(request.body.decode('utf-8'))
-
-            if 'bar_name' in data:
-                bar.bar_name = data['bar_name']
-                bar.save()
-                return JsonResponse({'message': 'Bar updated successfully', 'bar_name': bar.bar_name})
-
-            return JsonResponse({'error': 'bar_name not provided'}, status=400)
-        except Bar.DoesNotExist:
-            return JsonResponse({'error': 'Bar not found'}, status=404)
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-
-    @action(detail=True, methods=['put'], url_path='update_bar')
-    def update_bar(self, request, pk=None):
-        bar = self.get_object()
-        serializer = BarSerializer(bar, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=400)
-
-    @method_decorator(csrf_exempt)
-    @action(detail=False, methods=['post'], url_path='create_bar')
-    def create_bar(self, request):
-        try:
-            data = json.loads(request.body.decode('utf-8'))
-            bar_name = data.get('bar_name')
-            xp_name = data.get('xp_name')
-            full_cycle = data.get('full_cycle')
-            partial_cycle1 = data.get('partial_cycle1')
-            partial_cycle2 = data.get('partial_cycle2')
-            partial_cycle3 = data.get('partial_cycle3')
-
-            if full_cycle is None:
-                return JsonResponse({'error': 'full_cycle is required'}, status=400)
-
-            bar = Bar.objects.create(
-                bar_name=bar_name,
-                xp_name=xp_name,
-                full_cycle=full_cycle,
-                partial_cycle1=partial_cycle1,
-                partial_cycle2=partial_cycle2,
-                partial_cycle3=partial_cycle3
-            )
-            serializer = BarSerializer(bar)
-            return JsonResponse(serializer.data, status=201)
-
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
 
 
 class RewardViewSet(viewsets.ModelViewSet):

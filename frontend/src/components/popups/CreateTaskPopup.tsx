@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import styles from './createTaskPopup.module.css';
 
+interface Layer {
+  layer_id: number;
+  layer: number;
+}
+
 interface bar {
   bar_id: number;
   bar_name: string;
@@ -9,7 +14,7 @@ interface bar {
   y_axis: number;
   size_horizontal: number;
   size_vertical: number;
-  zindex: number;
+  layer: Layer;
   full_cycle: number;
   total_points: number;
 }

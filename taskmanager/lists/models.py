@@ -5,16 +5,25 @@ from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
 
+class Layer(models.Model):
+    layer_id = models.AutoField(primary_key=True)
+    bar = models.OneToOneField('Bar', on_delete=models.CASCADE, null=True, blank=True, related_name='layer')
+    list = models.OneToOneField('TaskList', on_delete=models.CASCADE, null=True, blank=True, related_name='layer')
+    layer = models.IntegerField(unique=True)
+
+    class Meta:
+        db_table = 'layers'
+
+
 class TaskList(models.Model):
     list_id = models.AutoField(primary_key=True)
     list_name = models.CharField(max_length=255, null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)  # Set default user_id to 1
+    user = models.ForeignKey(User, on_delete=models.CASCADE, default=1)
     x_axis = models.FloatField(default=0)
     y_axis = models.FloatField(default=0)
     hidden = models.BooleanField(default=False)
     size_vertical = models.FloatField(default=200)
     size_horizontal = models.FloatField(default=300)
-    zindex = models.FloatField(default=500)
     detail_view = models.BooleanField(default=True)
 
     def __str__(self):
@@ -22,6 +31,25 @@ class TaskList(models.Model):
 
     class Meta:
         db_table = 'task_lists'
+
+
+class Bar(models.Model):
+    bar_id = models.AutoField(primary_key=True)
+    bar_name = models.CharField(max_length=255, null=True, blank=True)
+    xp_name = models.CharField(max_length=255, null=True, blank=True)
+    x_axis = models.FloatField(default=0)
+    y_axis = models.FloatField(default=0)
+    size_vertical = models.FloatField(default=125)
+    size_horizontal = models.FloatField(default=300)
+    total_points = models.IntegerField(default=0)
+    full_cycle = models.IntegerField(default=200)
+    hidden = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.bar_name if self.bar_name else f'Bar {self.bar_id}'
+
+    class Meta:
+        db_table = 'bars'
 
 
 class Task(models.Model):
@@ -37,26 +65,6 @@ class Task(models.Model):
 
     class Meta:
         db_table = 'tasks'
-
-
-class Bar(models.Model):
-    bar_id = models.AutoField(primary_key=True)
-    bar_name = models.CharField(max_length=255, null=True, blank=True)
-    xp_name = models.CharField(max_length=255, null=True, blank=True)
-    x_axis = models.FloatField(default=0)
-    y_axis = models.FloatField(default=0)
-    size_vertical = models.FloatField(default=125)
-    size_horizontal = models.FloatField(default=300)
-    zindex = models.FloatField(default=5000000)
-    total_points = models.IntegerField(default=0)
-    full_cycle = models.IntegerField(default=200)
-    hidden = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.bar_name if self.bar_name else f'Bar {self.bar_id}'
-
-    class Meta:
-        db_table = 'bars'
 
 
 class Reward(models.Model):

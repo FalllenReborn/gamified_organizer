@@ -17,6 +17,31 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
+-- Name: add_layer(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.add_layer() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    max_layer INT;
+BEGIN
+    SELECT COALESCE(MAX(layer), 4999999) + 1 INTO max_layer FROM layers;
+    
+    IF (TG_TABLE_NAME = 'bars') THEN
+        INSERT INTO layers (bar_id, layer) VALUES (NEW.bar_id, max_layer);
+    ELSIF (TG_TABLE_NAME = 'task_lists') THEN
+        INSERT INTO layers (list_id, layer) VALUES (NEW.list_id, max_layer);
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION public.add_layer() OWNER TO postgres;
+
+--
 -- Name: create_related_entries(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -87,6 +112,71 @@ $$;
 
 
 ALTER FUNCTION public.handle_task_deletion() OWNER TO postgres;
+
+--
+-- Name: move_to_highest(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.move_to_highest(p_bar_id integer DEFAULT NULL::integer, p_list_id integer DEFAULT NULL::integer) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    chosen_layer INT;
+    highest_layer INT;
+BEGIN
+    -- Determine the chosen layer based on bar_id or list_id
+    IF p_bar_id IS NOT NULL THEN
+        SELECT layer INTO chosen_layer FROM layers WHERE bar_id = p_bar_id;
+    ELSIF p_list_id IS NOT NULL THEN
+        SELECT layer INTO chosen_layer FROM layers WHERE list_id = p_list_id;
+    ELSE
+        RAISE EXCEPTION 'Either bar_id or list_id must be provided';
+    END IF;
+
+    -- Find the highest layer
+    SELECT MAX(layer) INTO highest_layer FROM layers;
+
+    -- Check if chosen_layer is less than highest_layer
+    IF chosen_layer < highest_layer THEN
+        -- Update the chosen layer to 5999999
+        UPDATE layers 
+        SET layer = 5999999 
+        WHERE (bar_id = p_bar_id OR list_id = p_list_id);
+
+        -- Subtract 1 from all higher layers
+        UPDATE layers 
+        SET layer = layer - 1 
+        WHERE layer > chosen_layer;
+
+        -- Set the chosen layer to highest_layer
+        UPDATE layers 
+        SET layer = highest_layer 
+        WHERE (bar_id = p_bar_id OR list_id = p_list_id);
+    END IF;
+END;
+$$;
+
+
+ALTER FUNCTION public.move_to_highest(p_bar_id integer, p_list_id integer) OWNER TO postgres;
+
+--
+-- Name: reorder_layers(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.reorder_layers() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Decrement the layer of all rows that have a higher layer than the deleted row
+    UPDATE layers
+    SET layer = layer - 1
+    WHERE layer > OLD.layer;
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION public.reorder_layers() OWNER TO postgres;
 
 --
 -- Name: update_bars_and_distribute_transactions(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -329,7 +419,6 @@ CREATE TABLE public.bars (
     y_axis double precision DEFAULT 0,
     size_vertical double precision DEFAULT 125,
     size_horizontal double precision DEFAULT 300,
-    zindex double precision DEFAULT 5000000,
     total_points integer DEFAULT 0,
     full_cycle integer DEFAULT 200 NOT NULL,
     hidden boolean DEFAULT false,
@@ -498,6 +587,45 @@ CREATE TABLE public.django_session (
 ALTER TABLE public.django_session OWNER TO reborn;
 
 --
+-- Name: layers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.layers (
+    layer_id integer NOT NULL,
+    bar_id integer,
+    list_id integer,
+    layer integer NOT NULL,
+    CONSTRAINT layers_check CHECK (((bar_id IS NOT NULL) OR (list_id IS NOT NULL))),
+    CONSTRAINT layers_check1 CHECK (((bar_id IS NULL) OR (list_id IS NULL))),
+    CONSTRAINT layers_layer_check CHECK (((layer >= 5000000) AND (layer < 6000000)))
+);
+
+
+ALTER TABLE public.layers OWNER TO postgres;
+
+--
+-- Name: layers_layer_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.layers_layer_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.layers_layer_id_seq OWNER TO postgres;
+
+--
+-- Name: layers_layer_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.layers_layer_id_seq OWNED BY public.layers.layer_id;
+
+
+--
 -- Name: lists_tasklist; Type: TABLE; Schema: public; Owner: reborn
 --
 
@@ -590,7 +718,6 @@ CREATE TABLE public.task_lists (
     hidden boolean,
     size_vertical double precision,
     size_horizontal double precision,
-    zindex double precision DEFAULT 500.0000,
     detail_view boolean DEFAULT true
 );
 
@@ -708,6 +835,13 @@ ALTER TABLE ONLY public.bars ALTER COLUMN bar_id SET DEFAULT nextval('public.bar
 --
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN currency_id SET DEFAULT nextval('public.currencies_currency_id_seq'::regclass);
+
+
+--
+-- Name: layers layer_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.layers ALTER COLUMN layer_id SET DEFAULT nextval('public.layers_layer_id_seq'::regclass);
 
 
 --
@@ -891,6 +1025,22 @@ ALTER TABLE ONLY public.django_session
 
 
 --
+-- Name: layers layers_layer_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.layers
+    ADD CONSTRAINT layers_layer_key UNIQUE (layer);
+
+
+--
+-- Name: layers layers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.layers
+    ADD CONSTRAINT layers_pkey PRIMARY KEY (layer_id);
+
+
+--
 -- Name: lists_tasklist lists_tasklist_pkey; Type: CONSTRAINT; Schema: public; Owner: reborn
 --
 
@@ -1037,6 +1187,20 @@ CREATE INDEX lists_tasklist_owner_id_4ed0467b ON public.lists_tasklist USING btr
 
 
 --
+-- Name: bars add_layer_to_bar; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER add_layer_to_bar AFTER INSERT ON public.bars FOR EACH ROW EXECUTE FUNCTION public.add_layer();
+
+
+--
+-- Name: task_lists add_layer_to_task_list; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER add_layer_to_task_list AFTER INSERT ON public.task_lists FOR EACH ROW EXECUTE FUNCTION public.add_layer();
+
+
+--
 -- Name: tasks after_task_insert; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1055,6 +1219,13 @@ CREATE TRIGGER before_task_delete BEFORE DELETE ON public.tasks FOR EACH ROW EXE
 --
 
 CREATE TRIGGER delete_nested_tasks_trigger AFTER DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.delete_nested_tasks();
+
+
+--
+-- Name: layers reorder_layers_after_delete; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER reorder_layers_after_delete AFTER DELETE ON public.layers FOR EACH ROW EXECUTE FUNCTION public.reorder_layers();
 
 
 --
@@ -1134,6 +1305,22 @@ ALTER TABLE ONLY public.django_admin_log
 
 ALTER TABLE ONLY public.django_admin_log
     ADD CONSTRAINT django_admin_log_user_id_c564eba6_fk_auth_user_id FOREIGN KEY (user_id) REFERENCES public.auth_user(id) DEFERRABLE INITIALLY DEFERRED;
+
+
+--
+-- Name: layers layers_bar_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.layers
+    ADD CONSTRAINT layers_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id) ON DELETE CASCADE;
+
+
+--
+-- Name: layers layers_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.layers
+    ADD CONSTRAINT layers_list_id_fkey FOREIGN KEY (list_id) REFERENCES public.task_lists(list_id) ON DELETE CASCADE;
 
 
 --

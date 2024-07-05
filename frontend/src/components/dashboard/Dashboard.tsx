@@ -13,6 +13,13 @@ import CreateBarPopup from '../popups/CreateBarPopup';
 import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
 import axios from 'axios';
 
+interface Layers {
+  layer_id: number;
+  layer: number;
+  list_id: number;
+  bar_id: number;
+}
+
 interface TaskList {
   list_id: number;
   list_name: string;
@@ -20,7 +27,7 @@ interface TaskList {
   y_axis: number;
   size_horizontal: number;
   size_vertical: number;
-  zindex: number;
+  layer: Layers;
   total_points: number;
   detail_view: boolean;
 }
@@ -33,14 +40,9 @@ interface BarData {
   y_axis: number;
   size_horizontal: number;
   size_vertical: number;
-  zindex: number;
+  layer: Layers;
   full_cycle: number;
   total_points: number;
-}
-
-interface Bar {
-  bar_id: number;
-  bar_name: string;
 }
 
 interface Currency {
@@ -105,8 +107,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
-  const largestZIndex = useRef(5000001);
-  const maxZIndex = useRef(5000001);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
@@ -139,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       setCheckedTasks([]);
       fetchBars();
       fetchCurrencies();
-      // Optionally, refresh the task list or handle state updates
+      fetchTaskLists();
     } catch (error) {
       console.error('Error deleting tasks:', error);
     }
@@ -368,129 +368,59 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     try {
       const response = await axios.get('http://localhost:8000/api/tasklists/');
       const fetchedTaskLists: TaskList[] = response.data;
-      const sortedTaskLists = fetchedTaskLists.sort((a, b) => a.zindex - b.zindex);
+      const sortedTaskLists = fetchedTaskLists.sort((a, b) => a.layer.layer - b.layer.layer);
       setTaskLists(sortedTaskLists);
-      updateMaxZIndex(sortedTaskLists, barsData);
     } catch (error) {
       console.error('Error fetching task lists:', error);
     }
-    updateMaxZIndex(taskLists, barsData);
   };
 
   const fetchBars = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/bars/');
       const fetchedBars: BarData[] = response.data;
-      const sortedBars = fetchedBars.sort((a, b) => a.zindex - b.zindex);
+      const sortedBars = fetchedBars.sort((a, b) => a.layer.layer - b.layer.layer);
       setBarsData(sortedBars);
-      updateMaxZIndex(taskLists, sortedBars);
     } catch (error) {
       console.error('Error fetching bars:', error);
     }
-    updateMaxZIndex(taskLists, barsData);
-  };
-
-  const updateMaxZIndex = (taskLists: TaskList[], barsData: BarData[]) => {
-    const allItems = [...taskLists, ...barsData];
-    const highestZIndex = Math.max(...allItems.map(item => item.zindex));
-    largestZIndex.current = highestZIndex > 5000000 && highestZIndex < 6000000 ? highestZIndex : 5000001;
-    maxZIndex.current = (5000000 + allItems.length);
-  };
-
-  const bringItemToFront = async (id: number, type: 'taskList' | 'bar') => {
-    updateMaxZIndex(taskLists, barsData);
-    const items = [
-      ...taskLists.map(item => ({ zindex: item.zindex, id: item.list_id, type: 'taskList' as const })),
-      ...barsData.map(item => ({ zindex: item.zindex, id: item.bar_id, type: 'bar' as const })),
-    ];
-    
-    const clickedItem = items.find(item => item.id === id && item.type === type);
-    if (!clickedItem) return;
-
-    const clickedZIndex = clickedItem.zindex;
-
-    if (clickedZIndex < largestZIndex.current) {
-      if (largestZIndex.current < maxZIndex.current) {
-        const newZIndex = largestZIndex.current + 1;
-        largestZIndex.current = newZIndex;
-        await updateZIndex(id, newZIndex, type);
-      } else if (largestZIndex.current === maxZIndex.current) {
-        for (const item of items) {
-          if (item.zindex >= clickedZIndex) {
-            const newZIndex = item.zindex - 1;
-            console.log(`New zindex: ${newZIndex}`);
-            await updateZIndex(item.id, newZIndex, item.type);
-          }
-        }
-        await updateZIndex(id, maxZIndex.current, type);
-      } else if (largestZIndex.current > maxZIndex.current) {
-        console.log('triggered debug');
-        for (const item of items) {
-          if (item.zindex >= 5000001) {
-            const newZIndex = item.zindex - 1;
-            console.log(`New zindex: ${newZIndex}`);
-            await updateZIndex(item.id, newZIndex, item.type);
-          } 
-        }
-        largestZIndex.current = maxZIndex.current;
-        await updateZIndex(id, maxZIndex.current, type);
-      }
-    } else if (clickedZIndex > largestZIndex.current) {
-      console.log('triggered debug');
-      if (clickedZIndex == maxZIndex.current) {
-        largestZIndex.current = maxZIndex.current;
-      } else if (clickedZIndex < maxZIndex.current) {
-        largestZIndex.current = clickedZIndex;
-      } else if (clickedZIndex > maxZIndex.current) {
-        for (const item of items) {
-          if (item.zindex >= 5000001) {
-            const newZIndex = item.zindex - 1;
-            console.log(`New zindex: ${newZIndex}, previous zindex ${item.zindex}`);
-            await updateZIndex(item.id, newZIndex, item.type);
-          } 
-        }
-        largestZIndex.current = maxZIndex.current;
-        await updateZIndex(id, maxZIndex.current, type);
-      }
-    } else if (clickedZIndex == largestZIndex.current) {
-      if (largestZIndex.current > maxZIndex.current) {
-        console.log('triggered debug');
-        for (const item of items) {
-          if (item.zindex >= 5000001) {
-            const newZIndex = item.zindex - 1;
-            console.log(`New zindex: ${newZIndex}`);
-            await updateZIndex(item.id, newZIndex, item.type);
-          } 
-        }
-        largestZIndex.current = maxZIndex.current;
-        await updateZIndex(id, maxZIndex.current, type);
-      }
-    }
-
-    await fetchTaskLists();
-    await fetchBars();
-
-    
-  };
-
-  const updateZIndex = async (id: number, zIndex: number, type: 'taskList' | 'bar') => {
-    const url = type === 'taskList'
-      ? `http://localhost:8000/api/tasklists/${id}/update_lists/`
-      : `http://localhost:8000/api/bars/${id}/update_bar/`;
-    try {
-      await axios.put(url, { zindex: zIndex });
-    } catch (error) {
-      console.error('Error updating z-index:', error);
-    }
-    console.log(`put: ${zIndex}`);
-    console.log(`max: ${maxZIndex.current}`);
-    console.log(`largest: ${largestZIndex.current}`);
   };
 
   useEffect(() => {
     fetchTaskLists();
     fetchBars();
   }, []);
+
+  const moveItemToHighestLayer = async (barId?: number, listId?: number) => {
+    try {
+      console.log(`Retrieved: bar =  ${barId}; list = ${listId}`);
+      const payload = barId ? { bar_id: barId } : { list_id: listId };
+      await axios.post('http://localhost:8000/api/layers/move_to_highest/', payload);
+      console.log("success");
+    } catch (error) {
+      console.error('Error moving item to highest:', error);
+    }
+    fetchBars();
+    fetchTaskLists();
+  };
+  
+  const handleMoveToHighest = (itemId: number, itemType: 'tasklist' | 'bar') => {
+    if (itemType === 'tasklist') {
+      const taskList = taskLists.find(tl => tl.list_id === itemId);
+      if (taskList) {
+        moveItemToHighestLayer(undefined, taskList.list_id);
+      } else {
+        console.error(`Task list with ID ${itemId} not found`);
+      }
+    } else if (itemType === 'bar') {
+      const bar = barsData.find(bar => bar.bar_id === itemId);
+      if (bar) {
+        moveItemToHighestLayer(bar.bar_id);
+      } else {
+        console.error(`Bar with ID ${itemId} not found`);
+      }
+    }
+  };
   
   const handleListDeletion = async (id: number) => {
     try {
@@ -537,7 +467,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         initialY: taskList.y_axis,
         initialWidth: taskList.size_horizontal,
         initialHeight: taskList.size_vertical,
-        zIndex: taskList.zindex,
+        zIndex: taskList.layer.layer,
       }));
       setWindows(newWindows);
     }
@@ -552,7 +482,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         initialY: barsData.y_axis,
         initialWidth: barsData.size_horizontal,
         initialHeight: barsData.size_vertical,
-        zIndex: barsData.zindex,
+        zIndex: barsData.layer.layer,
       }));
       setBars(newBars);
     }
@@ -748,7 +678,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             initialHeight={taskList.size_vertical}
             translate={translate} 
             scale={scale} 
-            zIndex={taskList.zindex}
+            zIndex={taskList.layer.layer}
             rewards={rewards}
             transactions={transactions}
             barsData={barsData}
@@ -756,7 +686,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             detailView={taskList.detail_view}
             onClose={handleCloseWindow} 
             onRename={handleRenameList}
-            onClick={() => bringItemToFront(taskList.list_id, 'taskList')}
+            onClick={() => handleMoveToHighest(taskList.list_id, 'tasklist')}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'taskList')}
@@ -782,10 +712,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               scale={scale} 
               currencies={currencies}
               transactions={transactions}
-              zIndex={bar.zindex}
+              zIndex={bar.layer.layer}
               onClose={handleCloseBar}
               onRename={handleRenameBar}
-              onClick={() => bringItemToFront(bar.bar_id, 'bar')}
+              onClick={() => handleMoveToHighest(bar.bar_id, 'bar')}
               onDrag={handleDragWindow}
               onResize={handleResizeWindow}
               onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'bars')}

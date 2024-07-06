@@ -9,7 +9,10 @@ from django.utils.decorators import method_decorator
 import json
 from django.http import JsonResponse
 from django.utils import timezone
-from django.db import connection
+from django.db import connection, transaction
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class LayerViewSet(viewsets.ModelViewSet):
@@ -25,10 +28,12 @@ class LayerViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Either bar_id or list_id must be provided'}, status=400)
 
         try:
-            with connection.cursor() as cursor:
-                cursor.callproc('move_to_highest', [bar_id, list_id])
+            with transaction.atomic():
+                with connection.cursor() as cursor:
+                    cursor.callproc('move_to_highest', [bar_id, list_id])
             return Response({'message': 'Layer moved to highest successfully'}, status=200)
         except Exception as e:
+            logger.error(f"Error occurred in move_to_highest: {str(e)}", exc_info=True)
             return Response({'error': str(e)}, status=500)
 
 

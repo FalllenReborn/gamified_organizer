@@ -119,10 +119,10 @@ ALTER FUNCTION public.handle_task_deletion() OWNER TO postgres;
 
 CREATE FUNCTION public.move_to_highest(p_bar_id integer DEFAULT NULL::integer, p_list_id integer DEFAULT NULL::integer) RETURNS void
     LANGUAGE plpgsql
-    AS $$
-DECLARE
+    AS $$DECLARE
     chosen_layer INT;
     highest_layer INT;
+    new_layer INT;
 BEGIN
     -- Determine the chosen layer based on bar_id or list_id
     IF p_bar_id IS NOT NULL THEN
@@ -133,28 +133,28 @@ BEGIN
         RAISE EXCEPTION 'Either bar_id or list_id must be provided';
     END IF;
 
-    -- Find the highest layer
-    SELECT MAX(layer) INTO highest_layer FROM layers;
+    -- Find the highest layer and set new layer to highest + 1 to avoid conflicts
+    SELECT COALESCE(MAX(layer), 0) + 1 INTO highest_layer FROM layers;
+    new_layer := highest_layer + 1;
 
-    -- Check if chosen_layer is less than highest_layer
-    IF chosen_layer < highest_layer THEN
-        -- Update the chosen layer to 5999999
+    -- Check if chosen_layer is less than new_layer
+    IF chosen_layer < new_layer THEN
+        -- Update the chosen layer to the temporary highest value
         UPDATE layers 
-        SET layer = 5999999 
+        SET layer = new_layer 
         WHERE (bar_id = p_bar_id OR list_id = p_list_id);
 
-        -- Subtract 1 from all higher layers
+        -- Subtract 1 from all higher layers except the newly set one
         UPDATE layers 
         SET layer = layer - 1 
-        WHERE layer > chosen_layer;
+        WHERE layer > chosen_layer AND layer < new_layer;
 
-        -- Set the chosen layer to highest_layer
+        -- Finally, set the chosen layer to the actual highest_layer
         UPDATE layers 
         SET layer = highest_layer 
         WHERE (bar_id = p_bar_id OR list_id = p_list_id);
     END IF;
-END;
-$$;
+END;$$;
 
 
 ALTER FUNCTION public.move_to_highest(p_bar_id integer, p_list_id integer) OWNER TO postgres;

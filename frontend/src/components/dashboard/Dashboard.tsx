@@ -390,13 +390,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchTaskLists();
     fetchBars();
   }, []);
-
+  
   const moveItemToHighestLayer = async (barId?: number, listId?: number) => {
     try {
-      console.log(`Retrieved: bar =  ${barId}; list = ${listId}`);
+      console.log(`Retrieved: bar = ${barId}; list = ${listId}`);
       const payload = barId ? { bar_id: barId } : { list_id: listId };
       await axios.post('http://localhost:8000/api/layers/move_to_highest/', payload);
-      console.log("success");
+      console.log("Success");
     } catch (error) {
       console.error('Error moving item to highest:', error);
     }
@@ -406,16 +406,38 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   
   const handleMoveToHighest = (itemId: number, itemType: 'tasklist' | 'bar') => {
     if (itemType === 'tasklist') {
-      const taskList = taskLists.find(tl => tl.list_id === itemId);
-      if (taskList) {
-        moveItemToHighestLayer(undefined, taskList.list_id);
+      const taskListIndex = taskLists.findIndex(tl => tl.list_id === itemId);
+      if (taskListIndex !== -1) {
+        // Optimistically update the zIndex of the task list
+        const updatedTaskLists = [...taskLists];
+        updatedTaskLists[taskListIndex] = {
+          ...updatedTaskLists[taskListIndex],
+          layer: {
+            ...updatedTaskLists[taskListIndex].layer,
+            layer: 6000000
+          }
+        };
+        setTaskLists(updatedTaskLists);
+  
+        moveItemToHighestLayer(undefined, taskLists[taskListIndex].list_id);
       } else {
         console.error(`Task list with ID ${itemId} not found`);
       }
     } else if (itemType === 'bar') {
-      const bar = barsData.find(bar => bar.bar_id === itemId);
-      if (bar) {
-        moveItemToHighestLayer(bar.bar_id);
+      const barIndex = barsData.findIndex(bar => bar.bar_id === itemId);
+      if (barIndex !== -1) {
+        // Optimistically update the zIndex of the bar
+        const updatedBarsData = [...barsData];
+        updatedBarsData[barIndex] = {
+          ...updatedBarsData[barIndex],
+          layer: {
+            ...updatedBarsData[barIndex].layer,
+            layer: 6000000
+          }
+        };
+        setBarsData(updatedBarsData);
+  
+        moveItemToHighestLayer(barsData[barIndex].bar_id);
       } else {
         console.error(`Bar with ID ${itemId} not found`);
       }

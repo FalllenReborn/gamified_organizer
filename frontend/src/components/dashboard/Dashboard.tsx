@@ -51,6 +51,13 @@ interface Currency {
   owned: number;
 }
 
+interface Task {
+  task_id: number;
+  task_name: string;
+  rewards: { [barId: number]: number };
+  transactions: { [currencyId: number]: number };
+}
+
 interface CreateCurrencyState {
   isOpen: boolean;
   defaultValue: string;
@@ -83,6 +90,21 @@ interface BarState {
   zIndex: number;
 }
 
+interface Transaction {
+  transaction_id: number;
+  bar: number;
+  task: number;
+  currency: number;
+  amount: number;
+}
+
+interface Reward {
+  reward_id: number;
+  bar: number;
+  task: number;
+  points: number;
+}
+
 interface DashboardProps {
   onReturnHome: () => void;
   createNewList: boolean;
@@ -111,8 +133,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
-  const [rewards, setRewards] = useState([]);
-  const [transactions, setTransactions] = useState([]);
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 0;
 
@@ -145,9 +169,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const openPopup = (windowId: number, nest_id: number | null) => {
+  const openPopup = (windowId: number, nest_id: number | null, editMode = false, task = null) => {
     setCurrentWindowId(windowId);
     setNest(nest_id);
+    setIsEditMode(editMode);
+    setTaskToEdit(task || undefined);
     setIsPopupOpen(true);
   };
 
@@ -291,13 +317,136 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   }, []);
 
   const handleConfirm = async (
+    taskId: number,
+    taskName: string,
+    newRewards: { [barId: number]: number },
+    newTransactions: { [currencyId: number]: number }
+  ) => {    
+    if (isEditMode && taskToEdit) {
+      await handleUpdate(taskId, taskName, newRewards, newTransactions);
+    } else {
+      await handleCreate(taskName, newRewards, newTransactions);
+    }
+    closePopup();
+    if (currentWindowId !== null && currentWindowId in taskUpdateCallbacks.current) {
+      taskUpdateCallbacks.current[currentWindowId]();
+    }
+    fetchRewards();
+    fetchTransactions();
+  };
+
+  const handleUpdate = async (
+    taskId: number,
+    taskName: string,
+    newRewards: { [barId: number]: number },
+    newTransactions: { [currencyId: number]: number }
+  ) => {
+    try {
+      // Step 1: Update the task
+      const taskPayload = {
+        task_name: taskName,
+        nested_id: nest, // Assuming 'nest' is defined in the scope
+      };
+  
+      console.log('Update Task Payload:', taskPayload);
+  
+      await axios.patch(`http://localhost:8000/api/tasks/${taskId}/update_task/`, taskPayload);
+      console.log('Task updated successfully');
+  
+      // Step 2: Update or delete existing rewards
+      const rewardPromises = rewards.map(async (reward) => {
+        const points = newRewards[reward.bar] || 0;
+  
+        if (reward.task === taskId) {
+          if (points > 0) {
+            // Update existing reward
+            const rewardPayload = {
+              task_id: taskId,
+              bar_id: reward.bar,
+              points,
+            };
+            console.log('Update Reward Payload:', rewardPayload);
+            return axios.patch(`http://localhost:8000/api/rewards/${reward.reward_id}/`, rewardPayload);
+          } else {
+            // Delete existing reward
+            console.log('Delete Reward:', reward.reward_id);
+            return axios.delete(`http://localhost:8000/api/rewards/${reward.reward_id}/`);
+          }
+        }
+        return null; // Ignore rewards not associated with taskId
+      });
+  
+      // Create new rewards
+      Object.entries(newRewards).forEach(([barId, points]) => {
+        if (points > 0 && !rewards.find(reward => reward.task === taskId && reward.bar === parseInt(barId, 10))) {
+          const rewardPayload = {
+            task_id: taskId,
+            bar_id: parseInt(barId, 10),
+            points,
+          };
+          console.log('Create Reward Payload:', rewardPayload);
+          rewardPromises.push(axios.post(`http://localhost:8000/api/rewards/create_reward/`, rewardPayload));
+        }
+      });
+  
+      // Step 3: Update or delete existing transactions
+      const transactionPromises = transactions.map(async (transaction) => {
+        const amount = newTransactions[transaction.currency] || 0;
+  
+        if (transaction.task === taskId) {
+          if (amount !== 0) {
+            // Update existing transaction
+            const transactionPayload = {
+              task_id: taskId,
+              currency_id: transaction.currency,
+              amount,
+            };
+            console.log('Update Transaction Payload:', transactionPayload);
+            return axios.patch(`http://localhost:8000/api/transactions/${transaction.transaction_id}/`, transactionPayload);
+          } else {
+            // Delete existing transaction
+            console.log('Delete Transaction:', transaction.transaction_id);
+            return axios.delete(`http://localhost:8000/api/transactions/${transaction.transaction_id}/`);
+          }
+        }
+        return null; // Ignore transactions not associated with taskId
+      });
+  
+      // Create new transactions
+      Object.entries(newTransactions).forEach(([currencyId, amount]) => {
+        if (amount !== 0 && !transactions.find(transaction => transaction.task === taskId && transaction.currency === parseInt(currencyId, 10))) {
+          const transactionPayload = {
+            task_id: taskId,
+            currency_id: parseInt(currencyId, 10),
+            amount,
+          };
+          console.log('Create Transaction Payload:', transactionPayload);
+          transactionPromises.push(axios.post(`http://localhost:8000/api/transactions/create_transaction/`, transactionPayload));
+        }
+      });
+  
+      // Combine reward and transaction promises
+      const allPromises = [...rewardPromises, ...transactionPromises].filter(promise => promise !== null);
+  
+      // Execute all update requests
+      await Promise.all(allPromises);
+  
+      console.log('Rewards and transactions updated successfully');
+    } catch (error) {
+      console.error('Error updating task, rewards, or transactions:', error);
+    }
+    closePopup();
+    fetchTransactions();
+    fetchRewards();
+  };
+
+  const handleCreate = async (
     taskName: string,
     rewards: { [barId: number]: number },
     transactions: { [currencyId: number]: number }
   ) => {
     try {
       if (currentWindowId === null) return;
-      console.log(`Nest: ${nest}`);
   
       // Step 1: Create the task
       const taskPayload = {
@@ -349,16 +498,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       await Promise.all(allPromises);
   
       console.log('Rewards and transactions created successfully');
-  
-      // Handle the successful task, reward, and transaction creation
-      closePopup();
-      if (currentWindowId in taskUpdateCallbacks.current) {
-        taskUpdateCallbacks.current[currentWindowId]();
-      }
-  
-      fetchRewards();
-      fetchTransactions();
-  
     } catch (error) {
       console.error('Error creating task, rewards, or transactions:', error);
     }
@@ -393,7 +532,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   
   const moveItemToHighestLayer = async (barId?: number, listId?: number) => {
     try {
-      console.log(`Retrieved: bar = ${barId}; list = ${listId}`);
       const payload = barId ? { bar_id: barId } : { list_id: listId };
       await axios.post('http://localhost:8000/api/layers/move_to_highest/', payload);
       console.log("Success");
@@ -770,8 +908,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <CreateTaskPopup
             onClose={closePopup}
             onConfirm={handleConfirm}
+            onUpdate={handleUpdate}
+            transactionsProp={transactions}
+            rewardsProp={rewards}
             bars={barsData}
             currencies={currencies}
+            isEditMode={isEditMode}
+            taskToEdit={taskToEdit}
           />
         )}
         {isCreateBarPopupOpen && (

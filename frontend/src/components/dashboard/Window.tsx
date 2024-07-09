@@ -24,7 +24,7 @@ interface WindowProps {
   currencies: any[];
   detailView: boolean;
   onResize: (id: number, width: number, height: number, type: string) => void;
-  openPopup: (windowId: number, nest_id: number | null) => void;
+  openPopup: (windowId: number, nest_id: number | null, editMode: any, task: any) => void;
   onPositionUpdate: (id: number, x: number, y: number) => void;
   onSizeUpdate: (id: number, width: number, height: number) => void;
   registerTaskUpdateCallback: (id: number, callback: () => void) => void;
@@ -72,6 +72,7 @@ const Window: React.FC<WindowProps> = ({
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDetailView, setIsDetailView] = useState(detailView);
+  const [hoveredTask, setHoveredTask] = useState<number | null>(null);
   const windowRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
@@ -293,6 +294,13 @@ const Window: React.FC<WindowProps> = ({
     return currency ? currency.currency_name : 'Currency';
   };
 
+  const handleEditTask = (taskId: number) => {
+    const task = tasks.find(t => t.task_id === taskId);
+    if (task) {
+      openPopup(id, task.nested_id, true, task); // Assuming openPopup can accept parameters to set edit mode and task to edit
+    }
+  };
+
   const renderNestedTasks = (outerTaskId: number) => {
     return tasks
       .filter((task) => task.nested_id === outerTaskId)
@@ -301,7 +309,11 @@ const Window: React.FC<WindowProps> = ({
         <div key={task.task_id} className={styles.taskContainer}>
           <div className={styles.taskRow}>
             <div className={styles.taskNestedCell}>
-              <div className={styles.classicView} style={{ width: isDetailView ? '40%' : '100%' }}>
+              <div className={styles.classicView} 
+                style={{ width: isDetailView ? '40%' : '100%' }}
+                onMouseEnter={() => setHoveredTask(task.task_id)} 
+                onMouseLeave={() => setHoveredTask(null)}
+              >
                 <div className={styles.checkbox}>
                   <input
                       type="checkbox"
@@ -313,6 +325,9 @@ const Window: React.FC<WindowProps> = ({
                   {task.expanded ? '▲' : '▼'}
                 </button>
                 <div className={styles.taskText}>{task.task_name}</div>
+                {hoveredTask === task.task_id && (
+                  <button className={styles.editButton} onClick={() => handleEditTask(task.task_id)}>Edit</button>
+                )}
               </div>
               {isDetailView && (
                 <div className={styles.detailView}>
@@ -342,7 +357,7 @@ const Window: React.FC<WindowProps> = ({
           {task.expanded && (
             <div className={styles.nestedTasks}>
               {renderNestedTasks(task.task_id)}
-              <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id)}>+ Create new task</button>
+              <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id, false, null)}>+ Create new task</button>
             </div>
           )}
         </div>
@@ -386,7 +401,7 @@ const Window: React.FC<WindowProps> = ({
                 draggable={false}
                 className={styles.arrow} 
               >
-                {isDetailView ? '«' : '»'}
+                {isDetailView ? '»' : '«'}
               </div>
             </div>
             <div className={styles.bottomBar}>
@@ -411,7 +426,7 @@ const Window: React.FC<WindowProps> = ({
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    openPopup(id, null)
+                    openPopup(id, null, false, null)
                   }}
                   draggable={false}
                   className={styles.addButton}
@@ -437,7 +452,11 @@ const Window: React.FC<WindowProps> = ({
             <div key={task.task_id} className={styles.taskContainer}>
               <div className={styles.taskRow}>
                 <div className={styles.taskCell}>
-                  <div className={styles.classicView} style={{ width: isDetailView ? '40%' : '100%' }}>
+                  <div className={styles.classicView} 
+                  style={{ width: isDetailView ? '40%' : '100%' }}
+                  onMouseEnter={() => setHoveredTask(task.task_id)} 
+                  onMouseLeave={() => setHoveredTask(null)}
+                  >
                     <div className={styles.checkbox}>
                       <input
                         type="checkbox"
@@ -449,6 +468,9 @@ const Window: React.FC<WindowProps> = ({
                       {task.expanded ? '▲' : '▼'}
                     </button>
                     <div className={styles.taskText}>{task.task_name}</div>
+                    {hoveredTask === task.task_id && (
+                      <button className={styles.editButton} onClick={() => handleEditTask(task.task_id)}>Edit</button>
+                    )}
                   </div>
                   {isDetailView && (
                     <div className={styles.detailView}>
@@ -478,7 +500,7 @@ const Window: React.FC<WindowProps> = ({
               {task.expanded && (
                 <div className={styles.nestedTasks}>
                   {renderNestedTasks(task.task_id)}
-                  <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id)}>+ Create new task</button>
+                  <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id, false, null)}>+ Create new task</button>
                 </div>
               )}
             </div>

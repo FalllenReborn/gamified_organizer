@@ -157,6 +157,29 @@
 .classicView {
     display: flex;
     align-items: center;
+    position: relative;
+    transition: background-color 0.3s;
+}
+
+.classicView:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* Adjust the dimming effect */
+}
+
+.editButton {
+    display: none;
+    position: absolute;
+    right: 3px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    z-index: 1;
+}
+
+.classicView:hover .editButton {
+    display: block;
 }
   
 .taskRow {

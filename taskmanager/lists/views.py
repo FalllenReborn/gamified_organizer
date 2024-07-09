@@ -226,6 +226,29 @@ class RewardViewSet(viewsets.ModelViewSet):
             return JsonResponse({'error': str(e)}, status=500)
 
     @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['patch'], url_path='')
+    def update_reward(self, request, pk=None):
+        try:
+            reward = self.get_object()
+            serializer = RewardSerializer(reward, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data, status=200)
+            return JsonResponse(serializer.errors, status=400)
+        except Reward.DoesNotExist:
+            return JsonResponse({'error': 'Reward not found'}, status=404)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['delete'], url_path='')
+    def delete_reward(self, request, pk=None):
+        try:
+            reward = self.get_object()
+            reward.delete()
+            return JsonResponse({'message': 'Reward deleted'}, status=204)
+        except Reward.DoesNotExist:
+            return JsonResponse({'error': 'Reward not found'}, status=404)
+
+    @method_decorator(csrf_exempt)
     @action(detail=False, methods=['get'], url_path='by_task')
     def get_rewards_by_task(self, request):
         task_id = request.query_params.get('task_id')
@@ -303,3 +326,26 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['patch'], url_path='')
+    def update_transaction(self, request, pk=None):
+        try:
+            transaction = self.get_object()
+            serializer = TransactionSerializer(transaction, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data, status=200)
+            return JsonResponse(serializer.errors, status=400)
+        except Transaction.DoesNotExist:
+            return JsonResponse({'error': 'Transaction not found'}, status=404)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['delete'], url_path='')
+    def delete_transaction(self, request, pk=None):
+        try:
+            transaction = self.get_object()
+            transaction.delete()
+            return JsonResponse({'message': 'Transaction deleted'}, status=204)
+        except Transaction.DoesNotExist:
+            return JsonResponse({'error': 'Transaction not found'}, status=404)

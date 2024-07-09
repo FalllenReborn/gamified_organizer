@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './createTaskPopup.module.css';
 
 interface Layer {
@@ -6,7 +6,7 @@ interface Layer {
   layer: number;
 }
 
-interface bar {
+interface Bar {
   bar_id: number;
   bar_name: string;
   xp_name: string;
@@ -19,26 +19,94 @@ interface bar {
   total_points: number;
 }
 
-interface currency {
+interface Currency {
   currency_id: number;
   currency_name: string;
   owned: number;
 }
 
+interface Task {
+  task_id: number;
+  task_name: string;
+  rewards: { [barId: number]: number };
+  transactions: { [currencyId: number]: number };
+}
+
+interface Transaction {
+  transaction_id: number;
+  bar: number;
+  task: number;
+  currency: number;
+  amount: number;
+}
+
+interface Reward {
+  reward_id: number;
+  bar: number;
+  task: number;
+  points: number;
+}
+
 interface CreateTaskPopupProps {
   onClose: () => void;
   onConfirm: (
-    taskName: string, 
-    rewards: { [barId: number]: number }, 
-    transactions: { [currencyId: number]: number }) => void;
-  bars: bar[];
-  currencies: currency[];
+    taskId: number,
+    taskName: string,
+    rewards: { [barId: number]: number },
+    transactions: { [currencyId: number]: number }
+  ) => void;
+  onUpdate: (
+    taskId: number,
+    taskName: string,
+    rewards: { [barId: number]: number },
+    transactions: { [currencyId: number]: number }
+  ) => void;
+  bars: Bar[];
+  currencies: Currency[];
+  isEditMode: boolean;
+  taskToEdit?: Task;
+  transactionsProp: Transaction[];
+  rewardsProp: Reward[];
 }
 
-const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, bars, currencies }) => {
+const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
+  onClose,
+  onConfirm,
+  onUpdate,
+  bars,
+  transactionsProp,
+  rewardsProp,
+  currencies,
+  isEditMode,
+  taskToEdit,
+}) => {
   const [taskName, setTaskName] = useState('');
   const [rewards, setRewards] = useState<{ [barId: number]: number }>({});
   const [transactions, setTransactions] = useState<{ [currencyId: number]: number }>({});
+
+  useEffect(() => {
+    if (isEditMode && taskToEdit) {
+      setTaskName(taskToEdit.task_name);
+    
+      // Initialize rewards state
+      const initialRewards: { [barId: number]: number } = {};
+      rewardsProp.forEach((reward) => {
+        if (reward.task === taskToEdit.task_id) {
+          initialRewards[reward.bar] = reward.points;
+        }
+      });
+      setRewards(initialRewards);
+
+      // Initialize transactions state
+      const initialTransactions: { [currencyId: number]: number } = {};
+      transactionsProp.forEach((transaction) => {
+        if (transaction.task === taskToEdit.task_id) {
+          initialTransactions[transaction.currency] = transaction.amount;
+        }
+      });
+      setTransactions(initialTransactions);
+    }
+  }, [isEditMode, taskToEdit, rewardsProp, transactionsProp]);
 
   const handleRewardChange = (barId: number, value: string) => {
     setRewards((prevRewards) => ({
@@ -48,7 +116,6 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, b
   };
 
   const handleTransactionChange = (currencyId: number, value: string) => {
-    // Validate number with up to 2 decimal places
     const regex = /^\d*\.?\d{0,2}$/;
     if (regex.test(value) || value === '') {
       setTransactions((prevTransactions) => ({
@@ -59,14 +126,18 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({ onClose, onConfirm, b
   };
 
   const handleConfirm = () => {
-    onConfirm(taskName, rewards, transactions);
+    if (isEditMode && taskToEdit) {
+      onConfirm(taskToEdit.task_id, taskName, rewards, transactions);
+    } else {
+      onConfirm(0, taskName, rewards, transactions);
+    }
   };
 
   return (
     <div className={styles.popupOverlay}>
       <div className={styles.popup}>
         <div className={styles.header}>
-          <h2>Create New Task</h2>
+          <h2>{isEditMode ? 'Edit Task' : 'Create New Task'}</h2>
         </div>
         <form className={styles.form}>
           <label className={styles.label} htmlFor="taskName">Task Name</label>

@@ -642,7 +642,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       }));
       setBars(newBars);
     }
-  }, [taskLists]);
+  }, [taskLists, barsData]);
 
   const handleSaveRename = async (id: number, newName: string, endpoint: string) => {
 
@@ -736,6 +736,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     barName: string,
     xpName: string,
     fullCycle: number,
+    sizeVertical: number,
+    sizeHorizontal: number,
+    xAxis: number,
+    yAxis: number,
     transactions: { [currencyId: number]: number }
   ) => {
     try {
@@ -743,22 +747,25 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         bar_name: barName,
         xp_name: xpName,
         full_cycle: fullCycle,
+        size_vertical: sizeVertical,
+        size_horizontal: sizeHorizontal,
+        x_axis: xAxis,
+        y_axis: yAxis,
       };
 
-      // Make a POST request to the API endpoint
+      // Make a POST request to create a new bar
       const response = await axios.post('http://localhost:8000/api/bars/create_bar/', requestBody);
-
-      // Assuming the response indicates success or contains new data, handle accordingly
       console.log('Successfully created bar:', response.data);
 
       const barId = response.data.bar_id;
 
+      // Process transactions associated with the new bar
       const transactionPromises = Object.entries(transactions).map(([currencyId, amount]) => {
         if (amount !== 0) {
           const transactionPayload = {
             bar_id: barId,
             currency_id: parseInt(currencyId, 10),
-            amount
+            amount,
           };
           console.log('Transaction Payload:', transactionPayload);
           return axios.post('http://localhost:8000/api/transactions/create_transaction/', transactionPayload);
@@ -768,6 +775,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
       await Promise.all(transactionPromises);
 
+      // Refresh data after successful creation
       fetchBars();
       fetchTransactions();
 
@@ -779,11 +787,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleEditBar = async (id: number) => {
-    const barToUpdate = barsData.find(w => w.bar_id === id);
+    const barToUpdate = barsData.find(bar => bar.bar_id === id);
     if (barToUpdate) {
       // Find transactions for the specific bar from the fetched transactions
       const transactionsForBar = transactions.filter(transaction => transaction.bar === id);
-  
+
       setIsCreateBarPopupOpen(true);
       setIsEditMode(true);
       setBarToEdit({
@@ -791,7 +799,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         transactions: transactionsForBar.reduce((acc, transaction) => {
           acc[transaction.currency] = transaction.amount;
           return acc;
-        }, {} as { [currencyId: number]: number })
+        }, {} as { [currencyId: number]: number }),
       });
     } else {
       console.error(`Bar with id ${id} not found.`);
@@ -803,6 +811,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     barName: string,
     xpName: string,
     fullCycle: number,
+    sizeVertical: number,
+    sizeHorizontal: number,
+    xAxis: number,
+    yAxis: number,
     newTransactions: { [currencyId: number]: number }
   ) => {
     try {
@@ -811,16 +823,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         bar_name: barName,
         xp_name: xpName,
         full_cycle: fullCycle,
+        size_vertical: sizeVertical,
+        size_horizontal: sizeHorizontal,
+        x_axis: xAxis,
+        y_axis: yAxis,
       };
-  
+
       // Step 1: Update the bar
       await axios.put(`http://localhost:8000/api/bars/${barId}/update_bar/`, requestBody);
       console.log('Bar updated successfully');
-  
+
       // Step 2: Update or delete existing transactions
       const transactionPromises = transactions.map(async (transaction) => {
         const amount = newTransactions[transaction.currency] || 0;
-  
+
         if (transaction.bar === barId) {
           if (amount !== 0) {
             // Update existing transaction
@@ -839,7 +855,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         }
         return null; // Ignore transactions not associated with barId
       });
-  
+
       // Create new transactions
       Object.entries(newTransactions).forEach(([currencyId, amount]) => {
         if (amount !== 0 && !transactions.find(transaction => transaction.bar === barId && transaction.currency === parseInt(currencyId, 10))) {
@@ -852,20 +868,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           transactionPromises.push(axios.post(`http://localhost:8000/api/transactions/create_transaction/`, transactionPayload));
         }
       });
-  
+
       // Execute all transaction promises
       await Promise.all(transactionPromises);
       console.log('Transactions updated successfully');
-  
+
       // Step 3: Refresh data
       fetchBars();
       fetchTransactions();
-  
+
       setIsCreateBarPopupOpen(false); // Close the popup after updating the bar
     } catch (error) {
       console.error('Error updating bar or transactions:', error);
       // Handle error, such as displaying an error message to the user
     }
+    fetchBars();
   };
 
   const backgroundSize = 50 * scale;

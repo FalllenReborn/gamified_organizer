@@ -84,6 +84,12 @@ const Bar: React.FC<BarProps> = ({
         sizeRef.current = size;
     }, [position, size]);
 
+    // Listen to changes in initialX, initialY, initialWidth, initialHeight and update state accordingly
+    useEffect(() => {
+        setPosition({ x: initialX, y: initialY });
+        setSize({ width: initialWidth, height: initialHeight });
+    }, [initialX, initialY, initialWidth, initialHeight]);
+
     useEffect(() => {  // works only when clicking on dashboard
         const handleClickOutside = (event: MouseEvent) => {
             if (

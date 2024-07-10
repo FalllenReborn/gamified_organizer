@@ -13,21 +13,33 @@ interface Bar {
   xp_name: string;
   full_cycle: number;
   transactions: { [currencyId: number]: number };
+  size_vertical: number;
+  size_horizontal: number;
+  x_axis: number;
+  y_axis: number;
 }
 
 interface CreateBarPopupProps {
   onClose: () => void;
   onConfirm: (
-    barName: string, 
-    xpName: string, 
-    fullCycle: number, 
+    barName: string,
+    xpName: string,
+    fullCycle: number,
+    sizeVertical: number,
+    sizeHorizontal: number,
+    xAxis: number,
+    yAxis: number,
     transactions: { [currencyId: number]: number },
   ) => Promise<void>;
   onUpdate: (
     barId: number,
-    barName: string, 
-    xpName: string, 
-    fullCycle: number, 
+    barName: string,
+    xpName: string,
+    fullCycle: number,
+    sizeVertical: number,
+    sizeHorizontal: number,
+    xAxis: number,
+    yAxis: number,
     transactions: { [currencyId: number]: number },
   ) => Promise<void>;
   currencies: Currency[];
@@ -35,8 +47,8 @@ interface CreateBarPopupProps {
   barToEdit?: Bar | null;
 }
 
-const CreateBarPopup: React.FC<CreateBarPopupProps> = ({ 
-  onClose, 
+const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
+  onClose,
   onConfirm,
   onUpdate,
   currencies,
@@ -47,6 +59,10 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
   const [xpName, setXpName] = useState<string>('');
   const [fullCycle, setFullCycle] = useState<string>('');
   const [transactions, setTransactions] = useState<{ [currencyId: number]: number }>({});
+  const [sizeVertical, setSizeVertical] = useState<number>(125);
+  const [sizeHorizontal, setSizeHorizontal] = useState<number>(300);
+  const [xAxis, setXAxis] = useState<number>(0);
+  const [yAxis, setYAxis] = useState<number>(0);
 
   useEffect(() => {
     if (isEditMode && barToEdit) {
@@ -54,6 +70,10 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
       setXpName(barToEdit.xp_name);
       setFullCycle(barToEdit.full_cycle.toString());
       setTransactions(barToEdit.transactions);
+      setSizeVertical(barToEdit.size_vertical);
+      setSizeHorizontal(barToEdit.size_horizontal);
+      setXAxis(barToEdit.x_axis);
+      setYAxis(barToEdit.y_axis);
     }
   }, [isEditMode, barToEdit]);
 
@@ -70,7 +90,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (parseInt(fullCycle) <= 0) {
-      alert("Full cycle must be a positive number");
+      alert('Full cycle must be a positive number');
       return;
     }
     try {
@@ -80,6 +100,10 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
           barName,
           xpName,
           parseInt(fullCycle),
+          sizeVertical,
+          sizeHorizontal,
+          xAxis,
+          yAxis,
           transactions
         );
       } else {
@@ -87,6 +111,10 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
           barName,
           xpName,
           parseInt(fullCycle),
+          sizeVertical,
+          sizeHorizontal,
+          xAxis,
+          yAxis,
           transactions
         );
       }
@@ -101,10 +129,31 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
     setXpName('');
     setFullCycle('');
     setTransactions({});
+    setSizeVertical(125);
+    setSizeHorizontal(300);
+    setXAxis(0);
+    setYAxis(0);
   };
 
-  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
     setter(e.target.value);
+  };
+
+  const handleSizeChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    const value = parseFloat(e.target.value);
+    if (!isNaN(value) && value >= 50) {
+      setter(value);
+    }
+  };
+
+  const handleAxisChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (
+    e: ChangeEvent<HTMLInputElement>
+  ) => {
+    setter(parseInt(e.target.value, 10));
   };
 
   return (
@@ -112,12 +161,8 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
       <div className={styles.popup}>
         <div className={styles.header}>
           <h2>{isEditMode ? 'Edit Bar' : 'Create Bar'}</h2>
-        </div>
-        <div className={styles.columns}>
-          <div className={styles.columnBar}>
-            <h3>Properties</h3>
-            <form className={styles.form} onSubmit={handleSubmit}>
-              <label className={styles.label}>
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <label className={styles.label}>
               Bar Name:
               <input
                 className={styles.input}
@@ -126,8 +171,8 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                 onChange={handleInputChange(setBarName)}
                 required
               />
-              </label>
-              <label className={styles.label}>
+            </label>
+            <label className={styles.label}>
               XP Name:
               <input
                 className={styles.input}
@@ -136,8 +181,8 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                 onChange={handleInputChange(setXpName)}
                 required
               />
-              </label>
-              <label className={styles.label}>
+            </label>
+            <label className={styles.label}>
               Full Cycle:
               <input
                 className={styles.input}
@@ -147,6 +192,54 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                 required
                 min="1"
               />
+            </label>
+          </form>
+        </div>
+        <div className={styles.columns}>
+          <div className={styles.columnBar}>
+            <h3>Properties</h3>
+            <form className={styles.form}>
+              <label className={styles.label}>
+                Size Vertical:
+                <input
+                  className={styles.input}
+                  type="number"
+                  value={sizeVertical}
+                  onChange={handleSizeChange(setSizeVertical)}
+                  required
+                  min="50"
+                />
+              </label>
+              <label className={styles.label}>
+                Size Horizontal:
+                <input
+                  className={styles.input}
+                  type="number"
+                  value={sizeHorizontal}
+                  onChange={handleSizeChange(setSizeHorizontal)}
+                  required
+                  min="50"
+                />
+              </label>
+              <label className={styles.label}>
+                X Axis:
+                <input
+                  className={styles.input}
+                  type="number"
+                  value={xAxis}
+                  onChange={handleAxisChange(setXAxis)}
+                  required
+                />
+              </label>
+              <label className={styles.label}>
+                Y Axis:
+                <input
+                  className={styles.input}
+                  type="number"
+                  value={yAxis}
+                  onChange={handleAxisChange(setYAxis)}
+                  required
+                />
               </label>
             </form>
           </div>
@@ -168,10 +261,12 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
           </div>
         </div>
         <div className={styles.footer}>
-            <button className={styles.cancelButton} type="button" onClick={onClose}>Cancel</button>
-            <button className={styles.confirmButton} type="submit" onClick={handleSubmit}>
-              {isEditMode ? 'Update Bar' : 'Create Bar'}
-            </button>
+          <button className={styles.cancelButton} type="button" onClick={onClose}>
+            Cancel
+          </button>
+          <button className={styles.confirmButton} type="submit" onClick={handleSubmit}>
+            {isEditMode ? 'Update Bar' : 'Create Bar'}
+          </button>
         </div>
       </div>
     </div>

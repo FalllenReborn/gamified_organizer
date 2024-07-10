@@ -41,6 +41,10 @@ class TaskListViewSet(viewsets.ModelViewSet):
     queryset = TaskList.objects.all()
     serializer_class = TaskListSerializer
 
+    def create(self, request, *args, **kwargs):
+        print(request.data)  # Log the incoming data
+        return super().create(request, *args, **kwargs)
+
     def get_queryset(self):
         return TaskList.objects.all().select_related('layer')
 

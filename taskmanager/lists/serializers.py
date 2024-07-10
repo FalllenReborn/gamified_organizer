@@ -9,7 +9,7 @@ class LayerSerializer(serializers.ModelSerializer):
 
 
 class TaskListSerializer(serializers.ModelSerializer):
-    layer = LayerSerializer()
+    layer = LayerSerializer(required=False)
 
     class Meta:
         model = TaskList

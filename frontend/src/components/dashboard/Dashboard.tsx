@@ -7,7 +7,7 @@ import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
 import Bar from './Bar';
 import Currencies from './Currencies';
-import RenamePopup from '../popups/RenamePopup';
+import CreateListPopup from '../popups/CreateListPopup';
 import CreateTaskPopup from '../popups/CreateTaskPopup';
 import CreateBarPopup from '../popups/CreateBarPopup';
 import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
@@ -63,11 +63,14 @@ interface CreateCurrencyState {
   defaultValue: string;
 }
 
-interface RenamePopupState {
+interface CreateListPopupState {
   isOpen: boolean;
   id: number | null;
-  endpoint: string;
   defaultValue: string;
+  defaultX: number;
+  defaultY: number;
+  defaultWidth: number;
+  defaultHeight: number;
 }
 
 interface WindowState {
@@ -129,7 +132,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [bars, setBars] = useState<BarState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '' });
-  const [renamePopup, setRenamePopup] = useState<RenamePopupState>({ isOpen: false, id: null, endpoint: '', defaultValue: '' });
+  const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 });
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -605,15 +608,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleRenameList = (id: number) => {
-    const windowToUpdate = windows.find(w => w.id === id);
-    if (windowToUpdate) {
-      setRenamePopup({ isOpen: true, id, endpoint: 'tasklists', defaultValue: windowToUpdate.title });
-    } else {
-      console.error(`List with id ${id} not found.`);
-    }
-  };
-
   useEffect(() => {
     if (taskLists.length > 0) {
       const newWindows = taskLists.map((taskList) => ({
@@ -642,26 +636,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       }));
       setBars(newBars);
     }
-  }, [taskLists, barsData]);
-
-  const handleSaveRename = async (id: number, newName: string, endpoint: string) => {
-
-    if (endpoint === 'taskList') {
-      try {
-        await axios.put(`http://localhost:8000/api/${endpoint}/${id}/update_name/`, { list_name: newName });
-        await fetchTaskLists();
-      } catch (error) {
-        console.error('Error renaming task list or fetching updated task lists:', error);
-      }
-    } else if (endpoint === 'bars') {
-      try {
-        await axios.put(`http://localhost:8000/api/${endpoint}/${id}/update_name/`, { bar_name: newName });
-        await fetchBars();
-      } catch (error) {
-        console.error('Error renaming bar or fetching updated bar:', error);
-      }
-    }
-  };
+  }, [taskLists]);
 
   const handleCreateCurrency = async () => {
     setCreateCurrencyPopup({ isOpen: true, defaultValue: 'New Currency' });
@@ -675,19 +650,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         console.error('Error renaming task list or fetching updated task lists:', error);
       }
 
-  };
-
-  const handleCreateNewList = async () => {
-    try {
-      const response = await axios.post('http://localhost:8000/api/tasklists/', {});
-      const newList: TaskList = response.data;
-
-      setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
-
-      setRenamePopup({ isOpen: true, id: newList.list_id, endpoint: 'tasklists', defaultValue: newList.list_name || 'New List' });
-    } catch (error) {
-      console.error('Error creating new task list:', error);
-    }
   };
 
   const handleDragWindow = (id: number, x: number, y: number, type: string) => {
@@ -882,7 +844,66 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error updating bar or transactions:', error);
       // Handle error, such as displaying an error message to the user
     }
-    fetchBars();
+  };
+
+  const handleCreateNewList = async () => {
+    setCreateListPopup({
+      isOpen: true,
+      id: null,
+      defaultValue: '',
+      defaultX: 0,
+      defaultY: 0,
+      defaultWidth: 300,
+      defaultHeight: 200,
+    });
+  };
+
+  const handleEditList = (id: number, defaultValue: string, x: number, y: number, width: number, height: number) => {
+    setCreateListPopup({
+      isOpen: true,
+      id,
+      defaultValue,
+      defaultX: x,
+      defaultY: y,
+      defaultWidth: width,
+      defaultHeight: height,
+    });
+  };
+
+  const handleSaveList = async (id: number | null, newName: string, x: number, y: number, width: number, height: number) => {
+    try {
+      if (id === null) {
+        // Create new list
+        const response = await axios.post('http://localhost:8000/api/tasklists/', {
+          list_name: newName,
+          x_axis: x,
+          y_axis: y,
+          size_horizontal: width,
+          size_vertical: height,
+        });
+        const newList: TaskList = response.data;
+        setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
+      } else {
+        // Update existing list
+        await axios.patch(`http://localhost:8000/api/tasklists/${id}/`, {
+          list_name: newName,
+          x_axis: x,
+          y_axis: y,
+          size_horizontal: width,
+          size_vertical: height,
+        });
+        setTaskLists((prevTaskLists) =>
+          prevTaskLists.map((list) =>
+            list.list_id === id
+              ? { ...list, list_name: newName, x_axis: x, y_axis: y, size_horizontal: width, size_vertical: height }
+              : list
+          )
+        );
+      }
+      setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 });
+    } catch (error) {
+      console.error('Error saving list:', error);
+    }
   };
 
   const backgroundSize = 50 * scale;
@@ -942,7 +963,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             currencies={currencies}
             detailView={taskList.detail_view}
             onClose={handleCloseWindow} 
-            onRename={handleRenameList}
+            onRename={(id) => handleEditList(id, taskList.list_name, taskList.x_axis, taskList.y_axis, taskList.size_horizontal, taskList.size_vertical)}
             onClick={() => handleMoveToHighest(taskList.list_id, 'tasklist')}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
@@ -991,14 +1012,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onQuit={() => setCreateCurrencyPopup({ isOpen: false, defaultValue: '' })}
           />
         )}
-        {renamePopup.isOpen && (
-          <RenamePopup
-            isOpen={renamePopup.isOpen}
-            id={renamePopup.id}
-            endpoint={renamePopup.endpoint}
-            defaultValue={renamePopup.defaultValue}
-            onSave={handleSaveRename}
-            onClose={() => setRenamePopup({ isOpen: false, id: null, endpoint: '', defaultValue: '' })}
+        {createListPopup.isOpen && (
+          <CreateListPopup
+            isOpen={createListPopup.isOpen}
+            id={createListPopup.id}
+            defaultValue={createListPopup.defaultValue}
+            defaultX={createListPopup.defaultX}
+            defaultY={createListPopup.defaultY}
+            defaultWidth={createListPopup.defaultWidth}
+            defaultHeight={createListPopup.defaultHeight}
+            onSave={handleSaveList}
+            onClose={() => setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 })}
           />
         )}
         {isPopupOpen && (

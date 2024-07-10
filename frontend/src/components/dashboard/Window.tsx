@@ -297,7 +297,7 @@ const Window: React.FC<WindowProps> = ({
   const handleEditTask = (taskId: number) => {
     const task = tasks.find(t => t.task_id === taskId);
     if (task) {
-      openPopup(id, task.nested_id, true, task); // Assuming openPopup can accept parameters to set edit mode and task to edit
+      openPopup(id, task.nested_id, true, task);
     }
   };
 

@@ -9,7 +9,7 @@ interface BarProps {
     full_cycle: number;
     xp_name: string;
     onClose: (id: number) => void;
-    onRename: (id: number) => void;
+    onEdit: (id: number) => void;
     onDrag: (id: number, x: number, y: number, type: string) => void;
     translate: { x: number; y: number };
     scale: number;
@@ -42,7 +42,7 @@ const Bar: React.FC<BarProps> = ({
     transactions,
     currencies,
     onClose,
-    onRename,
+    onEdit,
     onClick,
     onDrag,
     onResize,
@@ -214,8 +214,8 @@ const Bar: React.FC<BarProps> = ({
         setDropdownOpen(false);
     };
 
-    const handleRename = () => {
-        onRename(id);
+    const handleEdit = () => {
+        onEdit(id);
         setDropdownOpen(false);
     };
 
@@ -269,7 +269,7 @@ const Bar: React.FC<BarProps> = ({
                         {dropdownOpen && (
                             <div className={styles.dropdownContent}>
                                 <button onClick={handleDelete}>Delete</button>
-                                <button onClick={handleRename}>Rename</button>
+                                <button onClick={handleEdit}>Edit</button>
                             </div>
                         )}
                     </div>

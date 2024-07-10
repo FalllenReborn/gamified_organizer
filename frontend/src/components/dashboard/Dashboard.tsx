@@ -80,6 +80,10 @@ interface WindowState {
   zIndex: number;
 }
 
+interface Bar extends BarData {
+  transactions: { [currencyId: number]: number };
+}
+
 interface BarState {
   id: number;
   title: string;
@@ -137,9 +141,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined);
+  const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
+  const [barToEdit, setBarToEdit] = useState<Bar | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 0;
-
   const taskUpdateCallbacks = useRef<{ [key: number]: () => void }>({});
 
   const registerTaskUpdateCallback = (id: number, callback: () => void) => {
@@ -609,15 +614,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleRenameBar = (id: number) => {
-    const barToUpdate = bars.find(w => w.id === id);
-    if (barToUpdate) {
-      setRenamePopup({ isOpen: true, id, endpoint: 'bars', defaultValue: barToUpdate.title });
-    } else {
-      console.error(`Bar with id ${id} not found.`);
-    }
-  };
-
   useEffect(() => {
     if (taskLists.length > 0) {
       const newWindows = taskLists.map((taskList) => ({
@@ -732,15 +728,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
   const handleCreateNewBar = () => {
     setIsCreateBarPopupOpen(true);
+    setIsEditMode(false);
+    setBarToEdit(null);
   };
 
   const handleConfirmNewBar = async (
-    barName: string, 
-    xpName: string, 
-    fullCycle: number, 
-    partialCycle1: number | null, 
-    partialCycle2: number | null, 
-    partialCycle3: number | null,
+    barName: string,
+    xpName: string,
+    fullCycle: number,
     transactions: { [currencyId: number]: number }
   ) => {
     try {
@@ -748,14 +743,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         bar_name: barName,
         xp_name: xpName,
         full_cycle: fullCycle,
-        partial_cycle1: partialCycle1,
-        partial_cycle2: partialCycle2,
-        partial_cycle3: partialCycle3,
       };
-  
+
       // Make a POST request to the API endpoint
       const response = await axios.post('http://localhost:8000/api/bars/create_bar/', requestBody);
-  
+
       // Assuming the response indicates success or contains new data, handle accordingly
       console.log('Successfully created bar:', response.data);
 
@@ -778,7 +770,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
       fetchBars();
       fetchTransactions();
-  
+
       setIsCreateBarPopupOpen(false); // Close the popup after creating the new bar
     } catch (error) {
       console.error('Error creating new bar:', error);
@@ -786,7 +778,95 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
+  const handleEditBar = async (id: number) => {
+    const barToUpdate = barsData.find(w => w.bar_id === id);
+    if (barToUpdate) {
+      // Find transactions for the specific bar from the fetched transactions
+      const transactionsForBar = transactions.filter(transaction => transaction.bar === id);
+  
+      setIsCreateBarPopupOpen(true);
+      setIsEditMode(true);
+      setBarToEdit({
+        ...barToUpdate,
+        transactions: transactionsForBar.reduce((acc, transaction) => {
+          acc[transaction.currency] = transaction.amount;
+          return acc;
+        }, {} as { [currencyId: number]: number })
+      });
+    } else {
+      console.error(`Bar with id ${id} not found.`);
+    }
+  };
+
+  const handleUpdateBar = async (
+    barId: number,
+    barName: string,
+    xpName: string,
+    fullCycle: number,
+    newTransactions: { [currencyId: number]: number }
+  ) => {
+    try {
+      const requestBody = {
+        bar_id: barId,
+        bar_name: barName,
+        xp_name: xpName,
+        full_cycle: fullCycle,
+      };
+  
+      // Step 1: Update the bar
+      await axios.put(`http://localhost:8000/api/bars/${barId}/update_bar/`, requestBody);
+      console.log('Bar updated successfully');
+  
+      // Step 2: Update or delete existing transactions
+      const transactionPromises = transactions.map(async (transaction) => {
+        const amount = newTransactions[transaction.currency] || 0;
+  
+        if (transaction.bar === barId) {
+          if (amount !== 0) {
+            // Update existing transaction
+            const transactionPayload = {
+              bar_id: barId,
+              currency_id: transaction.currency,
+              amount,
+            };
+            console.log('Update Transaction Payload:', transactionPayload);
+            return axios.patch(`http://localhost:8000/api/transactions/${transaction.transaction_id}/`, transactionPayload);
+          } else {
+            // Delete existing transaction
+            console.log('Delete Transaction:', transaction.transaction_id);
+            return axios.delete(`http://localhost:8000/api/transactions/${transaction.transaction_id}/`);
+          }
+        }
+        return null; // Ignore transactions not associated with barId
+      });
+  
+      // Create new transactions
+      Object.entries(newTransactions).forEach(([currencyId, amount]) => {
+        if (amount !== 0 && !transactions.find(transaction => transaction.bar === barId && transaction.currency === parseInt(currencyId, 10))) {
+          const transactionPayload = {
+            bar_id: barId,
+            currency_id: parseInt(currencyId, 10),
+            amount,
+          };
+          console.log('Create Transaction Payload:', transactionPayload);
+          transactionPromises.push(axios.post(`http://localhost:8000/api/transactions/create_transaction/`, transactionPayload));
+        }
+      });
+  
+      // Execute all transaction promises
+      await Promise.all(transactionPromises);
+      console.log('Transactions updated successfully');
+  
+      // Step 3: Refresh data
+      fetchBars();
+      fetchTransactions();
+  
+      setIsCreateBarPopupOpen(false); // Close the popup after updating the bar
+    } catch (error) {
+      console.error('Error updating bar or transactions:', error);
+      // Handle error, such as displaying an error message to the user
+    }
+  };
 
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
@@ -874,7 +954,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               transactions={transactions}
               zIndex={bar.layer.layer}
               onClose={handleCloseBar}
-              onRename={handleRenameBar}
+              onEdit={handleEditBar}
               onClick={() => handleMoveToHighest(bar.bar_id, 'bar')}
               onDrag={handleDragWindow}
               onResize={handleResizeWindow}
@@ -921,7 +1001,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <CreateBarPopup
             onClose={() => setIsCreateBarPopupOpen(false)}
             onConfirm={handleConfirmNewBar}
+            onUpdate={handleUpdateBar}
             currencies={currencies}
+            isEditMode={isEditMode}
+            barToEdit={barToEdit}
           />
         )}
       </div>

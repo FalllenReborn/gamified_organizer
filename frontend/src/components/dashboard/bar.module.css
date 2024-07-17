@@ -145,6 +145,7 @@
     height: 20px;
     background: transparent;
     cursor: nwse-resize;
+    user-select: none;
 }
 
 .resizeHandle.top {

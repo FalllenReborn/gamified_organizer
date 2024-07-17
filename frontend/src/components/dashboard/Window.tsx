@@ -78,8 +78,11 @@ const Window: React.FC<WindowProps> = ({
   const sizeRef = useRef(size);
 
   const updateSizeInDatabase = useCallback(async (width: number, height: number) => {
+    const constrainedWidth = width < 50 ? 50 : width;
+    const constrainedHeight = height < 50 ? 50 : height;
+
     try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: width, size_vertical: height });
+      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: constrainedWidth, size_vertical: constrainedHeight });
       console.log('Size updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating size:', error);
@@ -179,13 +182,27 @@ const Window: React.FC<WindowProps> = ({
       if (resizeDirection.includes('right')) newWidth += dx;
       if (resizeDirection.includes('bottom')) newHeight += dy;
       if (resizeDirection.includes('left')) {
-        newWidth -= dx;
-        newX += dx;
+        if (newWidth - dx >= 50) {
+            newWidth -= dx;
+            newX += dx;
+        } else {
+            newX += newWidth - 50;
+            newWidth = 50;
+        }
       }
       if (resizeDirection.includes('top')) {
-        newHeight -= dy;
-        newY += dy;
+          if (newHeight - dy >= 50) {
+              newHeight -= dy;
+              newY += dy;
+          } else {
+              newY += newHeight - 50;
+              newHeight = 50;
+          }
       }
+    
+      // Apply the constraints
+      newWidth = Math.max(newWidth, 50);
+      newHeight = Math.max(newHeight, 50);
 
       setSize({ width: newWidth, height: newHeight });
       setPosition({ x: newX, y: newY });

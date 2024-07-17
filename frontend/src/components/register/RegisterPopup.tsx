@@ -83,8 +83,12 @@ const RegisterPopup: React.FC<RegisterPopupProps> = ({ show, isOpen, onClose, on
 
   if (!isOpen) return null;
 
+  const stopPropagation = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className={`${styles.popupOverlay} ${isDarkMode ? styles.darkMode : ''}`}>
+    <div className={`${styles.popupOverlay} ${isDarkMode ? styles.darkMode : ''}`} onWheel={stopPropagation}>
       <div className={`${styles.popup} ${isDarkMode ? styles.darkMode : ''}`}>
         <button type="button" className={`btn-close ${styles.closeIcon}`} aria-label="Close" onClick={onClose}></button>
         <h2>{t.register}</h2>

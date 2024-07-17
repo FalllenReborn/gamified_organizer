@@ -311,7 +311,7 @@
     position: absolute;
     background-color: transparent;
 
-    /* user-select: none; */
+    user-select: none;
 }
 
 .resizeHandle.top {

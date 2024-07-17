@@ -54,9 +54,13 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
     onClose();
   };
 
+  const stopPropagation = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     isOpen && (
-      <div className={styles.overlay}>
+      <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
           <h3>{id !== null ? 'Edit List' : 'Create List'}</h3>
           <form className={styles.form}>

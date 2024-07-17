@@ -23,9 +23,13 @@ const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, on
     onQuit();
   };
 
+  const stopPropagation = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   return (
     isOpen && (
-      <div className={styles.overlay}>
+      <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
           <h3>New Currency</h3>
           <input

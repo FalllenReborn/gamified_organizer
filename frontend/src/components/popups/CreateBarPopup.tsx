@@ -156,8 +156,12 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
     setter(parseInt(e.target.value, 10));
   };
 
+  const stopPropagation = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className={styles.popupOverlay}>
+    <div className={styles.popupOverlay} onWheel={stopPropagation}>
       <div className={styles.popup}>
         <div className={styles.header}>
           <h2>{isEditMode ? 'Edit Bar' : 'Create Bar'}</h2>

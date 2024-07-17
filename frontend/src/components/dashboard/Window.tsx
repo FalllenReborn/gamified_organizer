@@ -100,6 +100,11 @@ const Window: React.FC<WindowProps> = ({
     sizeRef.current = size;
   }, [position, size]);
 
+  useEffect(() => {
+    setPosition({ x: initialX, y: initialY });
+    setSize({ width: initialWidth, height: initialHeight });
+}, [initialX, initialY, initialWidth, initialHeight]);
+
   const fetchTasks = useCallback(async () => {
     try {
       const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
@@ -420,7 +425,7 @@ const Window: React.FC<WindowProps> = ({
                   <div className={styles.dropdownMenu}>
                     <button onClick={handleHide}>Hide</button>
                     <button onClick={handleDelete}>Delete</button>
-                    <button onClick={handleRename}>Rename</button>
+                    <button onClick={handleRename}>Edit</button>
                   </div>
                 )}
                 <button 

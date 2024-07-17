@@ -542,7 +542,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     try {
       const payload = barId ? { bar_id: barId } : { list_id: listId };
       await axios.post('http://localhost:8000/api/layers/move_to_highest/', payload);
-      console.log("Success");
     } catch (error) {
       console.error('Error moving item to highest:', error);
     }

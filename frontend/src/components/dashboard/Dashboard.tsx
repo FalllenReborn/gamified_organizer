@@ -790,6 +790,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         y_axis: yAxis,
       };
 
+      setBarsData(prevBarsData => prevBarsData.map(bar => 
+        bar.bar_id === barId ? { ...bar, ...requestBody } : bar
+      ));
+
       // Step 1: Update the bar
       await axios.put(`http://localhost:8000/api/bars/${barId}/update_bar/`, requestBody);
       console.log('Bar updated successfully');

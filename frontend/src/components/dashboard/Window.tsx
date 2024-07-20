@@ -77,6 +77,18 @@ const Window: React.FC<WindowProps> = ({
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
 
+  
+  useEffect(() => {
+    setPosition({ x: initialX, y: initialY });
+    positionRef.current = { x: initialX, y: initialY };
+  }, [initialX, initialY]);
+
+  useEffect(() => {
+    setSize({ width: initialWidth, height: initialHeight });
+    sizeRef.current = { width: initialWidth, height: initialHeight };
+  }, [initialWidth, initialHeight]);
+
+
   const updateSizeInDatabase = useCallback(async (width: number, height: number) => {
     const constrainedWidth = width < 50 ? 50 : width;
     const constrainedHeight = height < 50 ? 50 : height;
@@ -97,16 +109,6 @@ const Window: React.FC<WindowProps> = ({
       console.error('Error updating position:', error);
     }
   }, [id]);
-
-  useEffect(() => {
-    positionRef.current = position;
-    sizeRef.current = size;
-  }, [position, size]);
-
-  useEffect(() => {
-    setPosition({ x: initialX, y: initialY });
-    setSize({ width: initialWidth, height: initialHeight });
-}, [initialX, initialY, initialWidth, initialHeight]);
 
   const fetchTasks = useCallback(async () => {
     try {
@@ -146,7 +148,9 @@ const Window: React.FC<WindowProps> = ({
     if (isDragging) {
       const mouseX = e.clientX / scale;
       const mouseY = e.clientY / scale;
-      setPosition({ x: mouseX - startPos.x, y: mouseY - startPos.y });
+      const newPosition = { x: mouseX - startPos.x, y: mouseY - startPos.y };
+      setPosition(newPosition);
+      positionRef.current = newPosition;
     }
   }, [isDragging, scale, startPos]);
 
@@ -204,8 +208,12 @@ const Window: React.FC<WindowProps> = ({
       newWidth = Math.max(newWidth, 50);
       newHeight = Math.max(newHeight, 50);
 
-      setSize({ width: newWidth, height: newHeight });
-      setPosition({ x: newX, y: newY });
+      const newSize = { width: newWidth, height: newHeight };
+      const newPosition = { x: newX, y: newY };
+      setSize(newSize);
+      setPosition(newPosition);
+      sizeRef.current = newSize;
+      positionRef.current = newPosition;
       setStartPos({
         x: e.clientX / scale,
         y: e.clientY / scale,
@@ -218,8 +226,9 @@ const Window: React.FC<WindowProps> = ({
       setIsResizing(false);
       document.body.classList.remove(styles.disableSelect);
       const updatedSize = sizeRef.current;
+      const updatedPosition = positionRef.current;
       updateSizeInDatabase(updatedSize.width, updatedSize.height);
-      updatePositionInDatabase(positionRef.current.x, positionRef.current.y);
+      updatePositionInDatabase(updatedPosition.x, updatedPosition.y);
       onResize(id, updatedSize.width, updatedSize.height, 'taskList');
     }
   };

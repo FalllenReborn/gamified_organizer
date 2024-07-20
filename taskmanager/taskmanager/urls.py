@@ -1,8 +1,9 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from lists.views import (TaskListViewSet, TaskViewSet, BarViewSet, RewardViewSet,
-                         CurrencyViewSet, TransactionViewSet, LayerViewSet)
+from lists.views import (TaskListViewSet, TaskViewSet, BarViewSet,
+                         RewardViewSet, CurrencyViewSet, TransactionViewSet,
+                         LayerViewSet, ItemViewSet, VoucherViewSet)
 
 router = DefaultRouter()
 router.register(r'tasklists', TaskListViewSet)
@@ -12,6 +13,8 @@ router.register(r'rewards', RewardViewSet)
 router.register(r'currencies', CurrencyViewSet)
 router.register(r'transactions', TransactionViewSet)
 router.register(r'layers', LayerViewSet)
+router.register(r'items', ItemViewSet)
+router.register(r'vouchers', VoucherViewSet)
 
 urlpatterns = [
     path('admin/', admin.site.urls),

@@ -1,6 +1,5 @@
 from django.db import models
 from django.contrib.auth.models import User
-from django.db.models import Q
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
@@ -124,9 +123,45 @@ class Transaction(models.Model):
         db_table = 'transactions'
 
 
+class Item(models.Model):
+    item_id = models.AutoField(primary_key=True)
+    item_name = models.CharField(max_length=255)
+    storage = models.PositiveIntegerField(default=0)
+
+    def __str__(self):
+        return self.item_name
+
+    class Meta:
+        db_table = 'items'
+
+
+class Voucher(models.Model):
+    voucher_id = models.AutoField(primary_key=True)
+    task = models.ForeignKey('Task', on_delete=models.CASCADE, null=True, blank=True, db_column='task_id')
+    bar = models.ForeignKey('Bar', on_delete=models.CASCADE, null=True, blank=True, db_column='bar_id')
+    item = models.ForeignKey('Item', on_delete=models.CASCADE, db_column='item_id')
+    quantity = models.PositiveIntegerField()
+
+    def save(self, *args, **kwargs):
+        if (self.task is None and self.bar is None) or (self.task is not None and self.bar is not None):
+            raise ValueError('Either task or bar must be set, but not both.')
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f'Voucher {self.voucher_id}'
+
+    class Meta:
+        db_table = 'vouchers'
+
+
 @receiver(pre_delete, sender=Task)
 def handle_task_deletion(sender, instance, **kwargs):
     transactions = Transaction.objects.filter(task_id=instance.task_id)
     for trans in transactions:
         Currency.objects.filter(currency_id=trans.currency_id).update(owned=models.F('owned') + trans.amount)
         trans.delete()
+
+    vouchers = Voucher.objects.filter(task_id=instance.task_id)
+    for vouch in vouchers:
+        Item.objects.filter(item_id=vouch.item_id).update(storage=models.F('storage') + vouch.quantity)
+        vouch.delete()

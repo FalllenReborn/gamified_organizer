@@ -90,8 +90,9 @@ CREATE FUNCTION public.handle_task_deletion() RETURNS trigger
     AS $$
 DECLARE
     trans RECORD;
+    vouch RECORD;
 BEGIN
-    -- Loop through each transaction that has the deleted task_id
+    -- Handle transactions associated with the task
     FOR trans IN
         SELECT * FROM Transactions
         WHERE task_id = OLD.task_id
@@ -105,7 +106,22 @@ BEGIN
         DELETE FROM Transactions WHERE transaction_id = trans.transaction_id;
     END LOOP;
 
-    -- After processing transactions, allow the task to be deleted
+    -- Handle vouchers associated with the task
+    FOR vouch IN
+        SELECT * FROM Vouchers
+        WHERE task_id = OLD.task_id
+    LOOP
+        -- Distribute the voucher amount (in this case, decrement quantity) to the corresponding bar_id
+        -- For example, update a fictional table or logic where vouchers affect bars or items
+        UPDATE items
+        SET storage = storage + vouch.quantity
+        WHERE item_id = vouch.item_id;
+
+        -- Delete the voucher after processing it
+        DELETE FROM Vouchers WHERE voucher_id = vouch.voucher_id;
+    END LOOP;
+
+    -- After processing transactions and vouchers, allow the task to be deleted
     RETURN OLD;
 END;
 $$;
@@ -191,7 +207,7 @@ DECLARE
     division_difference FLOAT;
 BEGIN
     -- Compute initial division result before the points are added
-    SELECT total_points / full_cycle INTO initial_result
+    SELECT total_points::float / full_cycle INTO initial_result
     FROM Bars
     WHERE bar_id = OLD.bar_id;
 
@@ -199,12 +215,7 @@ BEGIN
     UPDATE Bars
     SET total_points = total_points + OLD.points
     WHERE bar_id = OLD.bar_id
-    RETURNING total_points INTO final_result;
-
-    -- Compute final division result after the points are added
-    SELECT total_points / full_cycle INTO final_result
-    FROM Bars
-    WHERE bar_id = OLD.bar_id;
+    RETURNING total_points::float / full_cycle INTO final_result;
 
     -- Calculate the difference in division results
     division_difference := final_result - initial_result;
@@ -221,7 +232,21 @@ BEGIN
               AND Transactions.bar_id = OLD.bar_id
               AND Transactions.amount > 0;
 
+            -- Distribute vouchers
+            UPDATE Vouchers
+            SET quantity = quantity - 1
+            FROM Bars
+            WHERE Vouchers.bar_id = Bars.bar_id
+              AND Bars.bar_id = OLD.bar_id
+              AND Vouchers.quantity > 0;
+
+            -- Ensure no negative quantities
+            UPDATE Vouchers
+            SET quantity = 0
+            WHERE quantity < 0;
+
             RAISE NOTICE 'Distributed amount % to currency_id %', (SELECT amount FROM Transactions WHERE bar_id = OLD.bar_id LIMIT 1), (SELECT currency_id FROM Transactions WHERE bar_id = OLD.bar_id LIMIT 1);
+            RAISE NOTICE 'Distributed voucher quantity to bar_id %', OLD.bar_id;
         END LOOP;
     END IF;
 
@@ -587,6 +612,42 @@ CREATE TABLE public.django_session (
 ALTER TABLE public.django_session OWNER TO reborn;
 
 --
+-- Name: items; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.items (
+    item_id integer NOT NULL,
+    item_name character varying(255) NOT NULL,
+    storage integer NOT NULL,
+    CONSTRAINT items_storage_check CHECK ((storage >= 0))
+);
+
+
+ALTER TABLE public.items OWNER TO postgres;
+
+--
+-- Name: items_item_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.items_item_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.items_item_id_seq OWNER TO postgres;
+
+--
+-- Name: items_item_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.items_item_id_seq OWNED BY public.items.item_id;
+
+
+--
 -- Name: layers; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -824,6 +885,46 @@ ALTER SEQUENCE public.transactions_transaction_id_seq OWNED BY public.transactio
 
 
 --
+-- Name: vouchers; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.vouchers (
+    voucher_id integer NOT NULL,
+    task_id integer,
+    bar_id integer,
+    quantity integer NOT NULL,
+    item_id integer NOT NULL,
+    CONSTRAINT vouchers_check CHECK (((task_id IS NOT NULL) OR (bar_id IS NOT NULL))),
+    CONSTRAINT vouchers_check1 CHECK (((task_id IS NULL) OR (bar_id IS NULL))),
+    CONSTRAINT vouchers_quantity_check CHECK ((quantity > 0))
+);
+
+
+ALTER TABLE public.vouchers OWNER TO postgres;
+
+--
+-- Name: vouchers_voucher_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.vouchers_voucher_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.vouchers_voucher_id_seq OWNER TO postgres;
+
+--
+-- Name: vouchers_voucher_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.vouchers_voucher_id_seq OWNED BY public.vouchers.voucher_id;
+
+
+--
 -- Name: bars bar_id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -835,6 +936,13 @@ ALTER TABLE ONLY public.bars ALTER COLUMN bar_id SET DEFAULT nextval('public.bar
 --
 
 ALTER TABLE ONLY public.currencies ALTER COLUMN currency_id SET DEFAULT nextval('public.currencies_currency_id_seq'::regclass);
+
+
+--
+-- Name: items item_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.items ALTER COLUMN item_id SET DEFAULT nextval('public.items_item_id_seq'::regclass);
 
 
 --
@@ -870,6 +978,13 @@ ALTER TABLE ONLY public.tasks ALTER COLUMN task_id SET DEFAULT nextval('public.t
 --
 
 ALTER TABLE ONLY public.transactions ALTER COLUMN transaction_id SET DEFAULT nextval('public.transactions_transaction_id_seq'::regclass);
+
+
+--
+-- Name: vouchers voucher_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vouchers ALTER COLUMN voucher_id SET DEFAULT nextval('public.vouchers_voucher_id_seq'::regclass);
 
 
 --
@@ -1025,6 +1140,14 @@ ALTER TABLE ONLY public.django_session
 
 
 --
+-- Name: items items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.items
+    ADD CONSTRAINT items_pkey PRIMARY KEY (item_id);
+
+
+--
 -- Name: layers layers_layer_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1086,6 +1209,14 @@ ALTER TABLE ONLY public.tasks
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_pkey PRIMARY KEY (transaction_id);
+
+
+--
+-- Name: vouchers vouchers_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vouchers
+    ADD CONSTRAINT vouchers_pkey PRIMARY KEY (voucher_id);
 
 
 --
@@ -1393,6 +1524,30 @@ ALTER TABLE ONLY public.transactions
 
 ALTER TABLE ONLY public.transactions
     ADD CONSTRAINT transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id);
+
+
+--
+-- Name: vouchers vouchers_bar_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vouchers
+    ADD CONSTRAINT vouchers_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id) ON DELETE CASCADE;
+
+
+--
+-- Name: vouchers vouchers_item_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vouchers
+    ADD CONSTRAINT vouchers_item_id_fkey FOREIGN KEY (item_id) REFERENCES public.items(item_id) ON DELETE CASCADE;
+
+
+--
+-- Name: vouchers vouchers_task_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.vouchers
+    ADD CONSTRAINT vouchers_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id) ON DELETE CASCADE;
 
 
 --

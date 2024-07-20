@@ -1,9 +1,10 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer
+from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer, Item, Voucher
 from .serializers import (TaskListSerializer, TaskSerializer, RewardSerializer,
-                          BarSerializer, CurrencySerializer, TransactionSerializer, LayerSerializer)
+                          BarSerializer, CurrencySerializer, TransactionSerializer,
+                          LayerSerializer, ItemSerializer, VoucherSerializer)
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
@@ -353,3 +354,94 @@ class TransactionViewSet(viewsets.ModelViewSet):
             return JsonResponse({'message': 'Transaction deleted'}, status=204)
         except Transaction.DoesNotExist:
             return JsonResponse({'error': 'Transaction not found'}, status=404)
+
+
+class ItemViewSet(viewsets.ModelViewSet):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_item')
+    def create_item(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            item_name = data.get('item_name')
+            storage = data.get('storage', 0)
+
+            if not item_name:
+                return JsonResponse({'error': 'item_name is required'}, status=400)
+
+            item = Item.objects.create(
+                item_name=item_name,
+                storage=storage
+            )
+            serializer = ItemSerializer(item)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+class VoucherViewSet(viewsets.ModelViewSet):
+    queryset = Voucher.objects.all()
+    serializer_class = VoucherSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_voucher')
+    def create_voucher(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            task_id = data.get('task_id')
+            bar_id = data.get('bar_id')
+            item_id = data.get('item_id')
+            quantity = data.get('quantity')
+
+            if not item_id or not quantity:
+                return JsonResponse({'error': 'item_id and quantity are required'}, status=400)
+            if task_id and bar_id:
+                return JsonResponse({'error': 'Only one of task_id or bar_id should be provided'}, status=400)
+            if not task_id and not bar_id:
+                return JsonResponse({'error': 'Either task_id or bar_id must be provided'}, status=400)
+
+            item = Item.objects.get(item_id=item_id)
+
+            voucher = Voucher.objects.create(
+                task_id=task_id,
+                bar_id=bar_id,
+                item=item,
+                quantity=quantity
+            )
+            serializer = VoucherSerializer(voucher)
+            return JsonResponse(serializer.data, status=201)
+
+        except Item.DoesNotExist:
+            return JsonResponse({'error': 'Item not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['patch'], url_path='')
+    def update_voucher(self, request, pk=None):
+        try:
+            voucher = self.get_object()
+            serializer = VoucherSerializer(voucher, data=request.data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data, status=200)
+            return JsonResponse(serializer.errors, status=400)
+        except Voucher.DoesNotExist:
+            return JsonResponse({'error': 'Voucher not found'}, status=404)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['delete'], url_path='')
+    def delete_voucher(self, request, pk=None):
+        try:
+            voucher = self.get_object()
+            voucher.delete()
+            return JsonResponse({'message': 'Voucher deleted'}, status=204)
+        except Voucher.DoesNotExist:
+            return JsonResponse({'error': 'Voucher not found'}, status=404)

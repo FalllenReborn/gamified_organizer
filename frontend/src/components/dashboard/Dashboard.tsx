@@ -98,6 +98,7 @@ interface WindowState {
 
 interface Bar extends BarData {
   transactions: { [currencyId: number]: number };
+  vouchers: { [itemId: number]: number },
 }
 
 interface BarState {
@@ -758,7 +759,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     sizeHorizontal: number,
     xAxis: number,
     yAxis: number,
-    transactions: { [currencyId: number]: number }
+    transactions: { [currencyId: number]: number },
+    vouchers: { [itemId: number]: number },
   ) => {
     try {
       const requestBody = {
@@ -791,11 +793,29 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         return null;
       }).filter(promise => promise !== null);
 
-      await Promise.all(transactionPromises);
+      const voucherPromises = Object.entries(vouchers).map(([itemId, quantity]) => {
+        if (quantity !== 0) {
+          const transactionPayload = {
+            bar_id: barId,
+            item_id: parseInt(itemId, 10),
+            quantity,
+          };
+          console.log('Transaction Payload:', transactionPayload);
+          return axios.post('http://localhost:8000/api/transactions/create_transaction/', transactionPayload);
+        }
+        return null;
+      }).filter(promise => promise !== null);
+
+      // Combine voucher and transaction promises
+      const allPromises = [...voucherPromises, ...transactionPromises];
+  
+      // Execute all creation requests
+      await Promise.all(allPromises);
 
       // Refresh data after successful creation
       fetchBars();
       fetchTransactions();
+      fetchVouchers();
 
       setIsCreateBarPopupOpen(false); // Close the popup after creating the new bar
     } catch (error) {
@@ -809,6 +829,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     if (barToUpdate) {
       // Find transactions for the specific bar from the fetched transactions
       const transactionsForBar = transactions.filter(transaction => transaction.bar === id);
+      const vouchersForBar = vouchers.filter(voucher => voucher.bar === id);
 
       setIsCreateBarPopupOpen(true);
       setIsEditMode(true);
@@ -818,6 +839,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           acc[transaction.currency] = transaction.amount;
           return acc;
         }, {} as { [currencyId: number]: number }),
+        vouchers: vouchersForBar.reduce((acc, voucher) => {
+          acc[voucher.item] = voucher.quantity;
+          return acc;
+        }, {} as { [itemId: number]: number }),
       });
     } else {
       console.error(`Bar with id ${id} not found.`);
@@ -833,7 +858,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     sizeHorizontal: number,
     xAxis: number,
     yAxis: number,
-    newTransactions: { [currencyId: number]: number }
+    newTransactions: { [currencyId: number]: number },
+    newVouchers: { [itemId: number]: number },
   ) => {
     try {
       const requestBody = {
@@ -891,13 +917,51 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         }
       });
 
-      // Execute all transaction promises
-      await Promise.all(transactionPromises);
+      const voucherPromises = vouchers.map(async (voucher) => {
+        const quantity = newVouchers[voucher.item] || 0;
+
+        if (voucher.bar === barId) {
+          if (quantity !== 0) {
+            // Update existing vouchers
+            const voucherPayload = {
+              bar_id: barId,
+              item_id: voucher.item,
+              quantity,
+            };
+            console.log('Update Voucher Payload:', voucherPayload);
+            return axios.patch(`http://localhost:8000/api/vouchers/${voucher.voucher_id}/`, voucherPayload);
+          } else {
+            // Delete existing vouchers
+            console.log('Delete Voucher:', voucher.voucher_id);
+            return axios.delete(`http://localhost:8000/api/vouchers/${voucher.voucher_id}/`);
+          }
+        }
+        return null; // Ignore vouchers not associated with barId
+      });
+
+      Object.entries(newVouchers).forEach(([itemId, quantity]) => {
+        if (quantity !== 0 && !vouchers.find(voucher => voucher.bar === barId && voucher.item === parseInt(itemId, 10))) {
+          const voucherPayload = {
+            bar_id: barId,
+            item_id: parseInt(itemId, 10),
+            quantity,
+          };
+          console.log('Create Voucher Payload:', voucherPayload);
+          voucherPromises.push(axios.post(`http://localhost:8000/api/vouchers/create_voucher/`, voucherPayload));
+        }
+      });
+
+      // Combine voucher and transaction promises
+      const allPromises = [...voucherPromises, ...transactionPromises];
+  
+      // Execute all creation requests
+      await Promise.all(allPromises);
       console.log('Transactions updated successfully');
 
       // Step 3: Refresh data
       fetchBars();
       fetchTransactions();
+      fetchVouchers();
 
       setIsCreateBarPopupOpen(false); // Close the popup after updating the bar
     } catch (error) {
@@ -1122,6 +1186,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onConfirm={handleConfirmNewBar}
             onUpdate={handleUpdateBar}
             currencies={currencies}
+            items={items}
             isEditMode={isEditMode}
             barToEdit={barToEdit}
           />

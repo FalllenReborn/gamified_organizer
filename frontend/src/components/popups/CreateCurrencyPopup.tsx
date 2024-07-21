@@ -1,6 +1,5 @@
 import React, { useState, useEffect, FC } from 'react';
 import styles from './createCurrencyPopup.module.css';
-import axios from 'axios';
 
 interface CreateCurrencyProps {
   isOpen: boolean;

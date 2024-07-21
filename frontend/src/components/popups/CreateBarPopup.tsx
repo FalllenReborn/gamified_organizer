@@ -7,12 +7,19 @@ interface Currency {
   owned: number;
 }
 
+interface Item {
+  item_id: number;
+  item_name: string;
+  storage: number;
+}
+
 interface Bar {
   bar_id: number;
   bar_name: string;
   xp_name: string;
   full_cycle: number;
   transactions: { [currencyId: number]: number };
+  vouchers: { [itemId: number]: number },
   size_vertical: number;
   size_horizontal: number;
   x_axis: number;
@@ -30,6 +37,7 @@ interface CreateBarPopupProps {
     xAxis: number,
     yAxis: number,
     transactions: { [currencyId: number]: number },
+    vouchers: { [itemId: number]: number },
   ) => Promise<void>;
   onUpdate: (
     barId: number,
@@ -41,8 +49,10 @@ interface CreateBarPopupProps {
     xAxis: number,
     yAxis: number,
     transactions: { [currencyId: number]: number },
+    vouchers: { [itemId: number]: number },
   ) => Promise<void>;
   currencies: Currency[];
+  items: Item[]
   isEditMode: boolean;
   barToEdit?: Bar | null;
 }
@@ -52,6 +62,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
   onConfirm,
   onUpdate,
   currencies,
+  items,
   isEditMode,
   barToEdit,
 }) => {
@@ -59,6 +70,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
   const [xpName, setXpName] = useState<string>('');
   const [fullCycle, setFullCycle] = useState<string>('');
   const [transactions, setTransactions] = useState<{ [currencyId: number]: number }>({});
+  const [vouchers, setVouchers] = useState<{ [itemId: number]: number }>({});
   const [sizeVertical, setSizeVertical] = useState<number>(125);
   const [sizeHorizontal, setSizeHorizontal] = useState<number>(300);
   const [xAxis, setXAxis] = useState<number>(0);
@@ -70,6 +82,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
       setXpName(barToEdit.xp_name);
       setFullCycle(barToEdit.full_cycle.toString());
       setTransactions(barToEdit.transactions);
+      setVouchers(barToEdit.vouchers);
       setSizeVertical(barToEdit.size_vertical);
       setSizeHorizontal(barToEdit.size_horizontal);
       setXAxis(barToEdit.x_axis);
@@ -85,6 +98,13 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
         [currencyId]: parseFloat(value) || 0,
       }));
     }
+  };
+
+  const handleVoucherChange = (itemId: number, value: string) => {
+    setVouchers((prevVouchers) => ({
+      ...prevVouchers,
+      [itemId]: parseInt(value, 10) || 0,
+    }));
   };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -104,7 +124,8 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
           sizeHorizontal,
           xAxis,
           yAxis,
-          transactions
+          transactions,
+          vouchers
         );
       } else {
         await onConfirm(
@@ -115,7 +136,8 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
           sizeHorizontal,
           xAxis,
           yAxis,
-          transactions
+          transactions,
+          vouchers
         );
       }
       clearForm();
@@ -258,6 +280,18 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                     type="text"
                     value={transactions[currency.currency_id] || ''}
                     onChange={(e) => handleTransactionChange(currency.currency_id, e.target.value)}
+                  />
+                </div>
+              ))}
+              <h4>Item vouchers</h4>
+              {items.map((item) => (
+                <div key={item.item_id} className={styles.rewardRow}>
+                  <span className={styles.rewardName}>{item.item_name}</span>
+                  <input
+                    className={styles.rewardInput}
+                    type="text"
+                    value={vouchers[item.item_id] || ''}
+                    onChange={(e) => handleVoucherChange(item.item_id, e.target.value)}
                   />
                 </div>
               ))}

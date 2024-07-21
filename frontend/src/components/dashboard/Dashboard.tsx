@@ -118,6 +118,14 @@ interface Transaction {
   amount: number;
 }
 
+interface Voucher {
+  voucher_id: number;
+  bar: number;
+  task: number;
+  item: number;
+  quantity: number;
+}
+
 interface Reward {
   reward_id: number;
   bar: number;
@@ -157,6 +165,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [vouchers, setVouchers] = useState<Voucher[]>([])
   const [isEditMode, setIsEditMode] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined);
   const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
@@ -324,6 +333,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const fetchVouchers = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/vouchers/');
+      setVouchers(response.data);
+    } catch (error) {
+      console.error('Error fetching vouchers:', error);
+    }
+  };
+
   const fetchCurrencies = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/currencies/');
@@ -347,6 +365,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchCurrencies();
     fetchTransactions();
     fetchRewards();
+    fetchVouchers();
   }, []);
 
   const handleConfirm = async (
@@ -469,6 +488,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error updating task, rewards, or transactions:', error);
     }
     closePopup();
+    fetchVouchers();
     fetchTransactions();
     fetchRewards();
   };
@@ -679,7 +699,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       }
   };
 
-  const handleSaveNewItem = async (newName: string) => {
+    const handleSaveNewItem = async (newName: string) => {
     try {
       await axios.post(`http://localhost:8000/api/items/create_item/`, { item_name: newName });
       await fetchItems();
@@ -1007,6 +1027,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             transactions={transactions}
             barsData={barsData}
             currencies={currencies}
+            items={items}
+            vouchers={vouchers}
             detailView={taskList.detail_view}
             onClose={handleCloseWindow} 
             onRename={(id) => handleEditList(id, taskList.list_name, taskList.x_axis, taskList.y_axis, taskList.size_horizontal, taskList.size_vertical)}
@@ -1034,6 +1056,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               initialHeight={bar.size_vertical}
               translate={translate} 
               scale={scale} 
+              items={items}
+              vouchers={vouchers}
               currencies={currencies}
               transactions={transactions}
               zIndex={bar.layer.layer}

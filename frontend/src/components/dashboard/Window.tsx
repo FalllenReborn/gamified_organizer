@@ -20,8 +20,10 @@ interface WindowProps {
   initialHeight: number;
   rewards: any[];
   transactions: any[];
+  vouchers: any[];
   barsData: any[];
   currencies: any[];
+  items: any[];
   detailView: boolean;
   onResize: (id: number, width: number, height: number, type: string) => void;
   openPopup: (windowId: number, nest_id: number | null, editMode: any, task: any) => void;
@@ -59,8 +61,10 @@ const Window: React.FC<WindowProps> = ({
   toggleTaskChecked,
   rewards,
   transactions,
+  vouchers,
   barsData,
   currencies,
+  items,
   detailView,
 }) => {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -315,6 +319,10 @@ const Window: React.FC<WindowProps> = ({
     return transactions.filter((transaction) => transaction.task === taskId);
   };
 
+  const getVouchersForTask = (taskId: number) => {
+    return vouchers.filter((voucher) => voucher.task === taskId);
+  };
+
   const getXPName = (barId: number) => {
     const bar = barsData.find(bar => bar.bar_id === barId);
     return bar ? bar.xp_name : 'XP';
@@ -323,6 +331,11 @@ const Window: React.FC<WindowProps> = ({
   const getCurrencyName = (currencyId: number) => {
     const currency = currencies.find(currency => currency.currency_id === currencyId);
     return currency ? currency.currency_name : 'Currency';
+  };
+
+  const getItemName = (itemId: number) => {
+    const item = items.find(item => item.item_id === itemId);
+    return item ? item.item_name : 'Item';
   };
 
   const handleEditTask = (taskId: number) => {
@@ -380,7 +393,15 @@ const Window: React.FC<WindowProps> = ({
                       ))}
                     </div>
                   </div>
-                  <div className={styles.column} id={styles.items}>Items</div>
+                  <div className={styles.column} id={styles.items}>
+                    <div className={styles.vouchers}>
+                      {getVouchersForTask(task.task_id).map((voucher) => (
+                        <span key={voucher.voucher_id} className={styles.voucher}>
+                          {getItemName(voucher.item)}: {voucher.quantity}<br />
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -523,7 +544,15 @@ const Window: React.FC<WindowProps> = ({
                           ))}
                         </div>
                       </div>
-                      <div className={styles.column} id={styles.items}>Items</div>
+                      <div className={styles.column} id={styles.items}>
+                        <div className={styles.vouchers}>
+                          {getVouchersForTask(task.task_id).map((voucher) => (
+                            <span key={voucher.voucher_id} className={styles.voucher}>
+                              {getItemName(voucher.item)}: {voucher.quantity}<br />
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

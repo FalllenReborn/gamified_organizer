@@ -24,6 +24,8 @@ interface BarProps {
     onSizeUpdate: (id: number, width: number, height: number) => void;
     transactions: any[];
     currencies: any[];
+    items: any[];
+    vouchers: any[];
 }
 
 const Bar: React.FC<BarProps> = ({
@@ -40,7 +42,9 @@ const Bar: React.FC<BarProps> = ({
     scale,
     zIndex,
     transactions,
+    vouchers,
     currencies,
+    items,
     onClose,
     onEdit,
     onClick,
@@ -252,9 +256,18 @@ const Bar: React.FC<BarProps> = ({
         return transactions.filter((transaction) => transaction.bar === barId);
     };
 
+    const getVouchersForBar = (barId: number) => {
+        return vouchers.filter((voucher) => voucher.bar === barId);
+    };
+
     const getCurrencyName = (currencyId: number) => {
         const currency = currencies.find(currency => currency.currency_id === currencyId);
         return currency ? currency.currency_name : 'Currency';
+    };
+
+    const getItemName = (itemId: number) => {
+        const item = items.find(item => item.item_id === itemId);
+        return item ? item.item_name : 'Item';
     };
 
     const progressPercentage = (total_points % full_cycle) / full_cycle * 100;
@@ -325,6 +338,11 @@ const Bar: React.FC<BarProps> = ({
                             {getTransactionsForBar(id).map((transaction) => (
                                 <li key={transaction.transaction_id} className={styles.transaction}>
                                     {getCurrencyName(transaction.currency)}: {transaction.amount}<br />
+                                </li>
+                            ))}
+                            {getVouchersForBar(id).map((voucher) => (
+                                <li key={voucher.voucher_id} className={styles.voucher}>
+                                    {getItemName(voucher.item)}: {voucher.quantity}<br />
                                 </li>
                             ))}
                         </ul>

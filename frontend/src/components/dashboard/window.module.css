@@ -217,13 +217,19 @@
 .rewards {
     line-height: 0.6em;
     margin-bottom: 3px;
-    overflow: hidden;
+
 }
 
 .transactions {
     line-height: 0.6em;
     margin-bottom: 3px;
-    overflow: hidden;
+
+}
+
+.vouchers {
+    line-height: 0.6em;
+    margin-bottom: 3px;
+
 }
 
 .taskText {
@@ -239,6 +245,11 @@
 }
 
 .transaction {
+    font-size: 10px;
+    color: white;
+}
+
+.voucher {
     font-size: 10px;
     color: white;
 }
@@ -305,6 +316,11 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
+}
+
+.column div {
+    height: 100%;
+    min-height: 20px;
 }
 
 .resizeHandle {

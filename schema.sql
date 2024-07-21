@@ -618,7 +618,7 @@ ALTER TABLE public.django_session OWNER TO reborn;
 CREATE TABLE public.items (
     item_id integer NOT NULL,
     item_name character varying(255) NOT NULL,
-    storage integer NOT NULL,
+    storage integer DEFAULT 0 NOT NULL,
     CONSTRAINT items_storage_check CHECK ((storage >= 0))
 );
 

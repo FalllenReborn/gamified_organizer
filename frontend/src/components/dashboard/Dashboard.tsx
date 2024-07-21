@@ -7,10 +7,12 @@ import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
 import Bar from './Bar';
 import Currencies from './Currencies';
+import Items from './Items';
 import CreateListPopup from '../popups/CreateListPopup';
 import CreateTaskPopup from '../popups/CreateTaskPopup';
 import CreateBarPopup from '../popups/CreateBarPopup';
 import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
+import CreateItemPopup from '../popups/CreateItemPopup';
 import axios from 'axios';
 
 interface Layers {
@@ -51,6 +53,12 @@ interface Currency {
   owned: number;
 }
 
+interface Item {
+  item_id: number;
+  item_name: string;
+  storage: number;
+}
+
 interface Task {
   task_id: number;
   task_name: string;
@@ -59,6 +67,11 @@ interface Task {
 }
 
 interface CreateCurrencyState {
+  isOpen: boolean;
+  defaultValue: string;
+}
+
+interface CreateItemState {
   isOpen: boolean;
   defaultValue: string;
 }
@@ -132,10 +145,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [bars, setBars] = useState<BarState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '' });
+  const [createItemPopup, setCreateItemPopup] = useState<CreateItemState>({ isOpen: false, defaultValue: '' });
   const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 });
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
   const [nest, setNest] = useState<number | null>(null);
@@ -317,8 +332,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error fetching currencies:', error);
     }
   };
+
+  const fetchItems = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/items/');
+      setItems(response.data); // Assuming the response.data is an array of currencies
+    } catch (error) {
+      console.error('Error fetching currencies:', error);
+    }
+  };
   
   useEffect(() => {
+    fetchItems();
     fetchCurrencies();
     fetchTransactions();
     fetchRewards();
@@ -641,15 +666,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setCreateCurrencyPopup({ isOpen: true, defaultValue: 'New Currency' });
   };
 
+  const handleCreateItem = async () => {
+    setCreateItemPopup({ isOpen: true, defaultValue: 'New Item' });
+  };
+
   const handleSaveNewCurrency = async (newName: string) => {
       try {
         await axios.post(`http://localhost:8000/api/currencies/create_currency/`, { currency_name: newName });
         await fetchCurrencies();
       } catch (error) {
-        console.error('Error renaming task list or fetching updated task lists:', error);
+        console.error('Error creating currency:', error);
       }
-
   };
+
+  const handleSaveNewItem = async (newName: string) => {
+    try {
+      await axios.post(`http://localhost:8000/api/items/create_item/`, { item_name: newName });
+      await fetchItems();
+    } catch (error) {
+      console.error('Error creating item:', error);
+    }
+};
 
   const handleDragWindow = (id: number, x: number, y: number, type: string) => {
     if (type === 'taskList') {
@@ -948,6 +985,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onCreateNewCurrency={handleCreateCurrency}
           /> 
         </div>
+        <div className={styles.items}>
+          <Items 
+            items={items}
+            onCreateNewItem={handleCreateItem}
+          /> 
+        </div>
         {taskLists.map((taskList) => (
           <div key={taskList.list_id} className={`${styles.window} window`}>
           <Window 
@@ -1013,6 +1056,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             defaultValue={createCurrencyPopup.defaultValue}
             onCreate={handleSaveNewCurrency}
             onQuit={() => setCreateCurrencyPopup({ isOpen: false, defaultValue: '' })}
+          />
+        )}
+        {createItemPopup.isOpen && (
+          <CreateItemPopup
+            isOpen={createItemPopup.isOpen}
+            defaultValue={createItemPopup.defaultValue}
+            onCreate={handleSaveNewItem}
+            onQuit={() => setCreateItemPopup({ isOpen: false, defaultValue: '' })}
           />
         )}
         {createListPopup.isOpen && (

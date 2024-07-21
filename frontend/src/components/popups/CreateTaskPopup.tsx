@@ -25,11 +25,18 @@ interface Currency {
   owned: number;
 }
 
+interface Item {
+  item_id: number;
+  item_name: string;
+  storage: number;
+}
+
 interface Task {
   task_id: number;
   task_name: string;
   rewards: { [barId: number]: number };
   transactions: { [currencyId: number]: number };
+  vouchers: { [itemId: number]: number };
 }
 
 interface Transaction {
@@ -38,6 +45,14 @@ interface Transaction {
   task: number;
   currency: number;
   amount: number;
+}
+
+interface Voucher {
+  voucher_id: number;
+  bar: number;
+  task: number;
+  item: number;
+  quantity: number;
 }
 
 interface Reward {
@@ -53,20 +68,24 @@ interface CreateTaskPopupProps {
     taskId: number,
     taskName: string,
     rewards: { [barId: number]: number },
-    transactions: { [currencyId: number]: number }
+    transactions: { [currencyId: number]: number },
+    vouchers: { [itemId: number]: number },
   ) => void;
   onUpdate: (
     taskId: number,
     taskName: string,
     rewards: { [barId: number]: number },
-    transactions: { [currencyId: number]: number }
+    transactions: { [currencyId: number]: number },
+    vouchers: { [itemId: number]: number },
   ) => void;
   bars: Bar[];
   currencies: Currency[];
+  items: Item[];
   isEditMode: boolean;
   taskToEdit?: Task;
   transactionsProp: Transaction[];
   rewardsProp: Reward[];
+  vouchersProp: Voucher[];
 }
 
 const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
@@ -76,12 +95,15 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
   bars,
   transactionsProp,
   rewardsProp,
+  vouchersProp,
   currencies,
+  items,
   isEditMode,
   taskToEdit,
 }) => {
   const [taskName, setTaskName] = useState('');
   const [rewards, setRewards] = useState<{ [barId: number]: number }>({});
+  const [vouchers, setVouchers] = useState<{ [itemId: number]: number }>({});
   const [transactions, setTransactions] = useState<{ [currencyId: number]: number }>({});
 
   useEffect(() => {
@@ -105,6 +127,14 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
         }
       });
       setTransactions(initialTransactions);
+
+      const initialVouchers: { [itemId: number]: number } = {};
+      vouchersProp.forEach((voucher) => {
+        if (voucher.task === taskToEdit.task_id) {
+          initialVouchers[voucher.item] = voucher.quantity;
+        }
+      });
+      setVouchers(initialVouchers);
     }
   }, [isEditMode, taskToEdit, rewardsProp, transactionsProp]);
 
@@ -112,6 +142,13 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
     setRewards((prevRewards) => ({
       ...prevRewards,
       [barId]: parseInt(value, 10) || 0,
+    }));
+  };
+
+  const handleVoucherChange = (itemId: number, value: string) => {
+    setVouchers((prevVouchers) => ({
+      ...prevVouchers,
+      [itemId]: parseInt(value, 10) || 0,
     }));
   };
 
@@ -127,9 +164,9 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
 
   const handleConfirm = () => {
     if (isEditMode && taskToEdit) {
-      onConfirm(taskToEdit.task_id, taskName, rewards, transactions);
+      onConfirm(taskToEdit.task_id, taskName, rewards, transactions, vouchers);
     } else {
-      onConfirm(0, taskName, rewards, transactions);
+      onConfirm(0, taskName, rewards, transactions, vouchers);
     }
   };
 
@@ -185,6 +222,20 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
                     type="text"
                     value={transactions[currency.currency_id] || ''}
                     onChange={(e) => handleTransactionChange(currency.currency_id, e.target.value)}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className={styles.rewardsBox}>
+              <h4>Item vouchers</h4>
+              {items.map((item) => (
+                <div key={item.item_id} className={styles.rewardRow}>
+                  <span className={styles.rewardName}>{item.item_name}</span>
+                  <input
+                    className={styles.rewardInput}
+                    type="text"
+                    value={vouchers[item.item_id] || ''}
+                    onChange={(e) => handleVoucherChange(item.item_id, e.target.value)}
                   />
                 </div>
               ))}

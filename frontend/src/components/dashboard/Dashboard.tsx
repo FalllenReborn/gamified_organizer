@@ -64,6 +64,7 @@ interface Task {
   task_name: string;
   rewards: { [barId: number]: number };
   transactions: { [currencyId: number]: number };
+  vouchers: { [itemId: number]: number };
 }
 
 interface CreateCurrencyState {
@@ -197,6 +198,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       fetchBars();
       fetchCurrencies();
       fetchTaskLists();
+      fetchItems();
     } catch (error) {
       console.error('Error deleting tasks:', error);
     }
@@ -373,12 +375,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     taskId: number,
     taskName: string,
     newRewards: { [barId: number]: number },
-    newTransactions: { [currencyId: number]: number }
+    newTransactions: { [currencyId: number]: number },
+    newVouchers: { [itemId: number]: number },
   ) => {    
     if (isEditMode && taskToEdit) {
-      await handleUpdate(taskId, taskName, newRewards, newTransactions);
+      await handleUpdate(taskId, taskName, newRewards, newTransactions, newVouchers);
     } else {
-      await handleCreate(taskName, newRewards, newTransactions);
+      await handleCreate(taskName, newRewards, newTransactions, newVouchers);
     }
     closePopup();
     if (currentWindowId !== null && currentWindowId in taskUpdateCallbacks.current) {
@@ -386,13 +389,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
     fetchRewards();
     fetchTransactions();
+    fetchVouchers();
   };
 
   const handleUpdate = async (
     taskId: number,
     taskName: string,
     newRewards: { [barId: number]: number },
-    newTransactions: { [currencyId: number]: number }
+    newTransactions: { [currencyId: number]: number },
+    newVouchers: { [itemId: number]: number },
   ) => {
     try {
       // Step 1: Update the task
@@ -477,9 +482,45 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           transactionPromises.push(axios.post(`http://localhost:8000/api/transactions/create_transaction/`, transactionPayload));
         }
       });
+
+      // Step 4: Update or delete existing vouchers
+      const voucherPromises = vouchers.map(async (voucher) => {
+        const quantity = newVouchers[voucher.item] || 0;
+  
+        if (voucher.task === taskId) {
+          if (quantity !== 0) {
+            // Update existing transaction
+            const voucherPayload = {
+              task_id: taskId,
+              item_id: voucher.item,
+              quantity,
+            };
+            console.log('Update Voucher Payload:', voucherPayload);
+            return axios.patch(`http://localhost:8000/api/vouchers/${voucher.voucher_id}/`, voucherPayload);
+          } else {
+            // Delete existing vouchers
+            console.log('Delete Transaction:', voucher.voucher_id);
+            return axios.delete(`http://localhost:8000/api/vouchers/${voucher.voucher_id}/`);
+          }
+        }
+        return null; // Ignore vouchers not associated with taskId
+      });
+  
+      // Create new vouchers
+      Object.entries(newVouchers).forEach(([itemId, quantity]) => {
+        if (quantity !== 0 && !vouchers.find(voucher => voucher.task === taskId && voucher.item === parseInt(itemId, 10))) {
+          const voucherPayload = {
+            task_id: taskId,
+            item_id: parseInt(itemId, 10),
+            quantity,
+          };
+          console.log('Create Vouchers Payload:', voucherPayload);
+          voucherPromises.push(axios.post(`http://localhost:8000/api/vouchers/create_voucher/`, voucherPayload));
+        }
+      });
   
       // Combine reward and transaction promises
-      const allPromises = [...rewardPromises, ...transactionPromises].filter(promise => promise !== null);
+      const allPromises = [...rewardPromises, ...transactionPromises, ...voucherPromises].filter(promise => promise !== null);
   
       // Execute all update requests
       await Promise.all(allPromises);
@@ -497,7 +538,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const handleCreate = async (
     taskName: string,
     rewards: { [barId: number]: number },
-    transactions: { [currencyId: number]: number }
+    transactions: { [currencyId: number]: number },
+    vouchers: { [itemId: number]: number },
   ) => {
     try {
       if (currentWindowId === null) return;
@@ -544,9 +586,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         }
         return null;
       }).filter(promise => promise !== null);
+
+      // Step 4: Create voucher for each currency with assigned amount
+      const voucherPromises = Object.entries(vouchers).map(([itemId, quantity]) => {
+        if (quantity !== 0) {
+          const voucherPayload = {
+            task_id: taskId,
+            item_id: parseInt(itemId, 10),
+            quantity
+          };
+          console.log('Voucher Payload:', voucherPayload);
+          return axios.post('http://localhost:8000/api/vouchers/create_voucher/', voucherPayload);
+        }
+        return null;
+      }).filter(promise => promise !== null);
   
       // Combine reward and transaction promises
-      const allPromises = [...rewardPromises, ...transactionPromises];
+      const allPromises = [...rewardPromises, ...transactionPromises, ...voucherPromises];
   
       // Execute all creation requests
       await Promise.all(allPromises);
@@ -795,13 +851,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
       const voucherPromises = Object.entries(vouchers).map(([itemId, quantity]) => {
         if (quantity !== 0) {
-          const transactionPayload = {
+          const voucherPayload = {
             bar_id: barId,
             item_id: parseInt(itemId, 10),
             quantity,
           };
-          console.log('Transaction Payload:', transactionPayload);
-          return axios.post('http://localhost:8000/api/transactions/create_transaction/', transactionPayload);
+          console.log('Voucher Payload:', voucherPayload);
+          return axios.post('http://localhost:8000/api/vouchers/create_voucher/', voucherPayload);
         }
         return null;
       }).filter(promise => promise !== null);
@@ -1174,8 +1230,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onUpdate={handleUpdate}
             transactionsProp={transactions}
             rewardsProp={rewards}
+            vouchersProp={vouchers}
             bars={barsData}
             currencies={currencies}
+            items={items}
             isEditMode={isEditMode}
             taskToEdit={taskToEdit}
           />

@@ -4,11 +4,14 @@ import styles from './createCurrencyPopup.module.css';
 interface CreateCurrencyProps {
   isOpen: boolean;
   defaultValue: string;
+  isEditMode: boolean; // New prop to indicate edit mode
   onCreate: (newName: string) => Promise<void>;
+  onEdit: (currencyId: number, newName: string) => Promise<void>;
   onQuit: () => void;
+  currencyId?: number; // New optional prop for currency ID
 }
 
-const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, onCreate, onQuit }) => {
+const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, isEditMode, onCreate, onEdit, onQuit, currencyId }) => {
   const [name, setName] = useState(defaultValue);
 
   useEffect(() => {
@@ -18,7 +21,11 @@ const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, on
   }, [isOpen, defaultValue]);
 
   const handleSave = async () => {
-    onCreate(name); // Call onSave after successful API request
+    if (isEditMode && currencyId !== undefined) {
+      await onEdit(currencyId, name); // Call onEdit for edit mode
+    } else {
+      await onCreate(name); // Call onCreate for create mode
+    }
     onQuit();
   };
 
@@ -30,7 +37,7 @@ const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, on
     isOpen && (
       <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
-          <h3>New Currency</h3>
+          <h3>{isEditMode ? 'Edit Currency' : 'New Currency'}</h3>
           <input
             type="text"
             value={name}

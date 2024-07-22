@@ -5,7 +5,7 @@ interface ItemsProps {
     items: any[];
     onCreateNewItem: () => void;
     onDeleteItem: (id: number) => void;
-    onEditItem: () => void;
+    onEditItem: (itemId: number, itemName: string) => void;
 }
 
 const Items: React.FC<ItemsProps> = ({
@@ -44,7 +44,7 @@ const Items: React.FC<ItemsProps> = ({
                         <div key={index} className={styles.item}>
                             {item.item_name}: {item.storage}
                             <div className={styles.buttons}>
-                                <button className={styles.editButton} onClick={onEditItem}>✏️</button>
+                                <button className={styles.editButton} onClick={() => onEditItem(item.item_id, item.item_name)}>✏️</button>
                                 <button className={styles.deleteButton} onClick={() => onDeleteItem(item.item_id)}>❌</button>
                             </div>
                         </div>

@@ -4,11 +4,14 @@ import styles from './createItemPopup.module.css';
 interface CreateItemProps {
   isOpen: boolean;
   defaultValue: string;
+  isEditMode: boolean;
   onCreate: (newName: string) => Promise<void>;
+  onEdit: (itemId: number, newName: string) => Promise<void>;
   onQuit: () => void;
+  itemId?: number;
 }
 
-const CreateItemPopup: FC<CreateItemProps> = ({ isOpen, defaultValue, onCreate, onQuit }) => {
+const CreateItemPopup: FC<CreateItemProps> = ({ isOpen, defaultValue, isEditMode, onCreate, onEdit, onQuit, itemId }) => {
   const [name, setName] = useState(defaultValue);
 
   useEffect(() => {
@@ -18,7 +21,11 @@ const CreateItemPopup: FC<CreateItemProps> = ({ isOpen, defaultValue, onCreate, 
   }, [isOpen, defaultValue]);
 
   const handleSave = async () => {
-    onCreate(name); // Call onSave after successful API request
+    if (isEditMode && itemId !== undefined) {
+      await onEdit(itemId, name); // Call onEdit for edit mode
+    } else {
+      await onCreate(name); // Call onCreate for create mode
+    }
     onQuit();
   };
 
@@ -30,7 +37,7 @@ const CreateItemPopup: FC<CreateItemProps> = ({ isOpen, defaultValue, onCreate, 
     isOpen && (
       <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
-          <h3>New Item</h3>
+        <h3>{isEditMode ? 'Edit Item' : 'New Item'}</h3>
           <input
             type="text"
             value={name}

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
-import styles from './currency.module.css';
+import styles from './currencies.module.css';
 
 interface CurrenciesProps {
     currencies: any[];
     onCreateNewCurrency: () => void;
+    onDeleteCurrency: (id: number) => void;
+    onEditCurrency: () => void;
 }
 
 const Currencies: React.FC<CurrenciesProps> = ({
     onCreateNewCurrency,
+    onDeleteCurrency,
+    onEditCurrency,
     currencies,
 }) => {
     const [isHidden, setIsHidden] = useState(false);
@@ -36,13 +40,17 @@ const Currencies: React.FC<CurrenciesProps> = ({
             </div>
             {!isHidden && (
                 <div className={styles.content}>
-                    <ul>
-                        {sortedCurrencies.map((currency, index) => (
-                        <React.Fragment key={index}>
-                            <li>{currency.currency_name}: {currency.owned}</li>
-                        </React.Fragment>
-                        ))}
-                    </ul>
+
+                    {sortedCurrencies.map((currency, index) => (
+                        <div key={index} className={styles.currency}>
+                            {currency.currency_name}: {currency.owned}
+                            <div className={styles.buttons}>
+                                <button className={styles.editButton} onClick={onEditCurrency}>✏️</button>
+                                <button className={styles.deleteButton} onClick={() => onDeleteCurrency(currency.currency_id)}>❌</button>
+                            </div>
+                        </div>
+                    ))}
+
                 </div>
             )}
         </div>

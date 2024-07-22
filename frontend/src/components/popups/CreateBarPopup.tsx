@@ -19,7 +19,7 @@ interface Bar {
   xp_name: string;
   full_cycle: number;
   transactions: { [currencyId: number]: number };
-  vouchers: { [itemId: number]: number },
+  vouchers: { [itemId: number]: number };
   size_vertical: number;
   size_horizontal: number;
   x_axis: number;

@@ -709,6 +709,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleItemDeletion = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/items/${id}/`);
+      setItems((prevItems) => prevItems.filter((item) => item.item_id !== id));
+    } catch (error) {
+      console.error('Error deleting task list:', error);
+    }
+    fetchItems();
+  };
+
+  const handleCurrencyDeletion = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/currencies/${id}/`);
+      setCurrencies((prevCurrencies) => prevCurrencies.filter((currency) => currency.currency_id !== id));
+    } catch (error) {
+      console.error('Error deleting task list:', error);
+    }
+    fetchCurrencies();
+  };
+
   useEffect(() => {
     if (taskLists.length > 0) {
       const newWindows = taskLists.map((taskList) => ({
@@ -1086,6 +1106,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleEditItem = () => {}
+
+  const handleEditCurrency = () => {}
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
@@ -1122,12 +1146,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         <div className={styles.currencies}>
           <Currencies 
             currencies={currencies}
+            onDeleteCurrency={handleCurrencyDeletion}
+            onEditCurrency={handleEditCurrency}
             onCreateNewCurrency={handleCreateCurrency}
           /> 
         </div>
         <div className={styles.items}>
           <Items 
             items={items}
+            onDeleteItem={handleItemDeletion}
+            onEditItem={handleEditItem}
             onCreateNewItem={handleCreateItem}
           /> 
         </div>

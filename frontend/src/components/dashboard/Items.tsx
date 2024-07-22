@@ -4,10 +4,14 @@ import styles from './items.module.css';
 interface ItemsProps {
     items: any[];
     onCreateNewItem: () => void;
+    onDeleteItem: (id: number) => void;
+    onEditItem: () => void;
 }
 
 const Items: React.FC<ItemsProps> = ({
     onCreateNewItem,
+    onDeleteItem,
+    onEditItem,
     items,
 }) => {
     const [isHidden, setIsHidden] = useState(false);
@@ -36,13 +40,15 @@ const Items: React.FC<ItemsProps> = ({
             </div>
             {!isHidden && (
                 <div className={styles.content}>
-                    <ul>
-                        {sortedItems.map((item, index) => (
-                        <React.Fragment key={index}>
-                            <li>{item.item_name}: {item.storage}</li>
-                        </React.Fragment>
-                        ))}
-                    </ul>
+                    {sortedItems.map((item, index) => (
+                        <div key={index} className={styles.item}>
+                            {item.item_name}: {item.storage}
+                            <div className={styles.buttons}>
+                                <button className={styles.editButton} onClick={onEditItem}>✏️</button>
+                                <button className={styles.deleteButton} onClick={() => onDeleteItem(item.item_id)}>❌</button>
+                            </div>
+                        </div>
+                    ))}
                 </div>
             )}
         </div>

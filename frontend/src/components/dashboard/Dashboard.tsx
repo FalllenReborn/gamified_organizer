@@ -15,11 +15,11 @@ import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
 import CreateItemPopup from '../popups/CreateItemPopup';
 import axios from 'axios';
 
-interface Layers {
+interface Layer {
   layer_id: number;
   layer: number;
-  list_id: number;
-  bar_id: number;
+  foreign_table: number;
+  foreign_id: number;
 }
 
 interface TaskList {
@@ -29,7 +29,7 @@ interface TaskList {
   y_axis: number;
   size_horizontal: number;
   size_vertical: number;
-  layer: Layers;
+  layer: Layer;
   total_points: number;
   detail_view: boolean;
 }
@@ -42,9 +42,19 @@ interface BarData {
   y_axis: number;
   size_horizontal: number;
   size_vertical: number;
-  layer: Layers;
+  layer: Layer;
   full_cycle: number;
   total_points: number;
+}
+
+interface ShopData {
+  shop_id: number;
+  shop_name: string;
+  x_axis: number;
+  y_axis: number;
+  size_horizontal: number;
+  size_vertical: number;
+  layer: Layer;
 }
 
 interface Currency {
@@ -139,6 +149,11 @@ interface Reward {
   points: number;
 }
 
+interface StateItem {
+  id: number;
+  layer: number;
+}
+
 interface DashboardProps {
   onReturnHome: () => void;
   createNewList: boolean;
@@ -163,6 +178,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 });
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
+  const [shopsData, setShopsData] = useState<ShopData[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -373,6 +389,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchTransactions();
     fetchRewards();
     fetchVouchers();
+    fetchTaskLists();
+    fetchBars();
+    fetchShops();
   }, []);
 
   const handleConfirm = async (
@@ -627,7 +646,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error fetching task lists:', error);
     }
   };
-
+  
   const fetchBars = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/bars/');
@@ -638,60 +657,114 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error fetching bars:', error);
     }
   };
-
-  useEffect(() => {
-    fetchTaskLists();
-    fetchBars();
-  }, []);
   
-  const moveItemToHighestLayer = async (barId?: number, listId?: number) => {
+  const fetchShops = async () => {
     try {
-      const payload = barId ? { bar_id: barId } : { list_id: listId };
-      await axios.post('http://localhost:8000/api/layers/move_to_highest/', payload);
+      const response = await axios.get('http://localhost:8000/api/shops/');
+      const fetchedShops: ShopData[] = response.data;
+      const sortedShops = fetchedShops.sort((a, b) => a.layer.layer - b.layer.layer);
+      setShopsData(sortedShops);
     } catch (error) {
-      console.error('Error moving item to highest:', error);
+      console.error('Error fetching shops:', error);
     }
-    fetchBars();
-    fetchTaskLists();
+  };
+
+  type UpdateStateFunction = (id: number, updatedLayer: number) => void;
+
+  const optimisticUpdate = (
+    foreignId: number,
+    foreignTable: number,
+    updateState: UpdateStateFunction,
+    previousLayer: number
+  ) => {
+    // Immediately update the UI
+    updateState(foreignId, 6000000);
+  
+    // Revert changes if the server update fails
+    return axios.post('http://localhost:8000/api/layers/move_to_highest/', {
+      foreign_id: foreignId,
+      foreign_table: foreignTable
+    }).catch((error) => {
+      console.error('Error moving item to highest:', error);
+      // Revert the state update on error
+      updateState(foreignId, previousLayer);
+    });
+  };
+
+  const updateState = (
+    foreignTable: number,
+    id: number,
+    newLayer: number,
+    previousLayer: number
+  ) => {
+    switch (foreignTable) {
+      case 1:
+        setTaskLists(prevLists => 
+          prevLists.map(list =>
+            list.list_id === id
+              ? { ...list, layer: { ...list.layer, layer: newLayer } }
+              : list
+          )
+        );
+        break;
+      case 2:
+        setBarsData(prevBars =>
+          prevBars.map(bar =>
+            bar.bar_id === id
+              ? { ...bar, layer: { ...bar.layer, layer: newLayer } }
+              : bar
+          )
+        );
+        break;
+      case 3:
+        setShopsData(prevShops =>
+          prevShops.map(shop =>
+            shop.shop_id === id
+              ? { ...shop, layer: { ...shop.layer, layer: newLayer } }
+              : shop
+          )
+        );
+        break;
+      default:
+        console.error('Invalid foreign_table value:', foreignTable);
+    }
   };
   
-  const handleMoveToHighest = (itemId: number, itemType: 'tasklist' | 'bar') => {
-    if (itemType === 'tasklist') {
-      const taskListIndex = taskLists.findIndex(tl => tl.list_id === itemId);
-      if (taskListIndex !== -1) {
-        // Optimistically update the zIndex of the task list
-        const updatedTaskLists = [...taskLists];
-        updatedTaskLists[taskListIndex] = {
-          ...updatedTaskLists[taskListIndex],
-          layer: {
-            ...updatedTaskLists[taskListIndex].layer,
-            layer: 6000000
-          }
-        };
-        setTaskLists(updatedTaskLists);
+  const moveItemToHighestLayer = async (foreignId: number, foreignTable: number) => {
+    // Find the previous layer value based on foreignTable
+    let previousLayer: number;
   
-        moveItemToHighestLayer(undefined, taskLists[taskListIndex].list_id);
-      } else {
-        console.error(`Task list with ID ${itemId} not found`);
-      }
-    } else if (itemType === 'bar') {
-      const barIndex = barsData.findIndex(bar => bar.bar_id === itemId);
-      if (barIndex !== -1) {
-        // Optimistically update the zIndex of the bar
-        const updatedBarsData = [...barsData];
-        updatedBarsData[barIndex] = {
-          ...updatedBarsData[barIndex],
-          layer: {
-            ...updatedBarsData[barIndex].layer,
-            layer: 6000000
-          }
-        };
-        setBarsData(updatedBarsData);
+    switch (foreignTable) {
+      case 1:
+        previousLayer = taskLists.find(list => list.list_id === foreignId)?.layer.layer || 0;
+        break;
+      case 2:
+        previousLayer = barsData.find(bar => bar.bar_id === foreignId)?.layer.layer || 0;
+        break;
+      case 3:
+        previousLayer = shopsData.find(shop => shop.shop_id === foreignId)?.layer.layer || 0;
+        break;
+      default:
+        console.error('Invalid foreign_table value:', foreignTable);
+        return;
+    }
   
-        moveItemToHighestLayer(barsData[barIndex].bar_id);
-      } else {
-        console.error(`Bar with ID ${itemId} not found`);
-      }
+    // Perform optimistic update
+    const revertLayer = optimisticUpdate(
+      foreignId,
+      foreignTable,
+      (id, newLayer) => updateState(foreignTable, id, newLayer, previousLayer),
+      previousLayer
+    );
+  
+    try {
+      await revertLayer;  // Wait for the revert logic to complete
+      // Fetch updated data if necessary
+      fetchBars();
+      fetchTaskLists();
+      fetchShops();
+    } catch (error) {
+      console.error('Error during optimistic update:', error);
     }
   };
   
@@ -732,36 +805,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
     fetchCurrencies();
   };
-
-  useEffect(() => {
-    if (taskLists.length > 0) {
-      const newWindows = taskLists.map((taskList) => ({
-        id: taskList.list_id,
-        title: taskList.list_name,
-        initialX: taskList.x_axis,
-        initialY: taskList.y_axis,
-        initialWidth: taskList.size_horizontal,
-        initialHeight: taskList.size_vertical,
-        zIndex: taskList.layer.layer,
-      }));
-      setWindows(newWindows);
-    }
-  }, [taskLists]);
-
-  useEffect(() => {
-    if (barsData.length > 0) {
-      const newBars = barsData.map((barsData) => ({
-        id: barsData.bar_id,
-        title: barsData.bar_name,
-        initialX: barsData.x_axis,
-        initialY: barsData.y_axis,
-        initialWidth: barsData.size_horizontal,
-        initialHeight: barsData.size_vertical,
-        zIndex: barsData.layer.layer,
-      }));
-      setBars(newBars);
-    }
-  }, [taskLists]);
 
   const handleCreateCurrency = () => {
     setCreateCurrencyPopup({
@@ -1226,7 +1269,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             detailView={taskList.detail_view}
             onClose={handleCloseWindow} 
             onRename={(id) => handleEditList(id, taskList.list_name, taskList.x_axis, taskList.y_axis, taskList.size_horizontal, taskList.size_vertical)}
-            onClick={() => handleMoveToHighest(taskList.list_id, 'tasklist')}
+            onClick={() => moveItemToHighestLayer(taskList.list_id, taskList.layer.foreign_table)}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
             onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'taskList')}
@@ -1257,7 +1300,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               zIndex={bar.layer.layer}
               onClose={handleCloseBar}
               onEdit={handleEditBar}
-              onClick={() => handleMoveToHighest(bar.bar_id, 'bar')}
+              onClick={() => moveItemToHighestLayer(bar.layer.foreign_id, bar.layer.foreign_table)}
               onDrag={handleDragWindow}
               onResize={handleResizeWindow}
               onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'bars')}

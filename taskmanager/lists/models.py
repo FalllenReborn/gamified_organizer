@@ -6,9 +6,9 @@ from django.dispatch import receiver
 
 class Layer(models.Model):
     layer_id = models.AutoField(primary_key=True)
-    bar = models.OneToOneField('Bar', on_delete=models.CASCADE, null=True, blank=True, related_name='layer')
-    list = models.OneToOneField('TaskList', on_delete=models.CASCADE, null=True, blank=True, related_name='layer')
     layer = models.IntegerField(unique=True)
+    foreign_id = models.IntegerField()
+    foreign_table = models.SmallIntegerField()
 
     class Meta:
         db_table = 'layers'
@@ -49,6 +49,22 @@ class Bar(models.Model):
 
     class Meta:
         db_table = 'bars'
+
+
+class Shop(models.Model):
+    shop_id = models.AutoField(primary_key=True)
+    shop_name = models.CharField(max_length=255)
+    x_axis = models.FloatField(default=0)
+    y_axis = models.FloatField(default=0)
+    size_vertical = models.FloatField(default=300)
+    size_horizontal = models.FloatField(default=300)
+    hidden = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.shop_name
+
+    class Meta:
+        db_table = 'shops'
 
 
 class Task(models.Model):
@@ -152,22 +168,6 @@ class Voucher(models.Model):
 
     class Meta:
         db_table = 'vouchers'
-
-
-class Shop(models.Model):
-    shop_id = models.AutoField(primary_key=True)
-    shop_name = models.CharField(max_length=255)
-    x_axis = models.FloatField(default=0)
-    y_axis = models.FloatField(default=0)
-    size_vertical = models.FloatField(default=300)
-    size_horizontal = models.FloatField(default=300)
-    hidden = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.shop_name
-
-    class Meta:
-        db_table = 'shops'
 
 
 class Price(models.Model):

@@ -22,20 +22,36 @@ class LayerViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'], url_path='move_to_highest')
     def move_to_highest(self, request):
-        bar_id = request.data.get('bar_id')
-        list_id = request.data.get('list_id')
+        # Retrieve data from the request
+        foreign_id = request.data.get('foreign_id')
+        foreign_table = request.data.get('foreign_table')
 
-        if not bar_id and not list_id:
-            return Response({'error': 'Either bar_id or list_id must be provided'}, status=400)
+        # Validate if the required parameters are provided
+        if foreign_id is None or foreign_table is None:
+            return Response({'error': 'foreign_id and foreign_table must be provided'}, status=400)
 
         try:
+            # Convert the values to integers
+            foreign_id = int(foreign_id)
+            foreign_table = int(foreign_table)
+
+            # Perform the database operation
             with transaction.atomic():
                 with connection.cursor() as cursor:
-                    cursor.callproc('move_to_highest', [bar_id, list_id])
+                    cursor.execute('SELECT * FROM move_to_higher(%s::integer, %s::smallint)',
+                                   [foreign_id, foreign_table])
+
             return Response({'message': 'Layer moved to highest successfully'}, status=200)
+
+        except ValueError as ve:
+            # Handle case where conversion to integer fails
+            logger.error(f"ValueError occurred in move_to_highest: {str(ve)}", exc_info=True)
+            return Response({'error': 'Invalid value provided for foreign_id or foreign_table'}, status=400)
+
         except Exception as e:
+            # General exception handling
             logger.error(f"Error occurred in move_to_highest: {str(e)}", exc_info=True)
-            return Response({'error': str(e)}, status=500)
+            return Response({'error': 'Internal server error'}, status=500)
 
 
 class TaskListViewSet(viewsets.ModelViewSet):
@@ -47,7 +63,7 @@ class TaskListViewSet(viewsets.ModelViewSet):
         return super().create(request, *args, **kwargs)
 
     def get_queryset(self):
-        return TaskList.objects.all().select_related('layer')
+        return TaskList.objects.all().select_related()
 
     @action(detail=False, methods=['GET'])
     def visible_lists(self, request):
@@ -88,7 +104,7 @@ class BarViewSet(viewsets.ModelViewSet):
     serializer_class = BarSerializer
 
     def get_queryset(self):
-        return Bar.objects.all().select_related('layer')
+        return Bar.objects.all().select_related()
 
     @method_decorator(csrf_exempt)
     @action(detail=True, methods=['put'], url_path='update_name')
@@ -135,6 +151,37 @@ class BarViewSet(viewsets.ModelViewSet):
                 full_cycle=full_cycle
             )
             serializer = BarSerializer(bar)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+
+class ShopViewSet(viewsets.ModelViewSet):
+    queryset = Shop.objects.all()
+    serializer_class = ShopSerializer
+
+    def get_queryset(self):
+        return Shop.objects.all().select_related()
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_shop')
+    def create_shop(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            shop_name = data.get('shop_name')
+            description = data.get('description')
+
+            if not shop_name:
+                return JsonResponse({'error': 'shop_name is required'}, status=400)
+
+            shop = Shop.objects.create(
+                shop_name=shop_name,
+                description=description
+            )
+            serializer = ShopSerializer(shop)
             return JsonResponse(serializer.data, status=201)
 
         except json.JSONDecodeError:
@@ -446,33 +493,6 @@ class VoucherViewSet(viewsets.ModelViewSet):
         except Voucher.DoesNotExist:
             return JsonResponse({'error': 'Voucher not found'}, status=404)
 
-
-class ShopViewSet(viewsets.ModelViewSet):
-    queryset = Shop.objects.all()
-    serializer_class = ShopSerializer
-
-    @method_decorator(csrf_exempt)
-    @action(detail=False, methods=['post'], url_path='create_shop')
-    def create_shop(self, request):
-        try:
-            data = json.loads(request.body.decode('utf-8'))
-            shop_name = data.get('shop_name')
-            description = data.get('description')
-
-            if not shop_name:
-                return JsonResponse({'error': 'shop_name is required'}, status=400)
-
-            shop = Shop.objects.create(
-                shop_name=shop_name,
-                description=description
-            )
-            serializer = ShopSerializer(shop)
-            return JsonResponse(serializer.data, status=201)
-
-        except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
 
 class PriceViewSet(viewsets.ModelViewSet):
     queryset = Price.objects.all()

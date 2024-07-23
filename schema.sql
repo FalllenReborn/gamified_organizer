@@ -26,12 +26,19 @@ CREATE FUNCTION public.add_layer() RETURNS trigger
 DECLARE
     max_layer INT;
 BEGIN
+    -- Get the maximum layer value plus 1
     SELECT COALESCE(MAX(layer), 4999999) + 1 INTO max_layer FROM layers;
-    
+
+    -- Insert into layers based on the triggering table
     IF (TG_TABLE_NAME = 'bars') THEN
-        INSERT INTO layers (bar_id, layer) VALUES (NEW.bar_id, max_layer);
+        INSERT INTO layers (foreign_id, foreign_table, layer) 
+        VALUES (NEW.bar_id, 2, max_layer);
     ELSIF (TG_TABLE_NAME = 'task_lists') THEN
-        INSERT INTO layers (list_id, layer) VALUES (NEW.list_id, max_layer);
+        INSERT INTO layers (foreign_id, foreign_table, layer) 
+        VALUES (NEW.list_id, 1, max_layer);
+    ELSIF (TG_TABLE_NAME = 'shops') THEN
+        INSERT INTO layers (foreign_id, foreign_table, layer) 
+        VALUES (NEW.shop_id, 3, max_layer);
     END IF;
 
     RETURN NEW;
@@ -57,6 +64,33 @@ $$;
 
 
 ALTER FUNCTION public.create_related_entries() OWNER TO postgres;
+
+--
+-- Name: delete_layer_if_referenced(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.delete_layer_if_referenced() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Check the foreign_table value and delete the layer accordingly
+    IF (SELECT foreign_table FROM layers WHERE foreign_id = OLD.id AND foreign_table = 1) THEN
+        -- Delete layer if it's a task_list and referenced record is deleted
+        DELETE FROM layers WHERE foreign_id = OLD.id AND foreign_table = 1;
+    ELSIF (SELECT foreign_table FROM layers WHERE foreign_id = OLD.id AND foreign_table = 2) THEN
+        -- Delete layer if it's a bar and referenced record is deleted
+        DELETE FROM layers WHERE foreign_id = OLD.id AND foreign_table = 2;
+    ELSIF (SELECT foreign_table FROM layers WHERE foreign_id = OLD.id AND foreign_table = 3) THEN
+        -- Delete layer if it's a shop and referenced record is deleted
+        DELETE FROM layers WHERE foreign_id = OLD.id AND foreign_table = 3;
+    END IF;
+
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.delete_layer_if_referenced() OWNER TO postgres;
 
 --
 -- Name: delete_nested_tasks(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -130,69 +164,78 @@ $$;
 ALTER FUNCTION public.handle_task_deletion() OWNER TO postgres;
 
 --
--- Name: move_to_highest(integer, integer); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: move_to_higher(integer, smallint); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.move_to_highest(p_bar_id integer DEFAULT NULL::integer, p_list_id integer DEFAULT NULL::integer) RETURNS void
+CREATE FUNCTION public.move_to_higher(p_foreign_id integer, p_foreign_table smallint) RETURNS void
     LANGUAGE plpgsql
-    AS $$DECLARE
+    AS $$
+DECLARE
     chosen_layer INT;
     highest_layer INT;
     new_layer INT;
 BEGIN
-    -- Determine the chosen layer based on bar_id or list_id
-    IF p_bar_id IS NOT NULL THEN
-        SELECT layer INTO chosen_layer FROM layers WHERE bar_id = p_bar_id;
-    ELSIF p_list_id IS NOT NULL THEN
-        SELECT layer INTO chosen_layer FROM layers WHERE list_id = p_list_id;
-    ELSE
-        RAISE EXCEPTION 'Either bar_id or list_id must be provided';
+    -- Determine the chosen layer based on foreign_id and foreign_table
+    SELECT layer INTO chosen_layer FROM layers 
+    WHERE foreign_id = p_foreign_id AND foreign_table = p_foreign_table;
+
+    -- Find the highest layer
+    SELECT COALESCE(MAX(layer), 4999999) INTO highest_layer FROM layers;
+
+    -- Check if the chosen layer is the highest
+    IF chosen_layer = highest_layer THEN
+        RETURN;
     END IF;
 
-    -- Find the highest layer and set new layer to highest + 1 to avoid conflicts
-    SELECT COALESCE(MAX(layer), 0) + 1 INTO highest_layer FROM layers;
+    -- Calculate the new layer
     new_layer := highest_layer + 1;
 
-    -- Check if chosen_layer is less than new_layer
-    IF chosen_layer < new_layer THEN
-        -- Update the chosen layer to the temporary highest value
-        UPDATE layers 
-        SET layer = new_layer 
-        WHERE (bar_id = p_bar_id OR list_id = p_list_id);
-
-        -- Subtract 1 from all higher layers except the newly set one
-        UPDATE layers 
-        SET layer = layer - 1 
-        WHERE layer > chosen_layer AND layer < new_layer;
-
-        -- Finally, set the chosen layer to the actual highest_layer
-        UPDATE layers 
-        SET layer = highest_layer 
-        WHERE (bar_id = p_bar_id OR list_id = p_list_id);
+    -- Check if the new layer exceeds the maximum allowed layer value
+    IF new_layer >= 6000000 THEN
+        -- Call the reset_layers function if the new layer exceeds the limit
+        PERFORM reset_layers();
+        -- Recalculate the highest layer and set the new layer
+        SELECT COALESCE(MAX(layer), 4999999) + 1 INTO highest_layer FROM layers;
+        new_layer := highest_layer;
     END IF;
-END;$$;
 
+    -- Update the chosen layer to the new layer
+    UPDATE layers 
+    SET layer = new_layer 
+    WHERE foreign_id = p_foreign_id AND foreign_table = p_foreign_table;
 
-ALTER FUNCTION public.move_to_highest(p_bar_id integer, p_list_id integer) OWNER TO postgres;
-
---
--- Name: reorder_layers(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.reorder_layers() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    -- Decrement the layer of all rows that have a higher layer than the deleted row
-    UPDATE layers
-    SET layer = layer - 1
-    WHERE layer > OLD.layer;
-    RETURN NULL;
 END;
 $$;
 
 
-ALTER FUNCTION public.reorder_layers() OWNER TO postgres;
+ALTER FUNCTION public.move_to_higher(p_foreign_id integer, p_foreign_table smallint) OWNER TO postgres;
+
+--
+-- Name: reset_layers(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.reset_layers() RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    r RECORD;
+    counter INT := 0;
+BEGIN
+    -- Iterate over all layers in ascending order
+    FOR r IN (SELECT layer_id, layer FROM layers ORDER BY layer) LOOP
+        -- Update each layer to the new value
+        UPDATE layers 
+        SET layer = 5000000 + counter
+        WHERE layer_id = r.layer_id;
+        
+        -- Increment the counter
+        counter := counter + 1;
+    END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION public.reset_layers() OWNER TO postgres;
 
 --
 -- Name: update_bars_and_distribute_transactions(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -653,11 +696,9 @@ ALTER SEQUENCE public.items_item_id_seq OWNED BY public.items.item_id;
 
 CREATE TABLE public.layers (
     layer_id integer NOT NULL,
-    bar_id integer,
-    list_id integer,
     layer integer NOT NULL,
-    CONSTRAINT layers_check CHECK (((bar_id IS NOT NULL) OR (list_id IS NOT NULL))),
-    CONSTRAINT layers_check1 CHECK (((bar_id IS NULL) OR (list_id IS NULL))),
+    foreign_id integer NOT NULL,
+    foreign_table smallint NOT NULL,
     CONSTRAINT layers_layer_check CHECK (((layer >= 5000000) AND (layer < 6000000)))
 );
 
@@ -1418,6 +1459,13 @@ CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session U
 
 
 --
+-- Name: idx_foreign; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_foreign ON public.layers USING btree (foreign_id, foreign_table);
+
+
+--
 -- Name: lists_tasklist_owner_id_4ed0467b; Type: INDEX; Schema: public; Owner: reborn
 --
 
@@ -1425,17 +1473,24 @@ CREATE INDEX lists_tasklist_owner_id_4ed0467b ON public.lists_tasklist USING btr
 
 
 --
--- Name: bars add_layer_to_bar; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: bars add_layer_on_bars; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER add_layer_to_bar AFTER INSERT ON public.bars FOR EACH ROW EXECUTE FUNCTION public.add_layer();
+CREATE TRIGGER add_layer_on_bars AFTER INSERT ON public.bars FOR EACH ROW EXECUTE FUNCTION public.add_layer();
 
 
 --
--- Name: task_lists add_layer_to_task_list; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: shops add_layer_on_shops; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER add_layer_to_task_list AFTER INSERT ON public.task_lists FOR EACH ROW EXECUTE FUNCTION public.add_layer();
+CREATE TRIGGER add_layer_on_shops AFTER INSERT ON public.shops FOR EACH ROW EXECUTE FUNCTION public.add_layer();
+
+
+--
+-- Name: task_lists add_layer_on_task_lists; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER add_layer_on_task_lists AFTER INSERT ON public.task_lists FOR EACH ROW EXECUTE FUNCTION public.add_layer();
 
 
 --
@@ -1453,17 +1508,31 @@ CREATE TRIGGER before_task_delete BEFORE DELETE ON public.tasks FOR EACH ROW EXE
 
 
 --
+-- Name: bars delete_layer_bar; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER delete_layer_bar AFTER DELETE ON public.bars FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced();
+
+
+--
+-- Name: shops delete_layer_shop; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER delete_layer_shop AFTER DELETE ON public.shops FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced();
+
+
+--
+-- Name: task_lists delete_layer_task_list; Type: TRIGGER; Schema: public; Owner: postgres
+--
+
+CREATE TRIGGER delete_layer_task_list AFTER DELETE ON public.task_lists FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced();
+
+
+--
 -- Name: tasks delete_nested_tasks_trigger; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
 CREATE TRIGGER delete_nested_tasks_trigger AFTER DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.delete_nested_tasks();
-
-
---
--- Name: layers reorder_layers_after_delete; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER reorder_layers_after_delete AFTER DELETE ON public.layers FOR EACH ROW EXECUTE FUNCTION public.reorder_layers();
 
 
 --
@@ -1567,22 +1636,6 @@ ALTER TABLE ONLY public.prices
 
 ALTER TABLE ONLY public.prices
     ADD CONSTRAINT fk_shop FOREIGN KEY (shop_id) REFERENCES public.shops(shop_id);
-
-
---
--- Name: layers layers_bar_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.layers
-    ADD CONSTRAINT layers_bar_id_fkey FOREIGN KEY (bar_id) REFERENCES public.bars(bar_id) ON DELETE CASCADE;
-
-
---
--- Name: layers layers_list_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.layers
-    ADD CONSTRAINT layers_list_id_fkey FOREIGN KEY (list_id) REFERENCES public.task_lists(list_id) ON DELETE CASCADE;
 
 
 --

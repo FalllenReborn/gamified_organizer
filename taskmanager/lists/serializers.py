@@ -9,19 +9,51 @@ class LayerSerializer(serializers.ModelSerializer):
 
 
 class TaskListSerializer(serializers.ModelSerializer):
-    layer = LayerSerializer(required=False)
+    layer = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = TaskList
         fields = '__all__'
 
+    @staticmethod
+    def get_layer(obj):
+        try:
+            layer = Layer.objects.get(foreign_id=obj.list_id, foreign_table=1)
+            return LayerSerializer(layer).data
+        except Layer.DoesNotExist:
+            return None
+
 
 class BarSerializer(serializers.ModelSerializer):
-    layer = LayerSerializer()
+    layer = serializers.SerializerMethodField(required=False)
 
     class Meta:
         model = Bar
         fields = '__all__'
+
+    @staticmethod
+    def get_layer(obj):
+        try:
+            layer = Layer.objects.get(foreign_id=obj.bar_id, foreign_table=2)
+            return LayerSerializer(layer).data
+        except Layer.DoesNotExist:
+            return None
+
+
+class ShopSerializer(serializers.ModelSerializer):
+    layer = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = Shop
+        fields = '__all__'
+
+    @staticmethod
+    def get_layer(obj):
+        try:
+            layer = Layer.objects.get(foreign_id=obj.shop_id, foreign_table=3)
+            return LayerSerializer(layer).data
+        except Layer.DoesNotExist:
+            return None
 
 
 class RewardSerializer(serializers.ModelSerializer):
@@ -57,12 +89,6 @@ class ItemSerializer(serializers.ModelSerializer):
 class VoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voucher
-        fields = '__all__'
-
-
-class ShopSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Shop
         fields = '__all__'
 
 

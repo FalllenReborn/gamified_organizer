@@ -1,10 +1,10 @@
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
-from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer, Item, Voucher
+from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer, Item, Voucher, Shop, Price
 from .serializers import (TaskListSerializer, TaskSerializer, RewardSerializer,
                           BarSerializer, CurrencySerializer, TransactionSerializer,
-                          LayerSerializer, ItemSerializer, VoucherSerializer)
+                          LayerSerializer, ItemSerializer, VoucherSerializer, ShopSerializer, PriceSerializer)
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
@@ -445,3 +445,72 @@ class VoucherViewSet(viewsets.ModelViewSet):
             return JsonResponse({'message': 'Voucher deleted'}, status=204)
         except Voucher.DoesNotExist:
             return JsonResponse({'error': 'Voucher not found'}, status=404)
+
+
+class ShopViewSet(viewsets.ModelViewSet):
+    queryset = Shop.objects.all()
+    serializer_class = ShopSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_shop')
+    def create_shop(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            shop_name = data.get('shop_name')
+            description = data.get('description')
+
+            if not shop_name:
+                return JsonResponse({'error': 'shop_name is required'}, status=400)
+
+            shop = Shop.objects.create(
+                shop_name=shop_name,
+                description=description
+            )
+            serializer = ShopSerializer(shop)
+            return JsonResponse(serializer.data, status=201)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+class PriceViewSet(viewsets.ModelViewSet):
+    queryset = Price.objects.all()
+    serializer_class = PriceSerializer
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='create_price')
+    def create_price(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            item_id = data.get('item_id')
+            shop_id = data.get('shop_id')
+            currency_id = data.get('currency_id')
+            amount = data.get('amount')
+
+            if not item_id or not shop_id or not currency_id or not amount:
+                return JsonResponse({'error': 'item_id, shop_id, currency_id, and amount are required'}, status=400)
+
+            item = Item.objects.get(item_id=item_id)
+            shop = Shop.objects.get(shop_id=shop_id)
+            currency = Currency.objects.get(currency_id=currency_id)
+
+            price = Price.objects.create(
+                item=item,
+                shop=shop,
+                currency=currency,
+                amount=amount
+            )
+            serializer = PriceSerializer(price)
+            return JsonResponse(serializer.data, status=201)
+
+        except Item.DoesNotExist:
+            return JsonResponse({'error': 'Item not found'}, status=404)
+        except Shop.DoesNotExist:
+            return JsonResponse({'error': 'Shop not found'}, status=404)
+        except Currency.DoesNotExist:
+            return JsonResponse({'error': 'Currency not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

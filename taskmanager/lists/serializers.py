@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer, Item, Voucher
+from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer, Item, Voucher, Shop, Price
 
 
 class LayerSerializer(serializers.ModelSerializer):
@@ -57,4 +57,16 @@ class ItemSerializer(serializers.ModelSerializer):
 class VoucherSerializer(serializers.ModelSerializer):
     class Meta:
         model = Voucher
+        fields = '__all__'
+
+
+class ShopSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Shop
+        fields = '__all__'
+
+
+class PriceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Price
         fields = '__all__'

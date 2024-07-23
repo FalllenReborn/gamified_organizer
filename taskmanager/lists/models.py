@@ -154,6 +154,36 @@ class Voucher(models.Model):
         db_table = 'vouchers'
 
 
+class Shop(models.Model):
+    shop_id = models.AutoField(primary_key=True)
+    shop_name = models.CharField(max_length=255)
+    x_axis = models.FloatField(default=0)
+    y_axis = models.FloatField(default=0)
+    size_vertical = models.FloatField(default=300)
+    size_horizontal = models.FloatField(default=300)
+    hidden = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.shop_name
+
+    class Meta:
+        db_table = 'shops'
+
+
+class Price(models.Model):
+    price_id = models.AutoField(primary_key=True)
+    currency = models.ForeignKey(Currency, on_delete=models.CASCADE, db_column='currency_id')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, db_column='item_id')
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE, db_column='shop_id')
+    cost = models.PositiveIntegerField()
+
+    def __str__(self):
+        return f'Price {self.price_id}: {self.cost}'
+
+    class Meta:
+        db_table = 'prices'
+
+
 @receiver(pre_delete, sender=Task)
 def handle_task_deletion(sender, instance, **kwargs):
     transactions = Transaction.objects.filter(task_id=instance.task_id)

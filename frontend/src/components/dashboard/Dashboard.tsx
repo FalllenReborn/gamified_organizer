@@ -242,6 +242,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setIsPopupOpen(true);
   };
 
+  const openCreatePrice = (windowId: number, editMode = false, task = null) => {
+
+  };
+
   const closePopup = () => {
     setIsPopupOpen(false);
   };
@@ -348,6 +352,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleCloseShop = async (id: number) => {
+    try {
+      await handleShopDeletion(id);
+      await fetchShops();
+    } catch (error) {
+      console.error('Error deleting shop:', error);
+    }
+  };
+
   const fetchRewards = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/rewards/');
@@ -403,6 +416,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
   
   useEffect(() => {
+    fetchPrices();
     fetchItems();
     fetchCurrencies();
     fetchTransactions();
@@ -805,6 +819,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleShopDeletion = async (id: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/shops/${id}/`);
+      setShopsData((prevShops) => prevShops.filter((shop) => shop.shop_id !== id));
+    } catch (error) {
+      console.error('Error deleting shop:', error);
+    }
+  };
+
   const handleItemDeletion = async (id: number) => {
     try {
       await axios.delete(`http://localhost:8000/api/items/${id}/`);
@@ -1172,6 +1195,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleEditShop = () => {}
+
   const handleCreateNewList = async () => {
     setCreateListPopup({
       isOpen: true,
@@ -1359,8 +1384,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               items={items}
               currencies={currencies}
               zIndex={shop.layer.layer}
-              onClose={handleCloseBar}
-              onEdit={handleEditBar}
+              onClose={handleCloseShop}
+              onEdit={handleEditShop}
+              onCreate={openPopup}
               onClick={() => moveItemToHighestLayer(shop.layer.foreign_id, shop.layer.foreign_table)}
               onDrag={handleDragWindow}
               onResize={handleResizeWindow}

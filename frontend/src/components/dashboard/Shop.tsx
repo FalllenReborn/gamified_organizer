@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './shop.module.css';
 import axios from 'axios';
 
+interface Price {
+    price_id: number;
+    currency: number;
+    item: number;
+    shop: number;
+    cost: number;
+  }
+
 interface ShopProps {
     id: number;
     title: string;
@@ -19,9 +27,10 @@ interface ShopProps {
     onResize: (id: number, width: number, height: number, type: string) => void;
     onPositionUpdate: (id: number, x: number, y: number) => void;
     onSizeUpdate: (id: number, width: number, height: number) => void;
+    onCreate: (windowId: number, editMode: any, task: any) => void;
     currencies: any[];
     items: any[];
-    prices: any[]
+    prices: Price[];
 }
 
 const Shop: React.FC<ShopProps> = ({
@@ -44,6 +53,7 @@ const Shop: React.FC<ShopProps> = ({
     onResize,
     onPositionUpdate,
     onSizeUpdate,
+    onCreate
 }) => {
     const [position, setPosition] = useState({ x: initialX, y: initialY });
     const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
@@ -52,6 +62,7 @@ const Shop: React.FC<ShopProps> = ({
     const [resizeDirection, setResizeDirection] = useState('');
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [inputValues, setInputValues] = useState<{ [key: number]: number }>({});
     const shopRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const positionRef = useRef(position);
@@ -66,6 +77,15 @@ const Shop: React.FC<ShopProps> = ({
         setSize({ width: initialWidth, height: initialHeight });
         sizeRef.current = { width: initialWidth, height: initialHeight };
     }, [initialWidth, initialHeight]);
+
+    useEffect(() => {
+        // Initialize input values for each price with default 0
+        const initialValues: { [key: number]: number } = {};
+        prices.forEach(price => {
+            initialValues[price.price_id] = 0;
+        });
+        setInputValues(initialValues);
+    }, [prices]);
 
     const updateSizeInDatabase = useCallback(async (width: number, height: number) => {
         const constrainedWidth = width < 50 ? 50 : width;
@@ -106,7 +126,13 @@ const Shop: React.FC<ShopProps> = ({
     }, []);
 
     const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-        if ((e.target as HTMLElement).closest(`.${styles.dropdown}`)) return;
+        const targetElement = e.target as HTMLElement;
+        if (targetElement.closest(`.${styles.addButton}`)) {
+            return; // Prevent dragging if clicking on taskbar buttons
+        }
+        if (targetElement.closest(`.${styles.dropdownButton}`)) {
+            return; // Prevent dragging if clicking on taskbar buttons
+        }
         setIsDragging(true);
         setStartPos({
             x: e.clientX / scale - position.x,
@@ -244,13 +270,44 @@ const Shop: React.FC<ShopProps> = ({
         setDropdownOpen(false);
     };
 
-    const getPricesForShop = (shopId: number) => {
-        return prices.filter((price) => price.bar === shopId);
+    const handleHide = () => {
+        console.log(`ID: ${id}`)
+        console.log(`Prices: ${prices}`)
+        console.log(prices)
+        {prices
+            .filter((price) => price.shop === id)
+            .map((price) => (
+                console.log(`Maped id ${price.price_id}`)
+        ))}
+    }
+
+    const getItemName = (itemId: number) => {
+        const item = items.find(item => item.item_id === itemId);
+        return item ? item.item_name : 'Item';
     };
 
     const getCurrencyName = (currencyId: number) => {
         const currency = currencies.find(currency => currency.currency_id === currencyId);
         return currency ? currency.currency_name : 'Currency';
+    };
+
+    const handleIncrement = (priceId: number) => {
+        setInputValues(prevValues => {
+            const newValue = prevValues[priceId] + 1;
+            return { ...prevValues, [priceId]: newValue };
+        });
+    };
+
+    const handleDecrement = (priceId: number) => {
+        setInputValues(prevValues => {
+            const newValue = Math.max(prevValues[priceId] - 1, 0);
+            return { ...prevValues, [priceId]: newValue };
+        });
+    };
+
+    const handleInputChange = (priceId: number, value: string) => {
+        const numericValue = Math.max(parseInt(value) || 0, 0);
+        setInputValues(prevValues => ({ ...prevValues, [priceId]: numericValue }));
     };
 
     return (
@@ -272,34 +329,115 @@ const Shop: React.FC<ShopProps> = ({
                 id={`shop-${id}`}
                 ref={shopRef}
                 className={styles.shop}
-                onMouseDown={handleDragStart}
                 style={{
                     width: `${size.width}px`,
                     height: `${size.height}px`,
-                }}>
-                <div className={styles.topLine}>
-                    <div className={styles.dropdown} ref={dropdownRef}>
-                        <button 
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setDropdownOpen(!dropdownOpen);
-                            }}
-                            draggable={false}
-                            className={styles.dropdownButton}
-                        >
-                            Menu
-                        </button>
-                        {dropdownOpen && (
-                            <div className={styles.dropdownContent}>
-                                <button onClick={handleDelete}>Delete</button>
-                                <button onClick={handleEdit}>Edit</button>
+                }}
+                onMouseDown={onClick}
+            >
+                <div className={styles.taskbar} onMouseDown={handleDragStart}>
+                    <div className={styles.classicViewHeader}>
+                        <div className={styles.topBar}>
+                            <span className={styles.title}>{title}</span>
+                        </div>
+                        <div className={styles.bottomBar}>
+                            <div className={styles.buttons}>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setDropdownOpen(!dropdownOpen);
+                                    }}
+                                    draggable={false}
+                                    className={styles.dropdownButton} 
+                                >
+                                    ⋮
+                                </button>
+                                {dropdownOpen && (
+                                    <div className={styles.dropdownMenu}>
+                                        <button onClick={handleHide}>Hide</button>
+                                        <button onClick={handleDelete}>Delete</button>
+                                        <button onClick={handleEdit}>Edit</button>
+                                    </div>
+                                )}
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onCreate(id, false, null)
+                                    }}
+                                    draggable={false}
+                                    className={styles.addButton}
+                                >
+                                    +
+                                </button>
                             </div>
-                        )}
+                            <span className={styles.id}>ID: {id}</span>
+                        </div>
                     </div>
-                    <span className={styles.id}>ID: {id}</span>
+                    <div className={styles.detailViewHeaders}>
+                        <div className={styles.columnHeader} id={styles.balanceHeader}>Balance</div>
+                        <div className={styles.columnHeader} id={styles.priceHeader}>Price</div>
+                    </div>
                 </div>
                 <div className={styles.content}>
-                    <span className={styles.title}>{title}</span>
+                    {prices
+                        .filter((price) => price.shop == id)
+                        .map((price) => (
+                        <div key={price.price_id} className={styles.priceContainer}>
+                            <div className={styles.priceRow}>
+                                <div className={styles.priceCell}>
+                                    <div className={styles.classicView}>
+                                        <div className={styles.priceName}>{getItemName(price.item)}</div>
+                                    </div>
+                                    <div className={styles.detailView}>
+                                        <div className={styles.column} id={styles.balanceContent}>
+                                            <div className={styles.balances}>
+                                                <button
+                                                    className={styles.decrementButton}
+                                                    onClick={() => handleDecrement(price.price_id)}
+                                                >
+                                                    -
+                                                </button>
+                                                <input
+                                                    type="number"
+                                                    className={styles.balanceInput}
+                                                    value={inputValues[price.price_id]}
+                                                    onChange={(e) => handleInputChange(price.price_id, e.target.value)}
+                                                    min="0"
+                                                    step="1"
+                                                />
+                                                <button
+                                                    className={styles.incrementButton}
+                                                    onClick={() => handleIncrement(price.price_id)}
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className={styles.column} id={styles.priceContent}>
+                                            <div className={styles.prices}>
+                                                {getCurrencyName(price.currency)}: {price.cost * inputValues[price.price_id]} ({price.cost})
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    <div className={styles.connectingClass}></div>
+                        <div className={styles.emptyClasic}></div>
+                        <div className={styles.emptyDetail}>
+                            <div className={styles.columnConector}></div>
+                            <div className={styles.columnConector}></div>
+                        </div>
+                    <div className={styles.footer}>
+                        <div className={styles.footerClasic}>
+                            Sample Text
+                        </div>
+                        <div className={styles.footerDetail}>
+                            <div className={styles.columnFooter}>Sample Text</div>
+                            <div className={styles.columnFooter}>Sample Text</div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className={`${styles.resizeHandle} ${styles.right}`} onMouseDown={(e) => handleResizeStart(e, 'right')}></div>

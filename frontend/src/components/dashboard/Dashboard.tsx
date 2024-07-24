@@ -6,6 +6,7 @@ import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
 import Window from './Window';
 import Bar from './Bar';
+import Shop from './Shop';
 import Currencies from './Currencies';
 import Items from './Items';
 import CreateListPopup from '../popups/CreateListPopup';
@@ -142,6 +143,14 @@ interface Voucher {
   quantity: number;
 }
 
+interface Price {
+  price_id: number;
+  currency: number;
+  item: number;
+  shop: number;
+  cost: number;
+}
+
 interface Reward {
   reward_id: number;
   bar: number;
@@ -188,6 +197,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([])
+  const [prices, setPrices] = useState<Price[]>([])
   const [isEditMode, setIsEditMode] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined);
   const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
@@ -379,7 +389,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       const response = await axios.get('http://localhost:8000/api/items/');
       setItems(response.data); // Assuming the response.data is an array of currencies
     } catch (error) {
-      console.error('Error fetching currencies:', error);
+      console.error('Error fetching items:', error);
+    }
+  };
+
+  const fetchPrices = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/prices/');
+      setPrices(response.data);
+    } catch (error) {
+      console.error('Error fetching prices:', error);
     }
   };
   
@@ -671,7 +690,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
   type UpdateStateFunction = (id: number, updatedLayer: number) => void;
 
-  const optimisticUpdate = (
+  const optimisticUpdate = async (
     foreignId: number,
     foreignTable: number,
     updateState: UpdateStateFunction,
@@ -681,7 +700,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     updateState(foreignId, 6000000);
   
     // Revert changes if the server update fails
-    return axios.post('http://localhost:8000/api/layers/move_to_highest/', {
+    return await axios.post('http://localhost:8000/api/layers/move_to_highest/', {
       foreign_id: foreignId,
       foreign_table: foreignTable
     }).catch((error) => {
@@ -706,7 +725,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               : list
           )
         );
-        break;
+      break;
       case 2:
         setBarsData(prevBars =>
           prevBars.map(bar =>
@@ -715,7 +734,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               : bar
           )
         );
-        break;
+      break;
       case 3:
         setShopsData(prevShops =>
           prevShops.map(shop =>
@@ -724,7 +743,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               : shop
           )
         );
-        break;
+      break;
       default:
         console.error('Invalid foreign_table value:', foreignTable);
     }
@@ -891,6 +910,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           bar.bar_id === id ? { ...bar, x_axis: x, y_axis: y } : bar
         )
       );
+    } else if (type === 'shops') {
+      setShopsData((prevShopsData) =>
+        prevShopsData.map((shop) =>
+          shop.shop_id === id ? { ...shop, x_axis: x, y_axis: y } : shop
+        )
+      );
     }
   };
 
@@ -909,6 +934,14 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           bar.bar_id === id
             ? { ...bar, size_horizontal: width, size_vertical: height }
             : bar
+        )
+      );
+    } else if (type === 'shops') {
+      setShopsData((prevShopsData) =>
+        prevShopsData.map((shop) =>
+          shop.shop_id === id
+            ? { ...shop, size_horizontal: width, size_vertical: height }
+            : shop
         )
       );
     }
@@ -1308,6 +1341,31 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               total_points={bar.total_points}
               full_cycle={bar.full_cycle}
               xp_name={bar.xp_name}     
+            />
+          </div>
+        ))}
+        {shopsData.map((shop) => (
+          <div key={shop.shop_id} className={`${styles.shop} shop`}>
+            <Shop
+              id={shop.shop_id}
+              title={shop.shop_name}
+              initialX={shop.x_axis}
+              initialY={shop.y_axis}
+              initialWidth={shop.size_horizontal}
+              initialHeight={shop.size_vertical}
+              translate={translate} 
+              scale={scale} 
+              prices={prices}
+              items={items}
+              currencies={currencies}
+              zIndex={shop.layer.layer}
+              onClose={handleCloseBar}
+              onEdit={handleEditBar}
+              onClick={() => moveItemToHighestLayer(shop.layer.foreign_id, shop.layer.foreign_table)}
+              onDrag={handleDragWindow}
+              onResize={handleResizeWindow}
+              onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'shops')}
+              onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height, 'shops')}
             />
           </div>
         ))}

@@ -166,6 +166,15 @@ class ShopViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return Shop.objects.all().select_related()
 
+    @action(detail=True, methods=['put'], url_path='update_shop')
+    def update_shop(self, request, pk=None):
+        shop = self.get_object()
+        serializer = ShopSerializer(shop, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
     @method_decorator(csrf_exempt)
     @action(detail=False, methods=['post'], url_path='create_shop')
     def create_shop(self, request):

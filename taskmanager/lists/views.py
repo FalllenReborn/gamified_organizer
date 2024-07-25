@@ -348,6 +348,24 @@ class CurrencyViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='update_balances')
+    def update_balances(self, request):
+        try:
+            data = request.data
+            for currency_id, new_balance in data.items():
+                try:
+                    currency = Currency.objects.get(pk=currency_id)
+                    currency.owned = new_balance
+                    currency.save()
+                except Currency.DoesNotExist:
+                    return JsonResponse({'error': f'Currency with id {currency_id} does not exist'}, status=400)
+
+            return JsonResponse({'status': 'success'}, status=200)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()
@@ -436,6 +454,24 @@ class ItemViewSet(viewsets.ModelViewSet):
 
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='update_storage')
+    def update_storage(self, request):
+        try:
+            data = request.data
+            for item_id, storage_update in data.items():
+                try:
+                    item = Item.objects.get(pk=item_id)
+                    item.storage += storage_update  # Add the purchased amount to the current storage
+                    item.save()
+                except Item.DoesNotExist:
+                    return JsonResponse({'error': f'Item with id {item_id} does not exist'}, status=400)
+
+            return JsonResponse({'status': 'success'}, status=200)
+
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 

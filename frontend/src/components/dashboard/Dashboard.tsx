@@ -1257,6 +1257,59 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleBuyClick = async (newBalances: { [currencyId: number]: number }, inputValues: { [key: number]: number }) => {
+    try {
+        // Filter out balances that have not changed
+        const updatedBalances = Object.keys(newBalances).reduce((acc, currencyId) => {
+            const currency = currencies.find(c => c.currency_id === parseInt(currencyId));
+            if (currency && currency.owned !== newBalances[parseInt(currencyId)]) {
+                acc[parseInt(currencyId)] = newBalances[parseInt(currencyId)];
+            }
+            return acc;
+        }, {} as { [currencyId: number]: number });
+
+        // Send the update request to the server for currencies
+        const currencyResponse = await axios.post('http://localhost:8000/api/currencies/update_balances/', updatedBalances, {
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (currencyResponse.status === 200) {
+            // If currencies updated successfully, update the items
+            const itemUpdates: { [itemId: number]: number } = {};
+            prices.forEach(price => {
+                const inputValue = inputValues[price.price_id] || 0;
+                if (inputValue > 0) {
+                    if (itemUpdates[price.item]) {
+                        itemUpdates[price.item] += inputValue;
+                    } else {
+                        itemUpdates[price.item] = inputValue;
+                    }
+                }
+            });
+
+            const itemResponse = await axios.post('http://localhost:8000/api/items/update_storage/', itemUpdates, {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+
+            if (itemResponse.status === 200) {
+                console.log('Items updated successfully');
+            } else {
+                console.error('Failed to update items', itemResponse);
+            }
+        } else {
+            console.error('Failed to update balances', currencyResponse);
+        }
+    } catch (error) {
+        console.error('Error updating balances and items', error);
+    }
+    fetchCurrencies();
+    fetchItems();
+  };
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
@@ -1384,6 +1437,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               items={items}
               currencies={currencies}
               zIndex={shop.layer.layer}
+              onBuy={handleBuyClick}
               onClose={handleCloseShop}
               onEdit={handleEditShop}
               onCreate={openPopup}

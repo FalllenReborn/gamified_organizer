@@ -8,7 +8,19 @@ interface Price {
     item: number;
     shop: number;
     cost: number;
-  }
+}
+
+interface Currency {
+    currency_id: number;
+    currency_name: string;
+    owned: number;
+}
+
+interface Item {
+    item_id: number;
+    item_name: string;
+    storage: number;
+}
 
 interface ShopProps {
     id: number;
@@ -19,6 +31,7 @@ interface ShopProps {
     translate: { x: number; y: number };
     scale: number;
     onClick: () => void;
+    onBuy: (newBalances: { [currencyId: number]: number }, inputValues: { [key: number]: number }) => void;
     zIndex: number;
     initialX: number;
     initialY: number;
@@ -28,8 +41,8 @@ interface ShopProps {
     onPositionUpdate: (id: number, x: number, y: number) => void;
     onSizeUpdate: (id: number, width: number, height: number) => void;
     onCreate: (windowId: number, editMode: any, task: any) => void;
-    currencies: any[];
-    items: any[];
+    currencies: Currency[];
+    items: Item[];
     prices: Price[];
 }
 
@@ -46,13 +59,11 @@ const Shop: React.FC<ShopProps> = ({
     currencies,
     items,
     prices,
+    onBuy,
     onClose,
     onEdit,
     onClick,
-    onDrag,
     onResize,
-    onPositionUpdate,
-    onSizeUpdate,
     onCreate
 }) => {
     const [position, setPosition] = useState({ x: initialX, y: initialY });
@@ -63,6 +74,10 @@ const Shop: React.FC<ShopProps> = ({
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const [inputValues, setInputValues] = useState<{ [key: number]: number }>({});
+    const [combinedCosts, setCombinedCosts] = useState<{ [currencyId: number]: number }>({});
+    const [newBalances, setNewBalances] = useState<{ [currencyId: number]: number }>({});
+    const [isBuyDisabled, setIsBuyDisabled] = useState<boolean>(false);
+    const [errorMessages, setErrorMessages] = useState<{ [currencyId: number]: string }>({});
     const shopRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const positionRef = useRef(position);
@@ -227,7 +242,7 @@ const Shop: React.FC<ShopProps> = ({
             const updatedPosition = positionRef.current;
             updateSizeInDatabase(updatedSize.width, updatedSize.height);
             updatePositionInDatabase(updatedPosition.x, updatedPosition.y);
-            onResize(id, updatedSize.width, updatedSize.height, 'bars');
+            onResize(id, updatedSize.width, updatedSize.height, 'shops');
         }
     };
 
@@ -310,6 +325,48 @@ const Shop: React.FC<ShopProps> = ({
         setInputValues(prevValues => ({ ...prevValues, [priceId]: numericValue }));
     };
 
+    useEffect(() => {
+        const calculateCostsAndBalances = () => {
+            const filteredPrices = prices.filter((price) => price.shop === id);
+            const calculatedPrice: { [currencyId: number]: number } = {};
+    
+            filteredPrices.forEach((price) => {
+                const calculatedValue = price.cost * (inputValues[price.price_id] || 0);
+                if (calculatedPrice[price.currency]) {
+                    calculatedPrice[price.currency] += calculatedValue;
+                } else {
+                    calculatedPrice[price.currency] = calculatedValue;
+                }
+            });
+    
+            const updatedBalances: { [currencyId: number]: number } = {};
+            const updatedErrorMessages: { [currencyId: number]: string } = {};
+    
+            Object.keys(calculatedPrice).forEach((currencyId) => {
+                const currency = currencies.find(c => c.currency_id === parseInt(currencyId));
+                if (currency) {
+                    const newBalance = currency.owned - calculatedPrice[parseInt(currencyId)];
+                    updatedBalances[parseInt(currencyId)] = newBalance;
+                    if (newBalance <= 0) {
+                        updatedErrorMessages[parseInt(currencyId)] = `Not enough ${currency.currency_name} (${newBalance})`;
+                    } else {
+                        updatedErrorMessages[parseInt(currencyId)] = `New ${currency.currency_name} balance: ${newBalance}`;
+                    }
+                }
+            });
+    
+            setCombinedCosts(calculatedPrice);
+            setNewBalances(updatedBalances);
+            setErrorMessages(updatedErrorMessages);
+        };
+    
+        calculateCostsAndBalances();
+    }, [prices, inputValues, id, currencies]);
+    
+    useEffect(() => {
+        setIsBuyDisabled(Object.values(newBalances).some(balance => balance <= 0));
+    }, [newBalances]);
+
     return (
         <div
             id={`shop-${id}`}
@@ -390,6 +447,11 @@ const Shop: React.FC<ShopProps> = ({
                                     </div>
                                     <div className={styles.detailView}>
                                         <div className={styles.column} id={styles.balanceContent}>
+                                            <div className={styles.prices}>
+                                                {getCurrencyName(price.currency)}: {price.cost * inputValues[price.price_id]} ({price.cost})
+                                            </div>
+                                        </div>
+                                        <div className={styles.column} id={styles.priceContent}>
                                             <div className={styles.balances}>
                                                 <button
                                                     className={styles.decrementButton}
@@ -412,11 +474,7 @@ const Shop: React.FC<ShopProps> = ({
                                                     +
                                                 </button>
                                             </div>
-                                        </div>
-                                        <div className={styles.column} id={styles.priceContent}>
-                                            <div className={styles.prices}>
-                                                {getCurrencyName(price.currency)}: {price.cost * inputValues[price.price_id]} ({price.cost})
-                                            </div>
+                                            
                                         </div>
                                     </div>
                                 </div>
@@ -431,11 +489,36 @@ const Shop: React.FC<ShopProps> = ({
                         </div>
                     <div className={styles.footer}>
                         <div className={styles.footerClasic}>
-                            Sample Text
+                            {Object.entries(newBalances).map(([currencyId, balance]) => {
+                                const currency = currencies.find(c => c.currency_id === parseInt(currencyId));
+                                return currency ? (
+                                    <div key={currencyId}>
+                                        {errorMessages[parseInt(currencyId)]}
+                                    </div>
+                                ) : null;
+                            })}
                         </div>
                         <div className={styles.footerDetail}>
-                            <div className={styles.columnFooter}>Sample Text</div>
-                            <div className={styles.columnFooter}>Sample Text</div>
+                            <div className={styles.columnFooter}>
+                                {Object.entries(combinedCosts).map(([currencyId, total]) => {
+                                    const currency = currencies.find(c => c.currency_id === parseInt(currencyId));
+                                    return currency ? (
+                                        <div key={currencyId}>
+                                            {`${currency.currency_name}: ${total}`}
+                                        </div>
+                                    ) : null;
+                                })}
+                            </div>
+                            <div className={styles.columnFooter}>
+                                <button
+                                    className={`${styles.buyButton} ${isBuyDisabled ? styles.disabled : ''}`}
+                                    disabled={isBuyDisabled}
+                                    onClick={() => onBuy(newBalances, inputValues)}
+                                >
+                                    Buy
+                                </button>
+                                {isBuyDisabled && <div className={styles.errorMessage}>Not enough currency</div>}
+                            </div>
                         </div>
                     </div>
                 </div>

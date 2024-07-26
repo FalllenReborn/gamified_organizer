@@ -158,7 +158,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '', isEditMode: false, currencyId: undefined, });
   const [createItemPopup, setCreateItemPopup] = useState<CreateItemState>({ isOpen: false, defaultValue: '', isEditMode: false, itemId: undefined});
-  const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 });
+  const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200});
+  const [componentType, setComponentType] = useState<number>(0);
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [shopsData, setShopsData] = useState<ShopData[]>([]);
@@ -1262,6 +1263,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
 
   const handleEditShop = () => {}
 
+  const handleCreateNewShop = async () => {
+    setCreateListPopup({
+      isOpen: true,
+      id: null,
+      defaultValue: '',
+      defaultX: 0,
+      defaultY: 0,
+      defaultWidth: 300,
+      defaultHeight: 300,
+    });
+    setComponentType(3) //shop
+  };
+
   const handleCreateNewList = async () => {
     setCreateListPopup({
       isOpen: true,
@@ -1272,6 +1286,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       defaultWidth: 300,
       defaultHeight: 200,
     });
+    setComponentType(1) //list
   };
 
   const handleEditList = (id: number, defaultValue: string, x: number, y: number, width: number, height: number) => {
@@ -1284,6 +1299,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       defaultWidth: width,
       defaultHeight: height,
     });
+    setComponentType(1) //list
   };
 
   const handleSaveList = async (id: number | null, newName: string, x: number, y: number, width: number, height: number) => {
@@ -1317,6 +1333,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         );
       }
       setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 });
+    } catch (error) {
+      console.error('Error saving list:', error);
+    }
+  };
+
+  const handleSaveShop = async (id: number | null, newName: string, x: number, y: number, width: number, height: number) => {
+    try {
+      if (id === null) {
+        // Create new shop
+        const response = await axios.post('http://localhost:8000/api/shops/', {
+          shop_name: newName,
+          x_axis: x,
+          y_axis: y,
+          size_horizontal: width,
+          size_vertical: height,
+        });
+        const newShop: ShopData = response.data;
+        setShopsData((prevShopsData) => [...prevShopsData, newShop]);
+      } else {
+        // Update existing shop
+        await axios.patch(`http://localhost:8000/api/shops/${id}/`, {
+          shop_name: newName,
+          x_axis: x,
+          y_axis: y,
+          size_horizontal: width,
+          size_vertical: height,
+        });
+        setShopsData((prevShopsData) =>
+          prevShopsData.map((shop) =>
+            shop.shop_id === id
+              ? { ...shop, shop_name: newName, x_axis: x, y_axis: y, size_horizontal: width, size_vertical: height }
+              : shop
+          )
+        );
+      }
+      setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 100, defaultHeight: 100 });
     } catch (error) {
       console.error('Error saving list:', error);
     }
@@ -1402,6 +1454,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       >
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
         {isSidebarVisible && <Sidebar 
+          onCreateNewShop={handleCreateNewShop}
           onReturnHome={onReturnHome} 
           onCreateNewList={handleCreateNewList} 
           onCompleteTasks={handleCompleteTasks}
@@ -1546,8 +1599,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             defaultY={createListPopup.defaultY}
             defaultWidth={createListPopup.defaultWidth}
             defaultHeight={createListPopup.defaultHeight}
-            onSave={handleSaveList}
-            onClose={() => setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 })}
+            componentType={componentType}
+            onSaveList={handleSaveList}
+            onSaveShop={handleSaveShop}
+            onClose={() => setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 100, defaultHeight: 100 })}
           />
         )}
         {isTaskPopupOpen && (

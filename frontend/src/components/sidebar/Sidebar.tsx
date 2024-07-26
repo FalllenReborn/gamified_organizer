@@ -13,6 +13,7 @@ interface SidebarProps {
   onCompleteTasks: () => void;
   onReturnHome: () => void;
   onCreateNewBar: () => void;
+  onCreateNewShop: () => void;
 }
 
 type Language = 'english' | 'polish';
@@ -44,7 +45,7 @@ const translations: Record<Language, { [key: string]: string }> = {
 
 type DropdownState = 'createDropdown' | 'actionsDropdown' | 'languageDropdown' | 'themeDropdown' | 'accountDropdown' | 'navigateDropdown';
 
-const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onCreateNewBar }) => {
+const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onCreateNewBar, onCreateNewShop }) => {
   const { isDarkMode, toggleDarkMode, toggleLightMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const currentDateTime = useContext(ClockContext); // Use ClockContext
@@ -98,7 +99,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onC
         {dropdownStates === 'createDropdown' && (
           <div className={styles.dropdownContent}>
             <div id={styles.createListButton} className={styles.dropdownButton} onClick={onCreateNewList}>{t.createList}</div>
-            <div id={styles.createShopButton} className={styles.dropdownButton}>{t.createShop}</div>
+            <div id={styles.createShopButton} className={styles.dropdownButton} onClick={onCreateNewShop}>{t.createShop}</div>
             <div id={styles.createBarButton} className={styles.dropdownButton} onClick={onCreateNewBar}>{t.createXP}</div>
           </div>
         )}

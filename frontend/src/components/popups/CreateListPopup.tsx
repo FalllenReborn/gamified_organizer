@@ -9,7 +9,9 @@ interface CreateListPopupProps {
   defaultY: number;
   defaultWidth: number;
   defaultHeight: number;
-  onSave: (id: number | null, newName: string, x: number, y: number, width: number, height: number) => void;
+  componentType: number;
+  onSaveList: (id: number | null, newName: string, x: number, y: number, width: number, height: number) => void;
+  onSaveShop: (id: number | null, newName: string, x: number, y: number, width: number, height: number) => void;
   onClose: () => void;
 }
 
@@ -20,8 +22,10 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
   defaultX, 
   defaultY, 
   defaultWidth, 
-  defaultHeight, 
-  onSave, 
+  defaultHeight,
+  componentType, 
+  onSaveList, 
+  onSaveShop,
   onClose 
 }) => {
   const [name, setName] = useState(defaultValue);
@@ -50,7 +54,12 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
   };
 
   const handleSaveClick = () => {
-    onSave(id, name, xAxis, yAxis, sizeHorizontal, sizeVertical);
+    if (componentType === 1) {
+      onSaveList(id, name, xAxis, yAxis, sizeHorizontal, sizeVertical);
+    } else if (componentType === 3) {
+      onSaveShop(id, name, xAxis, yAxis, sizeHorizontal, sizeVertical);
+    }
+      
     onClose();
   };
 

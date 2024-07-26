@@ -66,31 +66,55 @@ $$;
 ALTER FUNCTION public.create_related_entries() OWNER TO postgres;
 
 --
--- Name: delete_layer_if_referenced(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: delete_layer_if_referenced_bar(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.delete_layer_if_referenced() RETURNS trigger
+CREATE FUNCTION public.delete_layer_if_referenced_bar() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    -- Check the foreign_table value and delete the layer accordingly
-    IF (SELECT foreign_table FROM layers WHERE foreign_id = OLD.id AND foreign_table = 1) THEN
-        -- Delete layer if it's a task_list and referenced record is deleted
-        DELETE FROM layers WHERE foreign_id = OLD.id AND foreign_table = 1;
-    ELSIF (SELECT foreign_table FROM layers WHERE foreign_id = OLD.id AND foreign_table = 2) THEN
-        -- Delete layer if it's a bar and referenced record is deleted
-        DELETE FROM layers WHERE foreign_id = OLD.id AND foreign_table = 2;
-    ELSIF (SELECT foreign_table FROM layers WHERE foreign_id = OLD.id AND foreign_table = 3) THEN
-        -- Delete layer if it's a shop and referenced record is deleted
-        DELETE FROM layers WHERE foreign_id = OLD.id AND foreign_table = 3;
-    END IF;
-
+    -- Delete layer if it's a bar and referenced record is deleted
+    DELETE FROM layers WHERE foreign_id = OLD.bar_id AND foreign_table = 2;
     RETURN OLD;
 END;
 $$;
 
 
-ALTER FUNCTION public.delete_layer_if_referenced() OWNER TO postgres;
+ALTER FUNCTION public.delete_layer_if_referenced_bar() OWNER TO postgres;
+
+--
+-- Name: delete_layer_if_referenced_shop(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.delete_layer_if_referenced_shop() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Delete layer if it's a shop and referenced record is deleted
+    DELETE FROM layers WHERE foreign_id = OLD.shop_id AND foreign_table = 3;
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.delete_layer_if_referenced_shop() OWNER TO postgres;
+
+--
+-- Name: delete_layer_if_referenced_task_list(); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.delete_layer_if_referenced_task_list() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Delete layer if it's a task_list and referenced record is deleted
+    DELETE FROM layers WHERE foreign_id = OLD.list_id AND foreign_table = 1;
+    RETURN OLD;
+END;
+$$;
+
+
+ALTER FUNCTION public.delete_layer_if_referenced_task_list() OWNER TO postgres;
 
 --
 -- Name: delete_nested_tasks(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -1511,21 +1535,21 @@ CREATE TRIGGER before_task_delete BEFORE DELETE ON public.tasks FOR EACH ROW EXE
 -- Name: bars delete_layer_bar; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER delete_layer_bar AFTER DELETE ON public.bars FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced();
+CREATE TRIGGER delete_layer_bar AFTER DELETE ON public.bars FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced_bar();
 
 
 --
 -- Name: shops delete_layer_shop; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER delete_layer_shop AFTER DELETE ON public.shops FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced();
+CREATE TRIGGER delete_layer_shop AFTER DELETE ON public.shops FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced_shop();
 
 
 --
 -- Name: task_lists delete_layer_task_list; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER delete_layer_task_list AFTER DELETE ON public.task_lists FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced();
+CREATE TRIGGER delete_layer_task_list AFTER DELETE ON public.task_lists FOR EACH ROW EXECUTE FUNCTION public.delete_layer_if_referenced_task_list();
 
 
 --

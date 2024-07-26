@@ -1261,7 +1261,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleEditShop = () => {}
+  const handleEditShop = (id: number, defaultValue: string, x: number, y: number, width: number, height: number) => {
+    setCreateListPopup({
+      isOpen: true,
+      id,
+      defaultValue,
+      defaultX: x,
+      defaultY: y,
+      defaultWidth: width,
+      defaultHeight: height,
+    });
+    setComponentType(3) //shop
+  };
 
   const handleCreateNewShop = async () => {
     setCreateListPopup({
@@ -1558,7 +1569,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               onDelete={handleDeletePrice}
               onBuy={handleBuyClick}
               onClose={handleCloseShop}
-              onEdit={handleEditShop}
+              onEdit={(id) => handleEditShop(id, shop.shop_name, shop.x_axis, shop.y_axis, shop.size_horizontal, shop.size_vertical)}
               onCreate={handlePricePopup}
               onClick={() => moveItemToHighestLayer(shop.layer.foreign_id, shop.layer.foreign_table)}
               onDrag={handleDragWindow}

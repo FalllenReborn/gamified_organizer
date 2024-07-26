@@ -103,29 +103,9 @@ interface CreateListPopupState {
   defaultHeight: number;
 }
 
-interface WindowState {
-  id: number;
-  title: string;
-  initialX: number;
-  initialY: number;
-  initialWidth: number;
-  initialHeight: number;
-  zIndex: number;
-}
-
 interface Bar extends BarData {
   transactions: { [currencyId: number]: number };
   vouchers: { [itemId: number]: number },
-}
-
-interface BarState {
-  id: number;
-  title: string;
-  initialX: number;
-  initialY: number;
-  initialWidth: number;
-  initialHeight: number;
-  zIndex: number;
 }
 
 interface Transaction {
@@ -175,8 +155,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [windows, setWindows] = useState<WindowState[]>([]);
-  const [bars, setBars] = useState<BarState[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '', isEditMode: false, currencyId: undefined, });
   const [createItemPopup, setCreateItemPopup] = useState<CreateItemState>({ isOpen: false, defaultValue: '', isEditMode: false, itemId: undefined});

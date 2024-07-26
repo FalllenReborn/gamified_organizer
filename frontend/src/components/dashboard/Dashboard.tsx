@@ -11,6 +11,7 @@ import Currencies from './Currencies';
 import Items from './Items';
 import CreateListPopup from '../popups/CreateListPopup';
 import CreateTaskPopup from '../popups/CreateTaskPopup';
+import CreatePricePopup from '../popups/CreatePricePopup';
 import CreateBarPopup from '../popups/CreateBarPopup';
 import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
 import CreateItemPopup from '../popups/CreateItemPopup';
@@ -158,11 +159,6 @@ interface Reward {
   points: number;
 }
 
-interface StateItem {
-  id: number;
-  layer: number;
-}
-
 interface DashboardProps {
   onReturnHome: () => void;
   createNewList: boolean;
@@ -190,8 +186,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [shopsData, setShopsData] = useState<ShopData[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [items, setItems] = useState<Item[]>([]);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isTaskPopupOpen, setIsTaskPopupOpen] = useState(false);
+  const [isPricePopupOpen, setIsPricePopupOpen] = useState(false);
   const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
+  const [currentShopId, setCurrentShopId] = useState<number>(0);
   const [nest, setNest] = useState<number | null>(null);
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -200,6 +198,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [prices, setPrices] = useState<Price[]>([])
   const [isEditMode, setIsEditMode] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined);
+  const [priceToEdit, setPriceToEdit] = useState<Price | undefined>(undefined);
   const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
   const [barToEdit, setBarToEdit] = useState<Bar | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
@@ -234,20 +233,27 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const openPopup = (windowId: number, nest_id: number | null, editMode = false, task = null) => {
+  const handleTaskCreate = (windowId: number, nest_id: number | null, editMode = false, task = null) => {
     setCurrentWindowId(windowId);
     setNest(nest_id);
     setIsEditMode(editMode);
     setTaskToEdit(task || undefined);
-    setIsPopupOpen(true);
-  };
-
-  const openCreatePrice = (windowId: number, editMode = false, task = null) => {
-
+    setIsTaskPopupOpen(true);
   };
 
   const closePopup = () => {
-    setIsPopupOpen(false);
+    setIsTaskPopupOpen(false);
+  };
+
+  const handlePricePopup = (shopId: number, editMode = false, price = null) => {
+    setCurrentShopId(shopId);
+    setIsEditMode(editMode);
+    setPriceToEdit(price || undefined);
+    setIsPricePopupOpen(true);
+  };
+
+  const closePricePopup = () => {
+    setIsPricePopupOpen(false);
   };
 
   const getInitialTranslate = () => {
@@ -361,6 +367,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const handleDeletePrice = async (PriceId: number) => {
+    try {
+      await handlePriceDeletion(PriceId);
+      await fetchPrices();
+    } catch (error) {
+      console.error('Error deleting shop:', error);
+    }
+  };
+
   const fetchRewards = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/rewards/');
@@ -426,6 +441,69 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchBars();
     fetchShops();
   }, []);
+
+  const handlePriceConfirm = async (
+    priceId: number,
+    newCost: number,
+    shopId: number,
+    itemId: number,
+    currencyId: number,
+  ) => {
+    if (isEditMode && priceToEdit) {
+      await handlePriceUpdate(priceId, newCost, shopId, itemId, currencyId);
+    } else {
+      await handlePriceCreate(newCost, shopId, itemId, currencyId);
+    }
+    closePricePopup();
+    fetchPrices();
+  }
+
+  const handlePriceUpdate = async (
+    priceId: number,
+    newCost: number,
+    shopId: number,
+    itemId: number,
+    currencyId: number,
+  ) => {
+    try {
+      const pricePayload = {
+        cost: newCost,
+        shop_id: shopId,
+        item_id: itemId,
+        currency_id: currencyId,
+      };
+
+      console.log('Update Price Payload:', pricePayload);
+    
+      await axios.patch(`http://localhost:8000/api/prices/${priceId}/update_price/`, pricePayload);
+      console.log('Price updating successfully');
+    } catch (error) {
+      console.error('Error updating price:', error);
+    }
+  }
+
+  const handlePriceCreate = async (
+    newCost: number,
+    shopId: number,
+    itemId: number,
+    currencyId: number,
+  ) => {
+    try {
+      const pricePayload = {
+        cost: newCost,
+        shop_id: shopId,
+        item_id: itemId,
+        currency_id: currencyId,
+      };
+
+      console.log('Price Payload:', pricePayload);
+    
+      const response = await axios.post('http://localhost:8000/api/prices/create_price/', pricePayload);
+      console.log('Price created successfully:', response.data);
+    } catch (error) {
+      console.error('Error creating price:', error);
+    }
+  }
 
   const handleConfirm = async (
     taskId: number,
@@ -823,6 +901,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     try {
       await axios.delete(`http://localhost:8000/api/shops/${id}/`);
       setShopsData((prevShops) => prevShops.filter((shop) => shop.shop_id !== id));
+    } catch (error) {
+      console.error('Error deleting shop:', error);
+    }
+  };
+
+  const handlePriceDeletion = async (priceId: number) => {
+    try {
+      await axios.delete(`http://localhost:8000/api/prices/${priceId}/`);
+      setPrices((prevPrices) => prevPrices.filter((price) => price.price_id !== priceId));
     } catch (error) {
       console.error('Error deleting shop:', error);
     }
@@ -1388,7 +1475,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             
             checkedTasks={checkedTasks}
             toggleTaskChecked={toggleTaskChecked}
-            openPopup={openPopup}
+            openPopup={handleTaskCreate}
             registerTaskUpdateCallback={registerTaskUpdateCallback}
           />
           </div>
@@ -1437,10 +1524,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
               items={items}
               currencies={currencies}
               zIndex={shop.layer.layer}
+              onDelete={handleDeletePrice}
               onBuy={handleBuyClick}
               onClose={handleCloseShop}
               onEdit={handleEditShop}
-              onCreate={openPopup}
+              onCreate={handlePricePopup}
               onClick={() => moveItemToHighestLayer(shop.layer.foreign_id, shop.layer.foreign_table)}
               onDrag={handleDragWindow}
               onResize={handleResizeWindow}
@@ -1484,7 +1572,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onClose={() => setCreateListPopup({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200 })}
           />
         )}
-        {isPopupOpen && (
+        {isTaskPopupOpen && (
           <CreateTaskPopup
             onClose={closePopup}
             onConfirm={handleConfirm}
@@ -1497,6 +1585,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             items={items}
             isEditMode={isEditMode}
             taskToEdit={taskToEdit}
+          />
+        )}
+        {isPricePopupOpen && (
+          <CreatePricePopup
+            onClose={closePricePopup}
+            onConfirm={handlePriceConfirm}
+            currencies={currencies}
+            items={items}
+            isEditMode={isEditMode}
+            priceToEdit={priceToEdit}
+            shopId={currentShopId}
+            shopsData={shopsData}
           />
         )}
         {isCreateBarPopupOpen && (

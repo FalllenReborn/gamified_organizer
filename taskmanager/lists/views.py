@@ -548,13 +548,15 @@ class PriceViewSet(viewsets.ModelViewSet):
     def create_price(self, request):
         try:
             data = json.loads(request.body.decode('utf-8'))
+            print('Incoming Data:', data)  # Debug print
+
             item_id = data.get('item_id')
             shop_id = data.get('shop_id')
             currency_id = data.get('currency_id')
-            amount = data.get('amount')
+            cost = data.get('cost')  # Using cost instead of amount
 
-            if not item_id or not shop_id or not currency_id or not amount:
-                return JsonResponse({'error': 'item_id, shop_id, currency_id, and amount are required'}, status=400)
+            if not item_id or not shop_id or not currency_id or not cost:
+                return JsonResponse({'error': 'item_id, shop_id, currency_id, and cost are required'}, status=400)
 
             item = Item.objects.get(item_id=item_id)
             shop = Shop.objects.get(shop_id=shop_id)
@@ -564,11 +566,51 @@ class PriceViewSet(viewsets.ModelViewSet):
                 item=item,
                 shop=shop,
                 currency=currency,
-                amount=amount
+                cost=cost  # Using cost instead of amount
             )
             serializer = PriceSerializer(price)
             return JsonResponse(serializer.data, status=201)
 
+        except Item.DoesNotExist:
+            return JsonResponse({'error': 'Item not found'}, status=404)
+        except Shop.DoesNotExist:
+            return JsonResponse({'error': 'Shop not found'}, status=404)
+        except Currency.DoesNotExist:
+            return JsonResponse({'error': 'Currency not found'}, status=404)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    @method_decorator(csrf_exempt)
+    @action(detail=True, methods=['patch'], url_path='update_price')
+    def update_price(self, request, pk=None):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            print('Incoming Data:', data)  # Debug print
+
+            price = Price.objects.get(pk=pk)
+
+            item_id = data.get('item_id')
+            shop_id = data.get('shop_id')
+            currency_id = data.get('currency_id')
+            cost = data.get('cost')  # Using cost instead of amount
+
+            if item_id:
+                price.item = Item.objects.get(item_id=item_id)
+            if shop_id:
+                price.shop = Shop.objects.get(shop_id=shop_id)
+            if currency_id:
+                price.currency = Currency.objects.get(currency_id=currency_id)
+            if cost is not None:
+                price.cost = cost
+
+            price.save()
+            serializer = PriceSerializer(price)
+            return JsonResponse(serializer.data, status=200)
+
+        except Price.DoesNotExist:
+            return JsonResponse({'error': 'Price not found'}, status=404)
         except Item.DoesNotExist:
             return JsonResponse({'error': 'Item not found'}, status=404)
         except Shop.DoesNotExist:

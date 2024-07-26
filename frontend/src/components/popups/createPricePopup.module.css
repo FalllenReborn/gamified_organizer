@@ -1,0 +1,73 @@
+/* createPricePopup.module.css */
+
+.popupOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 11000000;
+}
+
+.popup {
+    background: #2a2a2a;
+    padding: 20px;
+    border-radius: 8px;
+    width: 300px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.inputGroup {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input,
+select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+}
+
+.cancelButton,
+.confirmButton {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancelButton {
+    background: #f44336;
+    color: white;
+}
+
+.confirmButton {
+    background: #4caf50;
+    color: white;
+}
+
+.confirmButton:disabled {
+    background: #9e9e9e;
+    cursor: not-allowed;
+}

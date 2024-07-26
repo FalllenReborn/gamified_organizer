@@ -25,22 +25,23 @@ interface Item {
 interface ShopProps {
     id: number;
     title: string;
-    onClose: (id: number) => void;
-    onEdit: (id: number) => void;
-    onDrag: (id: number, x: number, y: number, type: string) => void;
     translate: { x: number; y: number };
     scale: number;
-    onClick: () => void;
-    onBuy: (newBalances: { [currencyId: number]: number }, inputValues: { [key: number]: number }) => void;
     zIndex: number;
     initialX: number;
     initialY: number;
     initialWidth: number;
     initialHeight: number;
+    onClick: () => void;
+    onClose: (id: number) => void;
+    onEdit: (id: number) => void;
+    onDrag: (id: number, x: number, y: number, type: string) => void;
     onResize: (id: number, width: number, height: number, type: string) => void;
     onPositionUpdate: (id: number, x: number, y: number) => void;
     onSizeUpdate: (id: number, width: number, height: number) => void;
-    onCreate: (windowId: number, editMode: any, task: any) => void;
+    onCreate: (windowId: number, editMode: any, price: any) => void;
+    onDelete: (priceId: number) => void;
+    onBuy: (newBalances: { [currencyId: number]: number }, inputValues: { [key: number]: number }) => void;
     currencies: Currency[];
     items: Item[];
     prices: Price[];
@@ -64,7 +65,8 @@ const Shop: React.FC<ShopProps> = ({
     onEdit,
     onClick,
     onResize,
-    onCreate
+    onCreate,
+    onDelete,
 }) => {
     const [position, setPosition] = useState({ x: initialX, y: initialY });
     const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
@@ -78,6 +80,7 @@ const Shop: React.FC<ShopProps> = ({
     const [newBalances, setNewBalances] = useState<{ [currencyId: number]: number }>({});
     const [isBuyDisabled, setIsBuyDisabled] = useState<boolean>(false);
     const [errorMessages, setErrorMessages] = useState<{ [currencyId: number]: string }>({});
+    const [hoveredPrice, setHoveredPrice] = useState<number | null>(null);
     const shopRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const positionRef = useRef(position);
@@ -354,7 +357,7 @@ const Shop: React.FC<ShopProps> = ({
                     }
                 }
             });
-    
+
             setCombinedCosts(calculatedPrice);
             setNewBalances(updatedBalances);
             setErrorMessages(updatedErrorMessages);
@@ -442,8 +445,18 @@ const Shop: React.FC<ShopProps> = ({
                         <div key={price.price_id} className={styles.priceContainer}>
                             <div className={styles.priceRow}>
                                 <div className={styles.priceCell}>
-                                    <div className={styles.classicView}>
+                                    <div 
+                                        className={styles.classicView}
+                                        onMouseEnter={() => setHoveredPrice(price.price_id)} 
+                                        onMouseLeave={() => setHoveredPrice(null)}
+                                    >
                                         <div className={styles.priceName}>{getItemName(price.item)}</div>
+                                        {hoveredPrice === price.price_id && (
+                                            <div className={styles.buttonContainer}>
+                                                <button className={styles.deleteButton} onClick={() => onDelete(price.price_id)}>Delete</button>
+                                                <button className={styles.editButton} onClick={() => onCreate(id, true, price)}>Edit</button>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className={styles.detailView}>
                                         <div className={styles.column} id={styles.balanceContent}>
@@ -462,7 +475,7 @@ const Shop: React.FC<ShopProps> = ({
                                                 <input
                                                     type="number"
                                                     className={styles.balanceInput}
-                                                    value={inputValues[price.price_id]}
+                                                    value={inputValues[price.price_id] ?? ''}
                                                     onChange={(e) => handleInputChange(price.price_id, e.target.value)}
                                                     min="0"
                                                     step="1"
@@ -474,7 +487,6 @@ const Shop: React.FC<ShopProps> = ({
                                                     +
                                                 </button>
                                             </div>
-                                            
                                         </div>
                                     </div>
                                 </div>
@@ -486,7 +498,7 @@ const Shop: React.FC<ShopProps> = ({
                         <div className={styles.emptyDetail}>
                             <div className={styles.columnConector}></div>
                             <div className={styles.columnConector}></div>
-                        </div>
+                    </div>
                     <div className={styles.footer}>
                         <div className={styles.footerClasic}>
                             {Object.entries(newBalances).map(([currencyId, balance]) => {

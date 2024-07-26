@@ -134,6 +134,8 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Ensures footer stays at the bottom */
+    font-size: 14px;
+
 }
 
 .priceRow {
@@ -150,6 +152,7 @@
     border-bottom: 1px solid #bbb;
     color: white;
     word-wrap: break-word;
+    position: relative; /* Ensure absolute positioning works within this container */
 }
 
 .classicView {
@@ -158,6 +161,58 @@
     align-items: center;
     position: relative;
     transition: background-color 0.3s;
+}
+
+.buttonContainer {
+    display: flex;
+    position: absolute;
+    right: 0px; /* Adjust as needed for spacing */
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.classicView:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* Adjust the dimming effect */
+}
+
+.editButton {
+    display: none;
+    margin-right: 3px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    z-index: 1;
+}
+
+.editButton:hover {
+    background: #025fc2;
+}
+
+.classicView:hover .editButton {
+    display: block;
+}
+
+.deleteButton {
+    display: none;
+    background: rgb(182, 7, 7);
+    margin-right: 5px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    z-index: 1;
+}
+
+.deleteButton:hover {
+    background: darkred;
+}
+
+.classicView:hover .deleteButton {
+    display: block;
 }
 
 .detailView {
@@ -337,7 +392,7 @@
 .footer {
     display: flex;
     justify-content: space-between;
-    background-color: #2f2f2f;
+    background-color: #3d3d3d;
     border-top: 1px solid #aaa;
     align-items: center; /* Center content vertically */
 }

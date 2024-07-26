@@ -504,10 +504,11 @@ const Window: React.FC<WindowProps> = ({
             <div key={task.task_id} className={styles.taskContainer}>
               <div className={styles.taskRow}>
                 <div className={styles.taskCell}>
-                  <div className={styles.classicView} 
-                  style={{ width: isDetailView ? '40%' : '100%' }}
-                  onMouseEnter={() => setHoveredTask(task.task_id)} 
-                  onMouseLeave={() => setHoveredTask(null)}
+                  <div 
+                    className={styles.classicView} 
+                    style={{ width: isDetailView ? '40%' : '100%' }}
+                    onMouseEnter={() => setHoveredTask(task.task_id)} 
+                    onMouseLeave={() => setHoveredTask(null)}
                   >
                     <div className={styles.checkbox}>
                       <input

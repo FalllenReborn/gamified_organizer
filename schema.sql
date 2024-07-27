@@ -955,7 +955,7 @@ ALTER SEQUENCE public.task_lists_list_id_seq OWNED BY public.task_lists.list_id;
 
 CREATE TABLE public.tasks (
     task_id integer NOT NULL,
-    list_id integer NOT NULL,
+    list_id integer,
     task_name character varying(255) NOT NULL,
     created_date_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     nested_id integer,
@@ -1660,6 +1660,14 @@ ALTER TABLE ONLY public.prices
 
 ALTER TABLE ONLY public.prices
     ADD CONSTRAINT fk_shop FOREIGN KEY (shop_id) REFERENCES public.shops(shop_id);
+
+
+--
+-- Name: tasks fk_tasks_list_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tasks
+    ADD CONSTRAINT fk_tasks_list_id FOREIGN KEY (list_id) REFERENCES public.task_lists(list_id);
 
 
 --

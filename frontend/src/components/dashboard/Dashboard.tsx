@@ -9,6 +9,7 @@ import Bar from './Bar';
 import Shop from './Shop';
 import Currencies from './Currencies';
 import Items from './Items';
+import Duties from './Duties'
 import CreateListPopup from '../popups/CreateListPopup';
 import CreateTaskPopup from '../popups/CreateTaskPopup';
 import CreatePricePopup from '../popups/CreatePricePopup';
@@ -187,6 +188,18 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const registerTaskUpdateCallback = (id: number, callback: () => void) => {
     taskUpdateCallbacks.current[id] = callback;
   };
+
+  const handleDutyEdit = () => {
+
+  }
+  
+  const handleDutyComplete = () => {
+    
+  }
+
+  const handleDutyDelete = () => {
+    
+  }
 
   const toggleTaskChecked = (taskId: number) => {
     setCheckedTasks((prev) =>
@@ -1486,6 +1499,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onDeleteItem={handleItemDeletion}
             onEditItem={handleEditItem}
             onCreateNewItem={handleCreateItem}
+          /> 
+        </div>
+        <div className={styles.duties}>
+          <Duties 
+            rewards={rewards}
+            transactions={transactions}
+            vouchers={vouchers}
+            barsData={barsData}
+            currencies={currencies}
+            items={items}
+            onEdit={handleDutyEdit}
+            onComplete={handleDutyComplete}
+            onDelete={handleDutyDelete}
           /> 
         </div>
         {taskLists.map((taskList) => (

@@ -1,0 +1,237 @@
+.duties {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 11000000;
+    border: 2px solid #bbb;
+    background-color: #4a4a4a;
+    display: flex;
+    flex-direction: column;
+}
+
+.hideButton {
+    cursor: pointer;
+    bottom: 5px;
+    left: 5px;
+    user-select: none;
+    cursor: pointer;
+}
+
+.taskbar {
+    justify-content: space-between;
+    display: flex;
+    flex-direction: row;
+    background-color: #2f2f2f;
+    border-bottom: 1px solid #aaa;
+    cursor: grab;
+    min-height: auto;
+}
+
+.classicViewHeader{
+    display: flex;
+    min-height: auto;
+}
+
+.buttons {
+    position: relative;
+    display: flex;
+    align-self: flex-start;
+}
+
+.addButton {
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.title {
+    flex-grow: 1;
+    text-align: center;
+    font-weight: bold;
+    word-wrap: break-word;
+}
+
+.arrow {
+    cursor: pointer;
+    margin-left: auto;
+    margin-right: 10px;
+    user-select: none;
+}
+
+.detailViewHeaders {
+    display: flex;
+    width: 60%;
+    flex-shrink: 0;
+}
+
+.columnHeader {
+    flex: 1;
+    text-align: center;
+    border-left: 2px solid #bbb;
+    box-sizing: border-box;
+}
+
+.content {
+    overflow: auto;
+    flex: 1; /* Ensures the content area takes up available space */
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* Ensures footer stays at the bottom */
+    font-size: 14px;
+
+}
+
+.dutyRow {
+    display: flex;
+    align-items: center;
+}
+
+.dutyCell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid #bbb;
+    color: white;
+    word-wrap: break-word;
+    position: relative; /* Ensure absolute positioning works within this container */
+}
+
+.classicView {
+    display: flex;
+    align-items: center;
+    position: relative;
+    transition: background-color 0.3s;
+}
+
+.classicView:hover {
+    background-color: rgba(0, 0, 0, 0.1); /* Adjust the dimming effect */
+}
+
+.buttonContainer {
+    display: flex;
+    position: absolute;
+    right: 0px; /* Adjust as needed for spacing */
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.completeButton {
+    display: none;
+    background: rgb(5, 105, 19);
+    margin-right: 5px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    z-index: 1;
+}
+
+.completeButton:hover {
+    background: rgb(5, 78, 14);
+}
+
+.classicView:hover .completeButton {
+    display: block;
+}
+
+.deleteButton {
+    display: none;
+    background: rgb(182, 7, 7);
+    margin-right: 5px;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    z-index: 1;
+}
+
+.deleteButton:hover {
+    background: darkred;
+}
+
+.classicView:hover .deleteButton {
+    display: block;
+}
+
+.editButton {
+    display: none;
+    margin-right: 3px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 2px 5px;
+    z-index: 1;
+}
+
+.editButton:hover {
+    background: #025fc2;
+}
+
+.classicView:hover .editButton {
+    display: block;
+}
+
+.detailView {
+    display: flex;
+    width: 60%;
+    flex-shrink: 0;
+}
+
+.column {
+    flex: 1;
+    text-align: center;
+    border-left: 2px solid #bbb;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.column div {
+    height: 100%;
+    min-height: 20px;
+}
+
+.rewards {
+    line-height: 0.6em;
+    margin-bottom: 3px;
+    font-size: 10px;
+    color: white;
+}
+
+.transactions {
+    line-height: 0.6em;
+    margin-bottom: 3px;
+    font-size: 10px;
+    color: white;
+}
+
+.vouchers {
+    line-height: 0.6em;
+    margin-bottom: 3px;
+    font-size: 10px;
+    color: white;
+}
+
+.connectingClass {
+    flex: 1;
+}
+
+.hideButton {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #aaa;
+    align-items: center; /* Center content vertically */
+}

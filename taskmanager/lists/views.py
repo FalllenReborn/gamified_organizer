@@ -205,8 +205,11 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         window_id = self.request.query_params.get('window_id')
-        if window_id:
-            queryset = Task.objects.filter(list_task_id=window_id).order_by('created_date_time')
+        if window_id is not None:
+            if window_id.lower() == 'null':  # duties
+                queryset = Task.objects.filter(list_task__isnull=True).order_by('created_date_time')
+            else:  # tasks
+                queryset = Task.objects.filter(list_task_id=window_id).order_by('created_date_time')
         else:
             queryset = super().get_queryset()
         return queryset

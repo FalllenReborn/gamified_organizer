@@ -140,20 +140,30 @@ $$;
 ALTER FUNCTION public.delete_nested_tasks() OWNER TO postgres;
 
 --
--- Name: handle_task_deletion(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: handle_task_completion(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.handle_task_deletion() RETURNS trigger
+CREATE FUNCTION public.handle_task_completion(p_task_id integer) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
     trans RECORD;
     vouch RECORD;
+    nested_task RECORD;
 BEGIN
+    -- Clone the task data into tasks_history
+    INSERT INTO tasks_history (task_id, list_id, task_name, nested_id, created_date_time)
+    SELECT t.task_id, t.list_id, t.task_name, t.nested_id, t.created_date_time
+    FROM tasks t
+    WHERE t.task_id = p_task_id;
+
+    -- Temporarily disable the delete_nested_tasks trigger
+    PERFORM 'ALTER TABLE tasks DISABLE TRIGGER delete_nested_tasks';
+
     -- Handle transactions associated with the task
     FOR trans IN
         SELECT * FROM Transactions
-        WHERE task_id = OLD.task_id
+        WHERE task_id = p_task_id
     LOOP
         -- Update the Currencies table by adding the transaction amount to the corresponding currency_id
         UPDATE Currencies
@@ -167,10 +177,9 @@ BEGIN
     -- Handle vouchers associated with the task
     FOR vouch IN
         SELECT * FROM Vouchers
-        WHERE task_id = OLD.task_id
+        WHERE task_id = p_task_id
     LOOP
         -- Distribute the voucher amount (in this case, decrement quantity) to the corresponding bar_id
-        -- For example, update a fictional table or logic where vouchers affect bars or items
         UPDATE items
         SET storage = storage + vouch.quantity
         WHERE item_id = vouch.item_id;
@@ -179,13 +188,27 @@ BEGIN
         DELETE FROM Vouchers WHERE voucher_id = vouch.voucher_id;
     END LOOP;
 
-    -- After processing transactions and vouchers, allow the task to be deleted
-    RETURN OLD;
+    -- Complete the nested tasks
+    FOR nested_task IN
+        SELECT * FROM tasks
+        WHERE nested_id = p_task_id
+    LOOP
+        PERFORM handle_task_completion(nested_task.task_id);
+    END LOOP;
+
+    -- Update bar and distribute transactions
+    PERFORM update_bar_and_distribute_transactions(p_task_id);
+
+    -- Delete the original task
+    DELETE FROM tasks WHERE task_id = p_task_id;
+
+    -- Re-enable the delete_nested_tasks trigger
+    PERFORM 'ALTER TABLE tasks ENABLE TRIGGER delete_nested_tasks';
 END;
 $$;
 
 
-ALTER FUNCTION public.handle_task_deletion() OWNER TO postgres;
+ALTER FUNCTION public.handle_task_completion(p_task_id integer) OWNER TO postgres;
 
 --
 -- Name: move_to_higher(integer, smallint); Type: FUNCTION; Schema: public; Owner: postgres
@@ -262,68 +285,65 @@ $$;
 ALTER FUNCTION public.reset_layers() OWNER TO postgres;
 
 --
--- Name: update_bars_and_distribute_transactions(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_bar_and_distribute_transactions(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_bars_and_distribute_transactions() RETURNS trigger
+CREATE FUNCTION public.update_bar_and_distribute_transactions(p_task_id integer) RETURNS void
     LANGUAGE plpgsql
     AS $$
 DECLARE
+    reward RECORD;
     initial_result FLOAT;
     final_result FLOAT;
     division_difference FLOAT;
 BEGIN
-    -- Compute initial division result before the points are added
-    SELECT total_points::float / full_cycle INTO initial_result
-    FROM Bars
-    WHERE bar_id = OLD.bar_id;
+    FOR reward IN
+        SELECT * FROM rewards WHERE task_id = p_task_id
+    LOOP
+        -- Compute initial division result before the points are added
+        SELECT total_points::float / full_cycle INTO initial_result
+        FROM Bars
+        WHERE bar_id = reward.bar_id;
 
-    -- Update the Bars table by adding the points to the row with the matching bar_id
-    UPDATE Bars
-    SET total_points = total_points + OLD.points
-    WHERE bar_id = OLD.bar_id
-    RETURNING total_points::float / full_cycle INTO final_result;
+        -- Update the Bars table by adding the points to the row with the matching bar_id
+        UPDATE Bars
+        SET total_points = total_points + reward.points
+        WHERE bar_id = reward.bar_id
+        RETURNING total_points::float / full_cycle INTO final_result;
 
-    -- Calculate the difference in division results
-    division_difference := final_result - initial_result;
+        -- Calculate the difference in division results
+        division_difference := final_result - initial_result;
 
-    -- Check if final result has increased compared to initial result
-    IF division_difference > 0 THEN
-        -- Loop through the number of complete cycles increased
-        FOR i IN 1..floor(division_difference) LOOP
-            -- Distribute amount to currencies with corresponding currency_id
-            UPDATE Currencies
-            SET owned = owned + Transactions.amount
-            FROM Transactions
-            WHERE Transactions.currency_id = Currencies.currency_id
-              AND Transactions.bar_id = OLD.bar_id
-              AND Transactions.amount > 0;
+        -- Check if final result has increased compared to initial result
+        IF division_difference > 0 THEN
+            -- Loop through the number of complete cycles increased
+            FOR i IN 1..floor(division_difference) LOOP
+                -- Distribute amount to currencies with corresponding currency_id
+                UPDATE Currencies
+                SET owned = owned + Transactions.amount
+                FROM Transactions
+                WHERE Transactions.currency_id = Currencies.currency_id
+                  AND Transactions.bar_id = reward.bar_id
+                  AND Transactions.amount > 0;
 
-            -- Distribute vouchers
-            UPDATE Vouchers
-            SET quantity = quantity - 1
-            FROM Bars
-            WHERE Vouchers.bar_id = Bars.bar_id
-              AND Bars.bar_id = OLD.bar_id
-              AND Vouchers.quantity > 0;
+                -- Distribute vouchers to update storage in items table
+                UPDATE items
+                SET storage = storage + Vouchers.quantity
+                FROM Vouchers
+                WHERE Vouchers.item_id = items.item_id
+                  AND Vouchers.bar_id = reward.bar_id
+                  AND Vouchers.quantity > 0;
 
-            -- Ensure no negative quantities
-            UPDATE Vouchers
-            SET quantity = 0
-            WHERE quantity < 0;
-
-            RAISE NOTICE 'Distributed amount % to currency_id %', (SELECT amount FROM Transactions WHERE bar_id = OLD.bar_id LIMIT 1), (SELECT currency_id FROM Transactions WHERE bar_id = OLD.bar_id LIMIT 1);
-            RAISE NOTICE 'Distributed voucher quantity to bar_id %', OLD.bar_id;
-        END LOOP;
-    END IF;
-
-    -- Return the old row (standard practice for AFTER DELETE triggers)
-    RETURN OLD;
+                RAISE NOTICE 'Distributed amount % to currency_id %', (SELECT amount FROM Transactions WHERE bar_id = reward.bar_id LIMIT 1), (SELECT currency_id FROM Transactions WHERE bar_id = reward.bar_id LIMIT 1);
+                RAISE NOTICE 'Updated storage for item_id %', (SELECT item_id FROM Vouchers WHERE bar_id = reward.bar_id LIMIT 1);
+            END LOOP;
+        END IF;
+    END LOOP;
 END;
 $$;
 
 
-ALTER FUNCTION public.update_bars_and_distribute_transactions() OWNER TO postgres;
+ALTER FUNCTION public.update_bar_and_distribute_transactions(p_task_id integer) OWNER TO postgres;
 
 SET default_tablespace = '';
 
@@ -693,6 +713,43 @@ CREATE TABLE public.items (
 ALTER TABLE public.items OWNER TO postgres;
 
 --
+-- Name: items_history; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.items_history (
+    item_id integer NOT NULL,
+    item_name character varying(255) NOT NULL,
+    use_id integer NOT NULL,
+    use_note character varying(500),
+    use_date_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.items_history OWNER TO postgres;
+
+--
+-- Name: items_history_use_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.items_history_use_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.items_history_use_id_seq OWNER TO postgres;
+
+--
+-- Name: items_history_use_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.items_history_use_id_seq OWNED BY public.items_history.use_id;
+
+
+--
 -- Name: items_item_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -966,6 +1023,22 @@ CREATE TABLE public.tasks (
 ALTER TABLE public.tasks OWNER TO postgres;
 
 --
+-- Name: tasks_history; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tasks_history (
+    task_id integer NOT NULL,
+    list_id integer,
+    task_name character varying(255),
+    nested_id integer,
+    created_date_time timestamp with time zone NOT NULL,
+    completed_date_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+
+ALTER TABLE public.tasks_history OWNER TO postgres;
+
+--
 -- Name: tasks_task_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
@@ -1085,6 +1158,13 @@ ALTER TABLE ONLY public.currencies ALTER COLUMN currency_id SET DEFAULT nextval(
 --
 
 ALTER TABLE ONLY public.items ALTER COLUMN item_id SET DEFAULT nextval('public.items_item_id_seq'::regclass);
+
+
+--
+-- Name: items_history use_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.items_history ALTER COLUMN use_id SET DEFAULT nextval('public.items_history_use_id_seq'::regclass);
 
 
 --
@@ -1296,6 +1376,14 @@ ALTER TABLE ONLY public.django_session
 
 
 --
+-- Name: items_history items_history_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.items_history
+    ADD CONSTRAINT items_history_pkey PRIMARY KEY (use_id);
+
+
+--
 -- Name: items items_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -1365,6 +1453,14 @@ ALTER TABLE ONLY public.shops
 
 ALTER TABLE ONLY public.task_lists
     ADD CONSTRAINT task_lists_pkey PRIMARY KEY (list_id);
+
+
+--
+-- Name: tasks_history tasks_history_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tasks_history
+    ADD CONSTRAINT tasks_history_pkey PRIMARY KEY (task_id);
 
 
 --
@@ -1525,13 +1621,6 @@ CREATE TRIGGER after_task_insert AFTER INSERT ON public.tasks FOR EACH ROW EXECU
 
 
 --
--- Name: tasks before_task_delete; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER before_task_delete BEFORE DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.handle_task_deletion();
-
-
---
 -- Name: bars delete_layer_bar; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -1557,13 +1646,6 @@ CREATE TRIGGER delete_layer_task_list AFTER DELETE ON public.task_lists FOR EACH
 --
 
 CREATE TRIGGER delete_nested_tasks_trigger AFTER DELETE ON public.tasks FOR EACH ROW EXECUTE FUNCTION public.delete_nested_tasks();
-
-
---
--- Name: rewards update_bars_and_distribute_transactions_trigger; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER update_bars_and_distribute_transactions_trigger AFTER DELETE ON public.rewards FOR EACH ROW EXECUTE FUNCTION public.update_bars_and_distribute_transactions();
 
 
 --

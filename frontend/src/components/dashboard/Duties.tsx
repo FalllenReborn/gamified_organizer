@@ -172,7 +172,10 @@ const Duties: React.FC<DutiesProps> = ({
                     <div className={styles.connectingClass}></div>
                 </> 
             }
-            <div className={styles.hideButton} onClick={() => setIsHidden(!isHidden)}>
+            <div 
+                className={`${styles.hideButton} ${isHidden ? '' : styles.bordered}`} 
+                onClick={() => setIsHidden(!isHidden)}
+            >
                 {isHidden ? '▼' : '▲'}
             </div>
         </div>

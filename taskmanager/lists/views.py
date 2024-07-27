@@ -252,6 +252,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         except Task.DoesNotExist:
             return Response({'error': 'Task not found'}, status=404)
 
+    @action(detail=True, methods=['post'], url_path='complete_task')
+    def complete_task(self, request, pk=None):
+        try:
+            task = self.get_object()
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT handle_task_completion(%s);", [task.task_id])
+            return JsonResponse({'status': 'Task completed and moved to history.'}, status=200)
+        except Task.DoesNotExist:
+            return JsonResponse({'error': 'Task not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class RewardViewSet(viewsets.ModelViewSet):
     queryset = Reward.objects.all()

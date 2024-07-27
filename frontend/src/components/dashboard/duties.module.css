@@ -231,7 +231,8 @@
 
 .hideButton {
     display: flex;
-    justify-content: space-between;
-    border-top: 1px solid #aaa;
-    align-items: center; /* Center content vertically */
+    justify-content: center;
+    height: 40px;
+    width: 40px;
+    align-items: center; 
 }

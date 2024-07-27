@@ -208,7 +208,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     console.log(`Checked: ${checkedTasks}`);
   };
 
-  const handleCompleteTasks = async () => {
+  const handleDeleteTasks = async () => {
     try {
       await Promise.all(
         checkedTasks.map((taskId) =>
@@ -224,6 +224,47 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       console.error('Error deleting tasks:', error);
     }
   };
+
+  const handleCompleteTasks = async () => {
+    try {
+      await Promise.all(
+        checkedTasks.map((taskId) =>
+          axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`)
+        )
+      );
+      setCheckedTasks([]);
+      fetchBars();
+      fetchCurrencies();
+      fetchTaskLists();
+      fetchItems();
+    } catch (error) {
+      console.error('Error deleting tasks:', error);
+    }
+  };
+
+  const handleCompleteDuty = async (taskId: number) => {
+    try {
+        await axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`);
+        fetchBars();
+        fetchCurrencies();
+        fetchTaskLists();
+        fetchItems();
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            if (error.response) {
+                console.error('Error response data:', error.response.data);
+                console.error('Error response status:', error.response.status);
+                console.error('Error response headers:', error.response.headers);
+            } else if (error.request) {
+                console.error('Error request:', error.request);
+            } else {
+                console.error('Error message:', error.message);
+            }
+        } else {
+            console.error('Unknown error:', error);
+        }
+    }
+};
 
   const handleTaskCreate = (windowId: number, nest_id: number | null, editMode = false, task = null) => {
     setCurrentWindowId(windowId);
@@ -1483,6 +1524,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           onCreateNewList={handleCreateNewList} 
           onCompleteTasks={handleCompleteTasks}
           onCreateNewBar={handleCreateNewBar}
+          onDeleteTasks={handleDeleteTasks}
         />}
         <ResetButton onClick={handleReset} />
         <div className={styles.currencies}>
@@ -1510,7 +1552,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             currencies={currencies}
             items={items}
             onEdit={handleDutyEdit}
-            onComplete={handleDutyComplete}
+            onComplete={handleCompleteDuty}
             onDelete={handleDutyDelete}
           /> 
         </div>

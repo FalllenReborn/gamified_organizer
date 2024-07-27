@@ -169,9 +169,7 @@ BEGIN
         UPDATE Currencies
         SET owned = owned + trans.amount
         WHERE currency_id = trans.currency_id;
-
-        -- Delete the transaction after processing it
-        DELETE FROM Transactions WHERE transaction_id = trans.transaction_id;
+        
     END LOOP;
 
     -- Handle vouchers associated with the task
@@ -184,23 +182,25 @@ BEGIN
         SET storage = storage + vouch.quantity
         WHERE item_id = vouch.item_id;
 
-        -- Delete the voucher after processing it
-        DELETE FROM Vouchers WHERE voucher_id = vouch.voucher_id;
     END LOOP;
 
     -- Complete the nested tasks
-    FOR nested_task IN
-        SELECT * FROM tasks
-        WHERE nested_id = p_task_id
-    LOOP
-        PERFORM handle_task_completion(nested_task.task_id);
-    END LOOP;
+	IF (SELECT list_id FROM tasks WHERE task_id = p_task_id) IS NOT NULL THEN
+	    FOR nested_task IN
+	        SELECT * FROM tasks
+	        WHERE nested_id = p_task_id
+	    LOOP
+	        PERFORM handle_task_completion(nested_task.task_id);
+	    END LOOP;
+	END IF;
 
     -- Update bar and distribute transactions
     PERFORM update_bar_and_distribute_transactions(p_task_id);
 
-    -- Delete the original task
-    DELETE FROM tasks WHERE task_id = p_task_id;
+    IF (SELECT list_id FROM tasks WHERE task_id = p_task_id) IS NOT NULL THEN
+        -- Delete the original task
+        DELETE FROM tasks WHERE task_id = p_task_id;
+    END IF;
 
     -- Re-enable the delete_nested_tasks trigger
     PERFORM 'ALTER TABLE tasks ENABLE TRIGGER delete_nested_tasks';
@@ -1032,11 +1032,34 @@ CREATE TABLE public.tasks_history (
     task_name character varying(255),
     nested_id integer,
     created_date_time timestamp with time zone NOT NULL,
-    completed_date_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    completed_date_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    history_id integer NOT NULL
 );
 
 
 ALTER TABLE public.tasks_history OWNER TO postgres;
+
+--
+-- Name: tasks_history_history_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tasks_history_history_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.tasks_history_history_id_seq OWNER TO postgres;
+
+--
+-- Name: tasks_history_history_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.tasks_history_history_id_seq OWNED BY public.tasks_history.history_id;
+
 
 --
 -- Name: tasks_task_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
@@ -1207,6 +1230,13 @@ ALTER TABLE ONLY public.task_lists ALTER COLUMN list_id SET DEFAULT nextval('pub
 --
 
 ALTER TABLE ONLY public.tasks ALTER COLUMN task_id SET DEFAULT nextval('public.tasks_task_id_seq'::regclass);
+
+
+--
+-- Name: tasks_history history_id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tasks_history ALTER COLUMN history_id SET DEFAULT nextval('public.tasks_history_history_id_seq'::regclass);
 
 
 --
@@ -1460,7 +1490,7 @@ ALTER TABLE ONLY public.task_lists
 --
 
 ALTER TABLE ONLY public.tasks_history
-    ADD CONSTRAINT tasks_history_pkey PRIMARY KEY (task_id);
+    ADD CONSTRAINT tasks_history_pkey PRIMARY KEY (history_id);
 
 
 --
@@ -1821,7 +1851,7 @@ ALTER TABLE ONLY public.transactions
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id);
+    ADD CONSTRAINT transactions_task_id_fkey FOREIGN KEY (task_id) REFERENCES public.tasks(task_id) ON DELETE CASCADE;
 
 
 --

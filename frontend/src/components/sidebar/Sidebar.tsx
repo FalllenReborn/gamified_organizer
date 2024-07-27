@@ -11,6 +11,7 @@ import classNames from 'classnames';
 interface SidebarProps {
   onCreateNewList: () => void;
   onCompleteTasks: () => void;
+  onDeleteTasks: () => void;
   onReturnHome: () => void;
   onCreateNewBar: () => void;
   onCreateNewShop: () => void;
@@ -23,7 +24,8 @@ const translations: Record<Language, { [key: string]: string }> = {
     createList: 'Create new list',
     createShop: 'Create new shop',
     createXP: 'Create new XP bar',
-    completed: 'Delete completed tasks',
+    completed: 'Complete tasks',
+    deleted: 'Delete tasks',
     login: 'Login',
     register: 'Register',
     returnHome: 'Home page',
@@ -34,7 +36,8 @@ const translations: Record<Language, { [key: string]: string }> = {
     createList: 'Stwórz nową listę',
     createShop: 'Stwórz nowy sklep',
     createXP: 'Stwórz nowy licznik doświadczenia',
-    completed: 'Usuń ukończone zadania',
+    completed: 'Ukończ zadania',
+    deleted: 'Usuń zadania',
     login: 'Zaloguj się',
     register: 'Zarejestruj się',
     returnHome: 'Strona Główna',
@@ -45,7 +48,13 @@ const translations: Record<Language, { [key: string]: string }> = {
 
 type DropdownState = 'createDropdown' | 'actionsDropdown' | 'languageDropdown' | 'themeDropdown' | 'accountDropdown' | 'navigateDropdown';
 
-const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onCreateNewBar, onCreateNewShop }) => {
+const Sidebar: React.FC<SidebarProps> = ({ 
+  onCreateNewList, 
+  onCompleteTasks, 
+  onCreateNewBar, 
+  onCreateNewShop,
+  onDeleteTasks,
+}) => {
   const { isDarkMode, toggleDarkMode, toggleLightMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const currentDateTime = useContext(ClockContext); // Use ClockContext
@@ -110,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onCreateNewList, onCompleteTasks, onC
         {dropdownStates === 'actionsDropdown' && (
           <div className={styles.dropdownContent}>
             <div id={styles.completeButton} className={styles.dropdownButton} onClick={onCompleteTasks}>{t.completed}</div>
-            <div id={styles.deleteButton} className={styles.dropdownButton}>Delete</div>
+            <div id={styles.deleteButton} className={styles.dropdownButton} onClick={onDeleteTasks}>Delete</div>
           </div>
         )}
       </div>

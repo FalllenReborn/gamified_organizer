@@ -24,12 +24,13 @@ interface WindowProps {
   barsData: any[];
   currencies: any[];
   items: any[];
+  tasks: Task[];
   detailView: boolean;
+  onExpand: (taskId: number, currentState: boolean) => void;
   onResize: (id: number, width: number, height: number, type: string) => void;
   openPopup: (windowId: number, nest_id: number | null, editMode: any, task: any) => void;
   onPositionUpdate: (id: number, x: number, y: number) => void;
   onSizeUpdate: (id: number, width: number, height: number) => void;
-  registerTaskUpdateCallback: (id: number, callback: () => void) => void;
 }
 
 interface Task {
@@ -56,7 +57,6 @@ const Window: React.FC<WindowProps> = ({
   initialHeight, 
   onResize, 
   openPopup, 
-  registerTaskUpdateCallback,
   checkedTasks, 
   toggleTaskChecked,
   rewards,
@@ -66,8 +66,9 @@ const Window: React.FC<WindowProps> = ({
   currencies,
   items,
   detailView,
+  tasks,
+  onExpand,
 }) => {
-  const [tasks, setTasks] = useState<Task[]>([]);
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
@@ -80,7 +81,6 @@ const Window: React.FC<WindowProps> = ({
   const windowRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
-
   
   useEffect(() => {
     setPosition({ x: initialX, y: initialY });
@@ -113,20 +113,6 @@ const Window: React.FC<WindowProps> = ({
       console.error('Error updating position:', error);
     }
   }, [id]);
-
-  const fetchTasks = useCallback(async () => {
-    try {
-      const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=${id}`);
-      setTasks(response.data);
-    } catch (error) {
-      console.error('Error fetching tasks:', error);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchTasks();
-    registerTaskUpdateCallback(id, fetchTasks);
-  }, [fetchTasks, id, registerTaskUpdateCallback]);
 
   const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     const targetElement = e.target as HTMLElement;
@@ -297,20 +283,6 @@ const Window: React.FC<WindowProps> = ({
     
   };
 
-  const toggleExpand = async (taskId: number, currentState: boolean) => {
-    const newExpandedState = !currentState;
-    try {
-      await axios.patch(`http://localhost:8000/api/tasks/${taskId}/update_task/`, { expanded: newExpandedState });
-      setTasks((prevTasks) => 
-        prevTasks.map((task) => 
-          task.task_id === taskId ? { ...task, expanded: newExpandedState } : task
-        )
-      );
-    } catch (error) {
-      console.error('Error updating task state:', error);
-    }
-  };
-
   const getRewardsForTask = (taskId: number) => {
     return rewards.filter((reward) => reward.task === taskId);
   };
@@ -365,7 +337,7 @@ const Window: React.FC<WindowProps> = ({
                       checked={checkedTasks.includes(task.task_id)}
                     />
                 </div>
-                <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                <button onClick={() => onExpand(task.task_id, task.expanded)} className={styles.expandButton}>
                   {task.expanded ? '▲' : '▼'}
                 </button>
                 <div className={styles.taskText}>{task.task_name}</div>
@@ -517,7 +489,7 @@ const Window: React.FC<WindowProps> = ({
                         checked={checkedTasks.includes(task.task_id)}
                       />
                     </div>
-                    <button onClick={() => toggleExpand(task.task_id, task.expanded)} className={styles.expandButton}>
+                    <button onClick={() => onExpand(task.task_id, task.expanded)} className={styles.expandButton}>
                       {task.expanded ? '▲' : '▼'}
                     </button>
                     <div className={styles.taskText}>{task.task_name}</div>

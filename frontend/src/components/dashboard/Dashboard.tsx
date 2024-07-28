@@ -173,7 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [shopsData, setShopsData] = useState<ShopData[]>([]);
-  const [duties, setDuties] = useState<Duty[]>([]);
+  const [tasks, setTasks] = useState<Duty[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [isTaskPopupOpen, setIsTaskPopupOpen] = useState(false);
@@ -216,8 +216,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       setCheckedTasks([]);
       fetchBars();
       fetchCurrencies();
-      fetchTaskLists();
       fetchItems();
+      fetchTasks();
     } catch (error) {
       console.error('Error deleting tasks:', error);
     }
@@ -233,8 +233,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       setCheckedTasks([]);
       fetchBars();
       fetchCurrencies();
-      fetchTaskLists();
       fetchItems();
+      fetchTasks();
     } catch (error) {
       console.error('Error deleting tasks:', error);
     }
@@ -245,7 +245,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         await axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`);
         fetchBars();
         fetchCurrencies();
-        fetchTaskLists();
         fetchItems();
     } catch (error) {
         if (axios.isAxiosError(error)) {
@@ -269,9 +268,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         await axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
         fetchBars();
         fetchCurrencies();
-        fetchTaskLists();
         fetchItems();
-        fetchDuties();
+        fetchTasks();
     } catch (error) {
         if (axios.isAxiosError(error)) {
             if (error.response) {
@@ -368,11 +366,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   useEffect(() => {
-    fetchTaskLists();
-    fetchBars();
-  }, []);
-
-  useEffect(() => {
     window.addEventListener('mouseup', handleMouseUp);
     return () => {
       window.removeEventListener('mouseup', handleMouseUp);
@@ -432,10 +425,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const fetchDuties = async () => {
+  const fetchTasks = async () => {
     try {
-      const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=null`);
-      setDuties(response.data);
+      const response = await axios.get(`http://localhost:8000/api/tasks/`);
+      setTasks(response.data);
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
@@ -496,7 +489,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
   
   useEffect(() => {
-    fetchDuties()
+    fetchTasks()
     fetchPrices();
     fetchItems();
     fetchCurrencies();
@@ -571,6 +564,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   }
 
+  const toggleExpand = async (taskId: number, currentState: boolean) => {
+    const newExpandedState = !currentState;
+    try {
+      await axios.patch(`http://localhost:8000/api/tasks/${taskId}/update_task/`, { expanded: newExpandedState });
+      setTasks((prevTasks) => 
+        prevTasks.map((task) => 
+          task.task_id === taskId ? { ...task, expanded: newExpandedState } : task
+        )
+      );
+    } catch (error) {
+      console.error('Error updating task state:', error);
+    }
+  };
+
   const handleConfirm = async (
     taskId: number,
     taskName: string,
@@ -590,9 +597,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchRewards();
     fetchTransactions();
     fetchVouchers();
-    if (currentWindowId === null) {
-      fetchDuties();
-    }
+    fetchTasks();
   };
 
   const handleUpdate = async (
@@ -1528,6 +1533,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchItems();
   };
 
+  const getFilteredTasks = (listId: number | null) => {
+    if (listId === null) {
+        return tasks.filter(task => task.list_task === null);
+    }
+    return tasks.filter(task => task.list_task === listId);
+};
+
   const backgroundSize = 50 * scale;
   const backgroundPosition = `${translate.x}px ${translate.y}px`;
 
@@ -1581,7 +1593,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         </div>
         <div className={styles.duties}>
           <Duties 
-            duties={duties}
+            duties={getFilteredTasks(null)}
             rewards={rewards}
             transactions={transactions}
             vouchers={vouchers}
@@ -1596,6 +1608,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         {taskLists.map((taskList) => (
           <div key={taskList.list_id} className={`${styles.window} window`}>
           <Window 
+            tasks={getFilteredTasks(taskList.list_id)}
             id={taskList.list_id} 
             title={taskList.list_name}
             initialX={taskList.x_axis}
@@ -1612,6 +1625,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             items={items}
             vouchers={vouchers}
             detailView={taskList.detail_view}
+            onExpand={toggleExpand}
             onClose={handleCloseWindow} 
             onRename={(id) => handleEditList(id, taskList.list_name, taskList.x_axis, taskList.y_axis, taskList.size_horizontal, taskList.size_vertical)}
             onClick={() => moveItemToHighestLayer(taskList.list_id, taskList.layer.foreign_table)}
@@ -1623,7 +1637,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             checkedTasks={checkedTasks}
             toggleTaskChecked={toggleTaskChecked}
             openPopup={handleTaskCreate}
-            registerTaskUpdateCallback={registerTaskUpdateCallback}
           />
           </div>
         ))}

@@ -78,7 +78,6 @@
 
 .content {
     overflow: auto;
-    flex: 1; /* Ensures the content area takes up available space */
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* Ensures footer stays at the bottom */
@@ -194,45 +193,32 @@
     border-left: 2px solid #bbb;
     box-sizing: border-box;
     display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    color: white;
+    line-height: 1em;
+
+}
+
+.column > div {
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-}
-
-.column div {
     height: 100%;
     min-height: 20px;
+    margin-bottom: 2px;
 }
 
-.rewards {
-    line-height: 0.6em;
-    margin-bottom: 3px;
-    font-size: 10px;
-    color: white;
-}
-
-.transactions {
-    line-height: 0.6em;
-    margin-bottom: 3px;
-    font-size: 10px;
-    color: white;
-}
-
-.vouchers {
-    line-height: 0.6em;
-    margin-bottom: 3px;
-    font-size: 10px;
-    color: white;
-}
-
-.connectingClass {
+.connector {
     flex: 1;
 }
 
 .hideButton {
     display: flex;
     justify-content: center;
-    height: 40px;
-    width: 40px;
+    height: 38px;
+    width: 36px;
     align-items: center; 
 }

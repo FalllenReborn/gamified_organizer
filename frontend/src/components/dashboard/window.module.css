@@ -214,23 +214,6 @@
     border-bottom: none;
 }
 
-.rewards {
-    line-height: 0.6em;
-    margin-bottom: 3px;
-
-}
-
-.transactions {
-    line-height: 0.6em;
-    margin-bottom: 3px;
-
-}
-
-.vouchers {
-    line-height: 0.6em;
-    margin-bottom: 3px;
-}
-
 .taskText {
     flex-grow: 1;
     font-size: 14px;
@@ -312,14 +295,21 @@
     border-left: 2px solid #bbb;
     box-sizing: border-box;
     display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 10px;
+    color: white;
+    line-height: 1em;
+}
+
+.column > div {
+    display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-}
-
-.column div {
     height: 100%;
     min-height: 20px;
+    margin-bottom: 2px;
 }
 
 .resizeHandle {

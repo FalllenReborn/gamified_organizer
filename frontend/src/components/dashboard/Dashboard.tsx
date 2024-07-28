@@ -60,6 +60,15 @@ interface ShopData {
   layer: Layer;
 }
 
+interface Duty {
+  task_id: number;
+  task_name: string;
+  list_task: number;
+  created_date_time: string;
+  nested_id: number | null;
+  expanded: boolean;
+}
+
 interface Currency {
   currency_id: number;
   currency_name: string;
@@ -164,6 +173,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [taskLists, setTaskLists] = useState<TaskList[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [shopsData, setShopsData] = useState<ShopData[]>([]);
+  const [duties, setDuties] = useState<Duty[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [items, setItems] = useState<Item[]>([]);
   const [isTaskPopupOpen, setIsTaskPopupOpen] = useState(false);
@@ -188,18 +198,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const registerTaskUpdateCallback = (id: number, callback: () => void) => {
     taskUpdateCallbacks.current[id] = callback;
   };
-
-  const handleDutyEdit = () => {
-
-  }
-  
-  const handleDutyComplete = () => {
-    
-  }
-
-  const handleDutyDelete = () => {
-    
-  }
 
   const toggleTaskChecked = (taskId: number) => {
     setCheckedTasks((prev) =>
@@ -264,9 +262,34 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             console.error('Unknown error:', error);
         }
     }
-};
+  };
 
-  const handleTaskCreate = (windowId: number, nest_id: number | null, editMode = false, task = null) => {
+  const handleDeleteDuty = async (taskId: number) => {
+    try {
+        await axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
+        fetchBars();
+        fetchCurrencies();
+        fetchTaskLists();
+        fetchItems();
+        fetchDuties();
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            if (error.response) {
+                console.error('Error response data:', error.response.data);
+                console.error('Error response status:', error.response.status);
+                console.error('Error response headers:', error.response.headers);
+            } else if (error.request) {
+                console.error('Error request:', error.request);
+            } else {
+                console.error('Error message:', error.message);
+            }
+        } else {
+            console.error('Unknown error:', error);
+        }
+    }
+  };
+
+  const handleTaskCreate = (windowId: number | null, nest_id: number | null, editMode = false, task = null) => {
     setCurrentWindowId(windowId);
     setNest(nest_id);
     setIsEditMode(editMode);
@@ -409,6 +432,15 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
+  const fetchDuties = async () => {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=null`);
+      setDuties(response.data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
+
   const fetchRewards = async () => {
     try {
       const response = await axios.get('http://localhost:8000/api/rewards/');
@@ -464,6 +496,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
   
   useEffect(() => {
+    fetchDuties()
     fetchPrices();
     fetchItems();
     fetchCurrencies();
@@ -557,6 +590,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchRewards();
     fetchTransactions();
     fetchVouchers();
+    if (currentWindowId === null) {
+      fetchDuties();
+    }
   };
 
   const handleUpdate = async (
@@ -709,7 +745,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     vouchers: { [itemId: number]: number },
   ) => {
     try {
-      if (currentWindowId === null) return;
+      // if (currentWindowId === null) return;
   
       // Step 1: Create the task
       const taskPayload = {
@@ -1545,15 +1581,16 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         </div>
         <div className={styles.duties}>
           <Duties 
+            duties={duties}
             rewards={rewards}
             transactions={transactions}
             vouchers={vouchers}
             barsData={barsData}
             currencies={currencies}
             items={items}
-            onEdit={handleDutyEdit}
+            onEdit={handleTaskCreate}
             onComplete={handleCompleteDuty}
-            onDelete={handleDutyDelete}
+            onDelete={handleDeleteDuty}
           /> 
         </div>
         {taskLists.map((taskList) => (

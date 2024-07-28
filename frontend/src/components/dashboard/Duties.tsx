@@ -2,28 +2,30 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from './duties.module.css';
 import axios from 'axios';
 
-interface DutiesProps {
-  rewards: any[];
-  transactions: any[];
-  vouchers: any[];
-  barsData: any[];
-  currencies: any[];
-  items: any[];
-  onEdit: (editMode: any, task: any) => void;
-  onComplete: (task: any) => void;
-  onDelete: (task: any) => void;
+interface Duty {
+    task_id: number;
+    task_name: string;
+    list_task: number;
+    created_date_time: string;
+    nested_id: number | null;
+    expanded: boolean;
 }
 
-interface Task {
-  task_id: number;
-  task_name: string;
-  list_task: number;
-  created_date_time: string;
-  nested_id: number | null;
-  expanded: boolean;
+interface DutiesProps {
+    duties: Duty[];
+    rewards: any[];
+    transactions: any[];
+    vouchers: any[];
+    barsData: any[];
+    currencies: any[];
+    items: any[];
+    onEdit: (windowId: number | null, nest_id: number | null, editMode: any, task: any) => void;
+    onComplete: (task: any) => void;
+    onDelete: (task: any) => void;
 }
 
 const Duties: React.FC<DutiesProps> = ({
+    duties,
     rewards,
     transactions,
     vouchers,
@@ -36,21 +38,7 @@ const Duties: React.FC<DutiesProps> = ({
 }) => {
     const [isDetailView, setIsDetailView] = useState(true);
     const [hoveredTask, setHoveredTask] = useState<number | null>(null);
-    const [duties, setDuties] = useState<Task[]>([]);
     const [isHidden, setIsHidden] = useState(false);
-
-    const fetchTasks = async () => {
-        try {
-          const response = await axios.get(`http://localhost:8000/api/tasks/?window_id=null`);
-          setDuties(response.data);
-        } catch (error) {
-          console.error('Error fetching tasks:', error);
-        }
-    };
-
-    useEffect(() => {
-        fetchTasks();
-    }, []);
 
     const getRewardsForTask = (taskId: number) => {
         return rewards.filter((reward) => reward.task === taskId);
@@ -78,14 +66,14 @@ const Duties: React.FC<DutiesProps> = ({
         const item = items.find(item => item.item_id === itemId);
         return item ? item.item_name : 'Item';
     };
-    
-    const handleEditDuty = (taskId: number) => {
-        const task = duties.find(t => t.task_id === taskId);
-        if (task) {
-            onEdit(true, task);
-        }
-    };
 
+    const handleEditDuty = (taskId: number) => {
+        const duty = duties.find(t => t.task_id === taskId);
+        if (duty) {
+          onEdit(null, null, true, duty);
+        }
+      };
+    
     return (
         <div className={styles.duties} style={{ 
             width: isHidden ? '40px' : '400px',
@@ -96,7 +84,7 @@ const Duties: React.FC<DutiesProps> = ({
                     <div className={styles.taskbar}>
                         <div className={styles.classicViewHeader} style={{ width: isDetailView ? '40%' : '100%' }}>
                             <div className={styles.buttons}>
-                                <button className={styles.addButton} onClick={() => {onEdit(false, null)}}>
+                                <button className={styles.addButton} onClick={() => {onEdit(null, null, false, null)}}>
                                     +
                                 </button>
                             </div>
@@ -129,7 +117,7 @@ const Duties: React.FC<DutiesProps> = ({
                                                 <div className={styles.buttonContainer}>
                                                     <button className={styles.completeButton} onClick={() => onComplete(duty.task_id)}>Complete</button>
                                                     <button className={styles.deleteButton} onClick={() => onDelete(duty.task_id)}>Delete</button>
-                                                    <button className={styles.editButton} onClick={() => onEdit(true, duty.task_id)}>Edit</button>
+                                                    <button className={styles.editButton} onClick={() => handleEditDuty(duty.task_id)}>Edit</button>
                                                 </div>
                                             )}
                                         </div>
@@ -169,9 +157,9 @@ const Duties: React.FC<DutiesProps> = ({
                             </div>
                         ))}
                     </div> 
-                    <div className={styles.connectingClass}></div>
                 </> 
             }
+            <div className={styles.connector}></div>
             <div 
                 className={`${styles.hideButton} ${isHidden ? '' : styles.bordered}`} 
                 onClick={() => setIsHidden(!isHidden)}

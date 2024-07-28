@@ -223,11 +223,12 @@ class TaskViewSet(viewsets.ModelViewSet):
             task_name = data.get('task_name')
             nested_id = data.get('nested_id')
 
-            if not list_id or not task_name:
-                return JsonResponse({'error': 'list_id and task_name are required'}, status=400)
+            if not task_name:
+                return JsonResponse({'error': 'task_name is required'}, status=400)
 
+            # Allow list_id to be None
             task = Task.objects.create(
-                list_task_id=list_id,
+                list_task_id=list_id if list_id != 'null' else None,
                 task_name=task_name,
                 created_date_time=timezone.now(),
                 nested_id=nested_id

@@ -69,7 +69,7 @@ class Shop(models.Model):
 
 class Task(models.Model):
     task_id = models.AutoField(primary_key=True)
-    list_task = models.ForeignKey(TaskList, on_delete=models.CASCADE, db_column='list_id')
+    list_task = models.ForeignKey(TaskList, on_delete=models.CASCADE, db_column='list_id', null=True, blank=True)
     task_name = models.CharField(max_length=255)
     created_date_time = models.DateTimeField(auto_now_add=True)
     nested_id = models.IntegerField(null=True, blank=True)

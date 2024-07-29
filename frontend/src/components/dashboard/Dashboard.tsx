@@ -4,7 +4,7 @@ import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
 import ToggleButton from '../sidebar/ToggleButton';
-import Window from './Window';
+import List from './List';
 import Bar from './Bar';
 import Shop from './Shop';
 import Currencies from './Currencies';
@@ -25,7 +25,7 @@ interface Layer {
   foreign_id: number;
 }
 
-interface TaskList {
+interface ListData {
   list_id: number;
   list_name: string;
   x_axis: number;
@@ -170,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [createItemPopup, setCreateItemPopup] = useState<CreateItemState>({ isOpen: false, defaultValue: '', isEditMode: false, itemId: undefined});
   const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200});
   const [componentType, setComponentType] = useState<number>(0);
-  const [taskLists, setTaskLists] = useState<TaskList[]>([]);
+  const [listsData, setListsData] = useState<ListData[]>([]);
   const [barsData, setBarsData] = useState<BarData[]>([]);
   const [shopsData, setShopsData] = useState<ShopData[]>([]);
   const [tasks, setTasks] = useState<Duty[]>([]);
@@ -178,7 +178,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [items, setItems] = useState<Item[]>([]);
   const [isTaskPopupOpen, setIsTaskPopupOpen] = useState(false);
   const [isPricePopupOpen, setIsPricePopupOpen] = useState(false);
-  const [currentWindowId, setCurrentWindowId] = useState<number | null>(null);
+  const [currentListId, setCurrentListId] = useState<number | null>(null);
   const [currentShopId, setCurrentShopId] = useState<number>(0);
   const [nest, setNest] = useState<number | null>(null);
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
@@ -287,8 +287,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleTaskCreate = (windowId: number | null, nest_id: number | null, editMode = false, task = null) => {
-    setCurrentWindowId(windowId);
+  const handleTaskCreate = (listId: number | null, nest_id: number | null, editMode = false, task = null) => {
+    setCurrentListId(listId);
     setNest(nest_id);
     setIsEditMode(editMode);
     setTaskToEdit(task || undefined);
@@ -389,12 +389,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setIsSidebarVisible(!isSidebarVisible);
   };
 
-  const handleCloseWindow = async (id: number) => {
+  const handleCloseList = async (id: number) => {
     try {
       await handleListDeletion(id);
-      await fetchTaskLists();
+      await fetchLists();
     } catch (error) {
-      console.error('Error deleting task list:', error);
+      console.error('Error deleting list:', error);
     }
   };
 
@@ -496,7 +496,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     fetchTransactions();
     fetchRewards();
     fetchVouchers();
-    fetchTaskLists();
+    fetchLists();
     fetchBars();
     fetchShops();
   }, []);
@@ -591,8 +591,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       await handleCreate(taskName, newRewards, newTransactions, newVouchers);
     }
     closePopup();
-    if (currentWindowId !== null && currentWindowId in taskUpdateCallbacks.current) {
-      taskUpdateCallbacks.current[currentWindowId]();
+    if (currentListId !== null && currentListId in taskUpdateCallbacks.current) {
+      taskUpdateCallbacks.current[currentListId]();
     }
     fetchRewards();
     fetchTransactions();
@@ -750,11 +750,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     vouchers: { [itemId: number]: number },
   ) => {
     try {
-      // if (currentWindowId === null) return;
   
       // Step 1: Create the task
       const taskPayload = {
-        list_id: currentWindowId,
+        list_id: currentListId,
         task_name: taskName,
         nested_id: nest
       };
@@ -821,12 +820,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const fetchTaskLists = async () => {
+  const fetchLists = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/tasklists/');
-      const fetchedTaskLists: TaskList[] = response.data;
-      const sortedTaskLists = fetchedTaskLists.sort((a, b) => a.layer.layer - b.layer.layer);
-      setTaskLists(sortedTaskLists);
+      const response = await axios.get('http://localhost:8000/api/lists/');
+      const fetchedLists: ListData[] = response.data;
+      const sortedLists = fetchedLists.sort((a, b) => a.layer.layer - b.layer.layer);
+      setListsData(sortedLists);
     } catch (error) {
       console.error('Error fetching task lists:', error);
     }
@@ -884,7 +883,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   ) => {
     switch (foreignTable) {
       case 1:
-        setTaskLists(prevLists => 
+        setListsData(prevLists => 
           prevLists.map(list =>
             list.list_id === id
               ? { ...list, layer: { ...list.layer, layer: newLayer } }
@@ -921,7 +920,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   
     switch (foreignTable) {
       case 1:
-        previousLayer = taskLists.find(list => list.list_id === foreignId)?.layer.layer || 0;
+        previousLayer = listsData.find(list => list.list_id === foreignId)?.layer.layer || 0;
         break;
       case 2:
         previousLayer = barsData.find(bar => bar.bar_id === foreignId)?.layer.layer || 0;
@@ -946,7 +945,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       await revertLayer;  // Wait for the revert logic to complete
       // Fetch updated data if necessary
       fetchBars();
-      fetchTaskLists();
+      fetchLists();
       fetchShops();
     } catch (error) {
       console.error('Error during optimistic update:', error);
@@ -955,8 +954,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   
   const handleListDeletion = async (id: number) => {
     try {
-      await axios.delete(`http://localhost:8000/api/tasklists/${id}/`);
-      setTaskLists((prevTaskLists) => prevTaskLists.filter((list) => list.list_id !== id));
+      await axios.delete(`http://localhost:8000/api/lists/${id}/`);
+      setListsData((prevListsData) => prevListsData.filter((list) => list.list_id !== id));
     } catch (error) {
       console.error('Error deleting task list:', error);
     }
@@ -1082,10 +1081,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleDragWindow = (id: number, x: number, y: number, type: string) => {
-    if (type === 'taskList') {
-      setTaskLists((prevTaskLists) =>
-        prevTaskLists.map((taskList) =>
-          taskList.list_id === id ? { ...taskList, x_axis: x, y_axis: y } : taskList
+    if (type === 'list') {
+      setListsData((prevListsData) =>
+        prevListsData.map((listData) =>
+          listData.list_id === id ? { ...listData, x_axis: x, y_axis: y } : listData
         )
       );
     } else if (type === 'bars') {
@@ -1104,12 +1103,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleResizeWindow = (id: number, width: number, height: number, type: string) => {
-    if (type === 'taskList') {
-      setTaskLists((prevTaskLists) =>
-        prevTaskLists.map((taskList) =>
-          taskList.list_id === id
-            ? { ...taskList, size_horizontal: width, size_vertical: height }
-            : taskList
+    if (type === 'list') {
+      setListsData((prevListsData) =>
+        prevListsData.map((listData) =>
+          listData.list_id === id
+            ? { ...listData, size_horizontal: width, size_vertical: height }
+            : listData
         )
       );
     } else if (type === 'bars') {
@@ -1412,26 +1411,26 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     try {
       if (id === null) {
         // Create new list
-        const response = await axios.post('http://localhost:8000/api/tasklists/', {
+        const response = await axios.post('http://localhost:8000/api/lists/', {
           list_name: newName,
           x_axis: x,
           y_axis: y,
           size_horizontal: width,
           size_vertical: height,
         });
-        const newList: TaskList = response.data;
-        setTaskLists((prevTaskLists) => [...prevTaskLists, newList]);
+        const newList: ListData = response.data;
+        setListsData((prevListsData) => [...prevListsData, newList]);
       } else {
         // Update existing list
-        await axios.patch(`http://localhost:8000/api/tasklists/${id}/`, {
+        await axios.patch(`http://localhost:8000/api/lists/${id}/`, {
           list_name: newName,
           x_axis: x,
           y_axis: y,
           size_horizontal: width,
           size_vertical: height,
         });
-        setTaskLists((prevTaskLists) =>
-          prevTaskLists.map((list) =>
+        setListsData((prevListsData) =>
+          prevListsData.map((list) =>
             list.list_id === id
               ? { ...list, list_name: newName, x_axis: x, y_axis: y, size_horizontal: width, size_vertical: height }
               : list
@@ -1605,34 +1604,34 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onDelete={handleDeleteDuty}
           /> 
         </div>
-        {taskLists.map((taskList) => (
-          <div key={taskList.list_id} className={`${styles.window} window`}>
-          <Window 
-            tasks={getFilteredTasks(taskList.list_id)}
-            id={taskList.list_id} 
-            title={taskList.list_name}
-            initialX={taskList.x_axis}
-            initialY={taskList.y_axis}
-            initialWidth={taskList.size_horizontal}
-            initialHeight={taskList.size_vertical}
+        {listsData.map((list) => (
+          <div key={list.list_id} className={`${styles.list} list`}>
+          <List 
+            tasks={getFilteredTasks(list.list_id)}
+            id={list.list_id} 
+            title={list.list_name}
+            initialX={list.x_axis}
+            initialY={list.y_axis}
+            initialWidth={list.size_horizontal}
+            initialHeight={list.size_vertical}
             translate={translate} 
             scale={scale} 
-            zIndex={taskList.layer.layer}
+            zIndex={list.layer.layer}
             rewards={rewards}
             transactions={transactions}
             barsData={barsData}
             currencies={currencies}
             items={items}
             vouchers={vouchers}
-            detailView={taskList.detail_view}
+            detailView={list.detail_view}
             onExpand={toggleExpand}
-            onClose={handleCloseWindow} 
-            onRename={(id) => handleEditList(id, taskList.list_name, taskList.x_axis, taskList.y_axis, taskList.size_horizontal, taskList.size_vertical)}
-            onClick={() => moveItemToHighestLayer(taskList.list_id, taskList.layer.foreign_table)}
+            onClose={handleCloseList} 
+            onRename={(id) => handleEditList(id, list.list_name, list.x_axis, list.y_axis, list.size_horizontal, list.size_vertical)}
+            onClick={() => moveItemToHighestLayer(list.list_id, list.layer.foreign_table)}
             onDrag={handleDragWindow}
             onResize={handleResizeWindow}
-            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'taskList')}
-            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height, 'taskList')}
+            onPositionUpdate={(id, x, y) => handleDragWindow(id, x, y, 'list')}
+            onSizeUpdate={(id, width, height) => handleResizeWindow(id, width, height, 'list')}
             
             checkedTasks={checkedTasks}
             toggleTaskChecked={toggleTaskChecked}

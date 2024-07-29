@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('lists', '0001_initial'),
+        ('logic_endpoints', '0001_initial'),
     ]
 
     operations = [
@@ -31,9 +31,9 @@ class Migration(migrations.Migration):
             fields=[
                 ('price_id', models.AutoField(primary_key=True, serialize=False)),
                 ('cost', models.PositiveIntegerField()),
-                ('currency', models.ForeignKey(db_column='currency_id', on_delete=django.db.models.deletion.CASCADE, to='lists.currency')),
-                ('item', models.ForeignKey(db_column='item_id', on_delete=django.db.models.deletion.CASCADE, to='lists.item')),
-                ('shop', models.ForeignKey(db_column='shop_id', on_delete=django.db.models.deletion.CASCADE, to='lists.shop')),
+                ('currency', models.ForeignKey(db_column='currency_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.currency')),
+                ('item', models.ForeignKey(db_column='item_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.item')),
+                ('shop', models.ForeignKey(db_column='shop_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.shop')),
             ],
             options={
                 'db_table': 'prices',

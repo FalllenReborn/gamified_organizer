@@ -34,7 +34,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'accounts',
     'rest_framework',
-    'lists',
+    'logic_endpoints',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

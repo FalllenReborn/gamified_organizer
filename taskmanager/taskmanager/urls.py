@@ -1,12 +1,12 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from lists.views import (TaskListViewSet, TaskViewSet, BarViewSet,
-                         RewardViewSet, CurrencyViewSet, TransactionViewSet,
-                         LayerViewSet, ItemViewSet, VoucherViewSet, ShopViewSet, PriceViewSet)
+from logic_endpoints.views import (TaskListViewSet, TaskViewSet, BarViewSet,
+                                   RewardViewSet, CurrencyViewSet, TransactionViewSet,
+                                   LayerViewSet, ItemViewSet, VoucherViewSet, ShopViewSet, PriceViewSet)
 
 router = DefaultRouter()
-router.register(r'tasklists', TaskListViewSet)
+router.register(r'lists', TaskListViewSet)
 router.register(r'tasks', TaskViewSet)
 router.register(r'bars', BarViewSet)
 router.register(r'rewards', RewardViewSet)

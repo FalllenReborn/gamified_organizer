@@ -70,7 +70,7 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Property',
             fields=[
-                ('task_property', models.OneToOneField(db_column='task_id', on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='property', serialize=False, to='lists.task')),
+                ('task_property', models.OneToOneField(db_column='task_id', on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='property', serialize=False, to='logic_endpoints.task')),
             ],
             options={
                 'db_table': 'properties',
@@ -81,9 +81,9 @@ class Migration(migrations.Migration):
             fields=[
                 ('voucher_id', models.AutoField(primary_key=True, serialize=False)),
                 ('quantity', models.PositiveIntegerField()),
-                ('bar', models.ForeignKey(blank=True, db_column='bar_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='lists.bar')),
-                ('item', models.ForeignKey(db_column='item_id', on_delete=django.db.models.deletion.CASCADE, to='lists.item')),
-                ('task', models.ForeignKey(blank=True, db_column='task_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='lists.task')),
+                ('bar', models.ForeignKey(blank=True, db_column='bar_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.bar')),
+                ('item', models.ForeignKey(db_column='item_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.item')),
+                ('task', models.ForeignKey(blank=True, db_column='task_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.task')),
             ],
             options={
                 'db_table': 'vouchers',
@@ -94,9 +94,9 @@ class Migration(migrations.Migration):
             fields=[
                 ('transaction_id', models.AutoField(primary_key=True, serialize=False)),
                 ('amount', models.DecimalField(decimal_places=2, max_digits=10)),
-                ('bar', models.ForeignKey(blank=True, db_column='bar_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='lists.bar')),
-                ('currency', models.ForeignKey(db_column='currency_id', on_delete=django.db.models.deletion.CASCADE, to='lists.currency')),
-                ('task', models.ForeignKey(blank=True, db_column='task_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='lists.task')),
+                ('bar', models.ForeignKey(blank=True, db_column='bar_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.bar')),
+                ('currency', models.ForeignKey(db_column='currency_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.currency')),
+                ('task', models.ForeignKey(blank=True, db_column='task_id', null=True, on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.task')),
             ],
             options={
                 'db_table': 'transactions',
@@ -122,15 +122,15 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='task',
             name='list_task',
-            field=models.ForeignKey(db_column='list_id', on_delete=django.db.models.deletion.CASCADE, to='lists.tasklist'),
+            field=models.ForeignKey(db_column='list_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.tasklist'),
         ),
         migrations.CreateModel(
             name='Reward',
             fields=[
                 ('reward_id', models.AutoField(primary_key=True, serialize=False)),
                 ('points', models.IntegerField(default=10)),
-                ('bar', models.ForeignKey(db_column='bar_id', on_delete=django.db.models.deletion.CASCADE, to='lists.bar')),
-                ('task', models.ForeignKey(db_column='task_id', on_delete=django.db.models.deletion.CASCADE, to='lists.task')),
+                ('bar', models.ForeignKey(db_column='bar_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.bar')),
+                ('task', models.ForeignKey(db_column='task_id', on_delete=django.db.models.deletion.CASCADE, to='logic_endpoints.task')),
             ],
             options={
                 'db_table': 'rewards',
@@ -141,8 +141,8 @@ class Migration(migrations.Migration):
             fields=[
                 ('layer_id', models.AutoField(primary_key=True, serialize=False)),
                 ('layer', models.IntegerField(unique=True)),
-                ('bar', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='layer', to='lists.bar')),
-                ('list', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='layer', to='lists.tasklist')),
+                ('bar', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='layer', to='logic_endpoints.bar')),
+                ('list', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='layer', to='logic_endpoints.tasklist')),
             ],
             options={
                 'db_table': 'layers',

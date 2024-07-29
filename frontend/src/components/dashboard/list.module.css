@@ -3,7 +3,7 @@
     padding: 10px;
 }
 
-.window {
+.list {
     position: absolute;
     border: 2px solid #bbb;
     overflow: hidden;

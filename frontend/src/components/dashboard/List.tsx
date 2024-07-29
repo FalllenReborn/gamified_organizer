@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import styles from './window.module.css';
+import styles from './list.module.css';
 import axios from 'axios';
 
-interface WindowProps {
+interface ListProps {
   id: number;
   title: string;
   checkedTasks: number[];
@@ -28,7 +28,7 @@ interface WindowProps {
   detailView: boolean;
   onExpand: (taskId: number, currentState: boolean) => void;
   onResize: (id: number, width: number, height: number, type: string) => void;
-  openPopup: (windowId: number, nest_id: number | null, editMode: any, task: any) => void;
+  openPopup: (listId: number, nest_id: number | null, editMode: any, task: any) => void;
   onPositionUpdate: (id: number, x: number, y: number) => void;
   onSizeUpdate: (id: number, width: number, height: number) => void;
 }
@@ -42,7 +42,7 @@ interface Task {
   expanded: boolean;
 }
 
-const Window: React.FC<WindowProps> = ({
+const List: React.FC<ListProps> = ({
   id, 
   title, 
   onClose, 
@@ -78,7 +78,7 @@ const Window: React.FC<WindowProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDetailView, setIsDetailView] = useState(detailView);
   const [hoveredTask, setHoveredTask] = useState<number | null>(null);
-  const windowRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const positionRef = useRef(position);
   const sizeRef = useRef(size);
   
@@ -98,7 +98,7 @@ const Window: React.FC<WindowProps> = ({
     const constrainedHeight = height < 50 ? 50 : height;
 
     try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { size_horizontal: constrainedWidth, size_vertical: constrainedHeight });
+      const response = await axios.put(`http://localhost:8000/api/lists/${id}/update_lists/`, { size_horizontal: constrainedWidth, size_vertical: constrainedHeight });
       console.log('Size updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating size:', error);
@@ -107,7 +107,7 @@ const Window: React.FC<WindowProps> = ({
 
   const updatePositionInDatabase = useCallback(async (x: number, y: number) => {
     try {
-      const response = await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { x_axis: x, y_axis: y });
+      const response = await axios.put(`http://localhost:8000/api/lists/${id}/update_lists/`, { x_axis: x, y_axis: y });
       console.log('Position updated successfully:', response.data);
     } catch (error) {
       console.error('Error updating position:', error);
@@ -219,7 +219,7 @@ const Window: React.FC<WindowProps> = ({
       const updatedPosition = positionRef.current;
       updateSizeInDatabase(updatedSize.width, updatedSize.height);
       updatePositionInDatabase(updatedPosition.x, updatedPosition.y);
-      onResize(id, updatedSize.width, updatedSize.height, 'taskList');
+      onResize(id, updatedSize.width, updatedSize.height, 'list');
     }
   };
 
@@ -256,12 +256,12 @@ const Window: React.FC<WindowProps> = ({
   };
 
   const handleHide = () => {
-    console.log(`Hide window ${id}`);
+    console.log(`Hide list ${id}`);
     setIsDropdownOpen(false);
   };
 
   const handleDelete = async () => {
-    console.log(`Delete window ${id}`);
+    console.log(`Delete list ${id}`);
     onClose(id);
     setIsDropdownOpen(false);
   };
@@ -274,7 +274,7 @@ const Window: React.FC<WindowProps> = ({
   const handleDetailViewToggle = async () => {
     const newDetailState = !isDetailView;
     try {
-      await axios.put(`http://localhost:8000/api/tasklists/${id}/update_lists/`, { detail_view: newDetailState });
+      await axios.put(`http://localhost:8000/api/lists/${id}/update_lists/`, { detail_view: newDetailState });
       setIsDetailView(newDetailState);
       console.log(`Detail: ${newDetailState}`)
     } catch (error) {
@@ -390,8 +390,8 @@ const Window: React.FC<WindowProps> = ({
 
   return (
     <div
-      id={`window-${id}`}
-      ref={windowRef}
+      id={`list-${id}`}
+      ref={listRef}
       className={`${styles.outerWrapper} ${isDragging ? styles.dragging : ''}`}
       style={{
         top: `${position.y * scale}px`,
@@ -404,9 +404,9 @@ const Window: React.FC<WindowProps> = ({
       }}
     >
       <div 
-        id={`window-${id}`}
-        ref={windowRef}
-        className={styles.window}
+        id={`list-${id}`}
+        ref={listRef}
+        className={styles.list}
         style={{
           width: `${size.width}px`,
           height: `${size.height}px`,
@@ -557,4 +557,4 @@ const Window: React.FC<WindowProps> = ({
   );
 };
 
-export default Window;
+export default List;

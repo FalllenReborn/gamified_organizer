@@ -5,7 +5,7 @@ from .views import (TaskListViewSet, TaskViewSet, BarViewSet,
                     LayerViewSet, ItemViewSet, VoucherViewSet, ShopViewSet, PriceViewSet)
 
 router = DefaultRouter()
-router.register(r'tasklists', TaskListViewSet)
+router.register(r'lists', TaskListViewSet)
 router.register(r'tasks', TaskViewSet)
 router.register(r'bars', BarViewSet)
 router.register(r'rewards', RewardViewSet)

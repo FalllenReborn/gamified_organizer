@@ -29,7 +29,7 @@ class TaskList(models.Model):
         return self.list_name or f"List {self.list_id}"
 
     class Meta:
-        db_table = 'task_lists'
+        db_table = 'lists'
 
 
 class Bar(models.Model):

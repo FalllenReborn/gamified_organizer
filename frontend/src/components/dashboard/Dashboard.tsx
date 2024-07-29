@@ -1,5 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, MouseEvent } from 'react';
 import { ThemeContext } from '../../context/ThemeContext';
+import { useConfirmation } from '../../context/ConfirmationContext';
 import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
@@ -160,6 +161,7 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const { isDarkMode } = useContext(ThemeContext);
+  const { requestConfirmation } = useConfirmation();
   const [scale, setScale] = useState(1);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -207,46 +209,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleDeleteTasks = async () => {
-    try {
-      await Promise.all(
-        checkedTasks.map((taskId) =>
-          axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
-        )
-      );
-      setCheckedTasks([]);
-      fetchBars();
-      fetchCurrencies();
-      fetchItems();
-      fetchTasks();
-    } catch (error) {
-      console.error('Error deleting tasks:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this task?');
+    if (confirmed) {
+      try {
+        await Promise.all(
+          checkedTasks.map((taskId) =>
+            axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
+          )
+        );
+        setCheckedTasks([]);
+        fetchBars();
+        fetchCurrencies();
+        fetchItems();
+        fetchTasks();
+      } catch (error) {
+        console.error('Error deleting tasks:', error);
+      }
+    } else {
+      console.log('Delete cancelled');
     }
   };
 
   const handleCompleteTasks = async () => {
-    try {
-      await Promise.all(
-        checkedTasks.map((taskId) =>
-          axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`)
-        )
-      );
-      setCheckedTasks([]);
-      fetchBars();
-      fetchCurrencies();
-      fetchItems();
-      fetchTasks();
-    } catch (error) {
-      console.error('Error deleting tasks:', error);
+    const confirmed = await requestConfirmation('Complete this task?');
+    if (confirmed) {
+      try {
+        await Promise.all(
+          checkedTasks.map((taskId) =>
+            axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`)
+          )
+        );
+        setCheckedTasks([]);
+        fetchBars();
+        fetchCurrencies();
+        fetchItems();
+        fetchTasks();
+      } catch (error) {
+        console.error('Error deleting tasks:', error);
+      }
+    } else {
+      console.log('Complete cancelled');
     }
   };
 
   const handleCompleteDuty = async (taskId: number) => {
-    try {
+    const confirmed = await requestConfirmation('Complete this duty?');
+    if (confirmed) {
+      try {
         await axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`);
         fetchBars();
         fetchCurrencies();
         fetchItems();
-    } catch (error) {
+      } catch (error) {
         if (axios.isAxiosError(error)) {
             if (error.response) {
                 console.error('Error response data:', error.response.data);
@@ -260,17 +274,22 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         } else {
             console.error('Unknown error:', error);
         }
+      }
+    } else {
+      console.log('Complete cancelled');
     }
   };
 
   const handleDeleteDuty = async (taskId: number) => {
-    try {
+    const confirmed = await requestConfirmation('Are you sure you want to delete this duty?');
+    if (confirmed) {
+      try {
         await axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
         fetchBars();
         fetchCurrencies();
         fetchItems();
         fetchTasks();
-    } catch (error) {
+      } catch (error) {
         if (axios.isAxiosError(error)) {
             if (error.response) {
                 console.error('Error response data:', error.response.data);
@@ -284,6 +303,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         } else {
             console.error('Unknown error:', error);
         }
+      }
+    } else {
+      console.log('Delete cancelled');
     }
   };
 
@@ -390,38 +412,58 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCloseList = async (id: number) => {
-    try {
-      await handleListDeletion(id);
-      await fetchLists();
-    } catch (error) {
-      console.error('Error deleting list:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this list?');
+    if (confirmed) {
+      try {
+        await handleListDeletion(id);
+        await fetchLists();
+      } catch (error) {
+        console.error('Error deleting list:', error);
+      }
+    } else {
+      console.log('Delete cancelled');
     }
   };
 
   const handleCloseBar = async (id: number) => {
-    try {
-      await handleBarDeletion(id);
-      await fetchBars();
-    } catch (error) {
-      console.error('Error deleting bar:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this bar?');
+    if (confirmed) {
+      try {
+        await handleBarDeletion(id);
+        await fetchBars();
+      } catch (error) {
+        console.error('Error deleting bar:', error);
+      }
+    } else {
+      console.log('Delete cancelled');
     }
   };
 
   const handleCloseShop = async (id: number) => {
-    try {
-      await handleShopDeletion(id);
-      await fetchShops();
-    } catch (error) {
-      console.error('Error deleting shop:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this shop?');
+    if (confirmed) {
+      try {
+        await handleShopDeletion(id);
+        await fetchShops();
+      } catch (error) {
+        console.error('Error deleting shop:', error);
+      }
+    } else {
+      console.log('Delete cancelled');
     }
   };
 
   const handleDeletePrice = async (PriceId: number) => {
-    try {
-      await handlePriceDeletion(PriceId);
-      await fetchPrices();
-    } catch (error) {
-      console.error('Error deleting shop:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this shop?');
+    if (confirmed) {
+      try {
+        await handlePriceDeletion(PriceId);
+        await fetchPrices();
+      } catch (error) {
+        console.error('Error deleting shop:', error);
+      }
+    } else {
+      console.log('Delete cancelled');
     }
   };
 
@@ -989,23 +1031,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleItemDeletion = async (id: number) => {
-    try {
-      await axios.delete(`http://localhost:8000/api/items/${id}/`);
-      setItems((prevItems) => prevItems.filter((item) => item.item_id !== id));
-    } catch (error) {
-      console.error('Error deleting task list:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this item?');
+    if (confirmed) {
+      try {
+        await axios.delete(`http://localhost:8000/api/items/${id}/`);
+        setItems((prevItems) => prevItems.filter((item) => item.item_id !== id));
+      } catch (error) {
+        console.error('Error deleting task list:', error);
+      }
+      fetchItems();
+    } else {
+      console.log('Delete cancelled');
     }
-    fetchItems();
   };
 
   const handleCurrencyDeletion = async (id: number) => {
-    try {
-      await axios.delete(`http://localhost:8000/api/currencies/${id}/`);
-      setCurrencies((prevCurrencies) => prevCurrencies.filter((currency) => currency.currency_id !== id));
-    } catch (error) {
-      console.error('Error deleting task list:', error);
+    const confirmed = await requestConfirmation('Are you sure you want to delete this currency?');
+    if (confirmed) {
+      try {
+        await axios.delete(`http://localhost:8000/api/currencies/${id}/`);
+        setCurrencies((prevCurrencies) => prevCurrencies.filter((currency) => currency.currency_id !== id));
+      } catch (error) {
+        console.error('Error deleting task list:', error);
+      }
+      fetchCurrencies();
+    } else {
+      console.log('Delete cancelled');
     }
-    fetchCurrencies();
   };
 
   const handleCreateCurrency = () => {

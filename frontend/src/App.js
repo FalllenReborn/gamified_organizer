@@ -5,6 +5,7 @@ import Dashboard from './components/dashboard/Dashboard';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { ClockProvider } from './context/ClockContext';
+import { ConfirmationProvider } from './context/ConfirmationContext';
 
 
 function App() {
@@ -19,16 +20,18 @@ function App() {
 
   return (
     <Router>
-      <ThemeProvider>
-        <AuthProvider>
-          <ClockProvider>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard createNewList={createNewList} onCreateNewList={handleCreateNewList} />} />
-            </Routes>
-          </ClockProvider>
-        </AuthProvider>
-      </ThemeProvider>
+      <ConfirmationProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <ClockProvider>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/dashboard" element={<Dashboard createNewList={createNewList} onCreateNewList={handleCreateNewList} />} />
+              </Routes>
+            </ClockProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </ConfirmationProvider>
     </Router>
   );
 }

@@ -119,7 +119,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {dropdownStates === 'actionsDropdown' && (
           <div className={styles.dropdownContent}>
             <div id={styles.completeButton} className={styles.dropdownButton} onClick={onCompleteTasks}>{t.completed}</div>
-            <div id={styles.deleteButton} className={styles.dropdownButton} onClick={onDeleteTasks}>Delete</div>
+            <div id={styles.deleteButton} className={styles.dropdownButton} onClick={onDeleteTasks}>{t.deleted}</div>
           </div>
         )}
       </div>

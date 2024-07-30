@@ -68,7 +68,7 @@
     gap: 5px;
 }
 
-.editButton, .deleteButton {
+.editButton, .deleteButton, .useButton{
     background: none;
     border: none;
     cursor: pointer;
@@ -80,12 +80,4 @@
     border-radius: 50%;
     width: 20px;
     height: 20px;
-}
-
-.editButton {
-    color: #4caf50;
-}
-
-.deleteButton {
-    color: #f44336;
 }

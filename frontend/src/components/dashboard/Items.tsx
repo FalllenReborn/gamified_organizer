@@ -6,12 +6,14 @@ interface ItemsProps {
     onCreateNewItem: () => void;
     onDeleteItem: (id: number) => void;
     onEditItem: (itemId: number, itemName: string) => void;
+    onUseItem: (itemId: number, storage: number) => void;
 }
 
 const Items: React.FC<ItemsProps> = ({
     onCreateNewItem,
     onDeleteItem,
     onEditItem,
+    onUseItem,
     items,
 }) => {
     const [isHidden, setIsHidden] = useState(false);
@@ -44,6 +46,7 @@ const Items: React.FC<ItemsProps> = ({
                         <div key={index} className={styles.item}>
                             {item.item_name}: {item.storage}
                             <div className={styles.buttons}>
+                                <button className={styles.useButton} onClick={() => onUseItem(item.item_id, item.storage)}>✅</button>
                                 <button className={styles.editButton} onClick={() => onEditItem(item.item_id, item.item_name)}>✏️</button>
                                 <button className={styles.deleteButton} onClick={() => onDeleteItem(item.item_id)}>❌</button>
                             </div>

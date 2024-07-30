@@ -483,6 +483,20 @@ class ItemViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+    @action(detail=True, methods=['post'], url_path='use_item')
+    def use_item(self, request, pk=None):
+        try:
+            item_id = pk
+            use_note = request.data.get('use_note', '')
+            use_quantity = request.data.get('use_quantity', 1)
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT use_item(%s, %s, %s);", [item_id, use_note, use_quantity])
+
+            return JsonResponse({'status': 'Item used successfully'}, status=200)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
 
 class VoucherViewSet(viewsets.ModelViewSet):
     queryset = Voucher.objects.all()

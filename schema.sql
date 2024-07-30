@@ -345,6 +345,30 @@ $$;
 
 ALTER FUNCTION public.update_bar_and_distribute_transactions(p_task_id integer) OWNER TO postgres;
 
+--
+-- Name: use_item(integer, text, integer); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.use_item(p_item_id integer, p_use_note text, p_use_quantity integer DEFAULT 1) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    -- Update the items table, subtracting the use_quantity from storage
+    UPDATE items
+    SET storage = storage - p_use_quantity
+    WHERE item_id = p_item_id;
+
+    -- Insert a new record into the items_history table
+    INSERT INTO items_history (item_id, item_name, use_note, use_date_time, use_quantity)
+    SELECT item_id, item_name, p_use_note, NOW(), p_use_quantity
+    FROM items
+    WHERE item_id = p_item_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.use_item(p_item_id integer, p_use_note text, p_use_quantity integer) OWNER TO postgres;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
@@ -721,7 +745,8 @@ CREATE TABLE public.items_history (
     item_name character varying(255) NOT NULL,
     use_id integer NOT NULL,
     use_note character varying(500),
-    use_date_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
+    use_date_time timestamp with time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    use_quantity integer DEFAULT 1 NOT NULL
 );
 
 

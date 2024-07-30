@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode } from 'react';
-import ConfirmationModal from '../components/reusable_components/ConfirmationModal';
+import ConfirmationModal from '../components/popups_actions/ConfirmationModal';
 
 interface ConfirmationContextProps {
   requestConfirmation: (message: string) => Promise<boolean>;

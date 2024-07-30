@@ -11,12 +11,13 @@ import Shop from './Shop';
 import Currencies from './Currencies';
 import Items from './Items';
 import Duties from './Duties'
-import CreateListPopup from '../popups/CreateListPopup';
-import CreateTaskPopup from '../popups/CreateTaskPopup';
-import CreatePricePopup from '../popups/CreatePricePopup';
-import CreateBarPopup from '../popups/CreateBarPopup';
-import CreateCurrencyPopup from '../popups/CreateCurrencyPopup';
-import CreateItemPopup from '../popups/CreateItemPopup';
+import CreateListPopup from '../popups_create/CreateListPopup';
+import CreateTaskPopup from '../popups_create/CreateTaskPopup';
+import CreatePricePopup from '../popups_create/CreatePricePopup';
+import CreateBarPopup from '../popups_create/CreateBarPopup';
+import CreateCurrencyPopup from '../popups_create/CreateCurrencyPopup';
+import CreateItemPopup from '../popups_create/CreateItemPopup';
+import UseItemPopup from '../popups_actions/UseItemPupup';
 import axios from 'axios';
 
 interface Layer {
@@ -116,7 +117,7 @@ interface CreateListPopupState {
 
 interface Bar extends BarData {
   transactions: { [currencyId: number]: number };
-  vouchers: { [itemId: number]: number },
+  vouchers: { [itemId: number]: number };
 }
 
 interface Transaction {
@@ -182,6 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [isPricePopupOpen, setIsPricePopupOpen] = useState(false);
   const [currentListId, setCurrentListId] = useState<number | null>(null);
   const [currentShopId, setCurrentShopId] = useState<number>(0);
+  const [maxQuantity, setMaxQuantity] = useState(0);
   const [nest, setNest] = useState<number | null>(null);
   const [checkedTasks, setCheckedTasks] = useState<number[]>([]);
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -192,6 +194,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [taskToEdit, setTaskToEdit] = useState<Task | undefined>(undefined);
   const [priceToEdit, setPriceToEdit] = useState<Price | undefined>(undefined);
   const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
+  const [showItemUse, setShowItemUse] = useState(false);
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [barToEdit, setBarToEdit] = useState<Bar | null>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 0;
@@ -1040,6 +1044,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         console.error('Error deleting task list:', error);
       }
       fetchItems();
+      fetchVouchers();
     } else {
       console.log('Delete cancelled');
     }
@@ -1055,6 +1060,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         console.error('Error deleting task list:', error);
       }
       fetchCurrencies();
+      fetchTransactions();
     } else {
       console.log('Delete cancelled');
     }
@@ -1095,6 +1101,33 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       itemId: itemId,
     });
   };
+
+  const handleUseItem = (itemId: number, itemStorage: number) => {
+    setSelectedItemId(itemId);
+    setShowItemUse(true);
+    setMaxQuantity(itemStorage);
+  }
+
+  const handleConfirmUse = async (useNote: string, useQuantity: number) => {
+    if (selectedItemId !== null) {
+      try {
+        await axios.post(`http://localhost:8000/api/items/${selectedItemId}/use_item/`, {
+          use_note: useNote,
+          use_quantity: useQuantity,
+        });
+        // Refresh data or perform necessary updates
+      } catch (error) {
+        console.error('Error using item:', error);
+      }
+    }
+    setShowItemUse(false);
+    fetchItems();
+  };
+
+  const handleCancelUse = () => {
+    setShowItemUse(false);
+  };
+
 
   const handleSaveNewCurrency = async (newName: string) => {
     try {
@@ -1640,6 +1673,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onDeleteItem={handleItemDeletion}
             onEditItem={handleEditItem}
             onCreateNewItem={handleCreateItem}
+            onUseItem={handleUseItem}
           /> 
         </div>
         <div className={styles.duties}>
@@ -1823,6 +1857,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             barToEdit={barToEdit}
           />
         )}
+        <UseItemPopup
+          show={showItemUse}
+          onConfirm={handleConfirmUse}
+          onCancel={handleCancelUse}
+          maxQuantity={maxQuantity}
+        />
       </div>
       <div
         className={styles.dashboardContent}

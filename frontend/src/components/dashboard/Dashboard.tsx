@@ -1,6 +1,7 @@
 import React, { useContext, useState, useRef, useEffect, MouseEvent } from 'react';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { useConfirmation } from '../../contexts/ConfirmationContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
@@ -163,6 +164,7 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const { isDarkMode } = useContext(ThemeContext);
   const { requestConfirmation } = useConfirmation();
+  const { t } = useTranslation();
   const [scale, setScale] = useState(1);
   const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
@@ -213,7 +215,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleDeleteTasks = async () => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this task?');
+    const confirmed = await requestConfirmation(`${t.areYouSureTask}`);
     if (confirmed) {
       try {
         await Promise.all(
@@ -235,7 +237,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCompleteTasks = async () => {
-    const confirmed = await requestConfirmation('Complete this task?');
+    const confirmed = await requestConfirmation(`${t.completeTasks}?`);
     if (confirmed) {
       try {
         await Promise.all(
@@ -257,7 +259,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCompleteDuty = async (taskId: number) => {
-    const confirmed = await requestConfirmation('Complete this duty?');
+    const confirmed = await requestConfirmation(`${t.completeDuties}`);
     if (confirmed) {
       try {
         await axios.post(`http://localhost:8000/api/tasks/${taskId}/complete_task/`);
@@ -285,7 +287,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleDeleteDuty = async (taskId: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this duty?');
+    const confirmed = await requestConfirmation(`${t.areYouSureDuty}`);
     if (confirmed) {
       try {
         await axios.delete(`http://localhost:8000/api/tasks/${taskId}/`)
@@ -418,7 +420,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCloseList = async (id: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this list?');
+    const confirmed = await requestConfirmation(`${t.areYouSureList}`);
     if (confirmed) {
       try {
         await handleListDeletion(id);
@@ -432,7 +434,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCloseBar = async (id: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this bar?');
+    const confirmed = await requestConfirmation(`${t.areYouSureBar}`);
     if (confirmed) {
       try {
         await handleBarDeletion(id);
@@ -446,7 +448,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCloseShop = async (id: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this shop?');
+    const confirmed = await requestConfirmation(`${t.areYouSureShop}`);
     if (confirmed) {
       try {
         await handleShopDeletion(id);
@@ -460,7 +462,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleDeletePrice = async (PriceId: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this shop?');
+    const confirmed = await requestConfirmation(`${t.areYouSurePrice}`);
     if (confirmed) {
       try {
         await handlePriceDeletion(PriceId);
@@ -1037,7 +1039,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleItemDeletion = async (id: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this item?');
+    const confirmed = await requestConfirmation(`${t.areYouSureItem}`);
     if (confirmed) {
       try {
         await axios.delete(`http://localhost:8000/api/items/${id}/`);
@@ -1053,7 +1055,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   };
 
   const handleCurrencyDeletion = async (id: number) => {
-    const confirmed = await requestConfirmation('Are you sure you want to delete this currency?');
+    const confirmed = await requestConfirmation(`${t.areYouSureCurrency}`);
     if (confirmed) {
       try {
         await axios.delete(`http://localhost:8000/api/currencies/${id}/`);

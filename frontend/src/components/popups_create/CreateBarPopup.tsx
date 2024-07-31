@@ -1,4 +1,5 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './createBarPopup.module.css';
 
 interface Currency {
@@ -66,6 +67,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
   isEditMode,
   barToEdit,
 }) => {
+  const { t } = useTranslation();
   const [barName, setBarName] = useState<string>('');
   const [xpName, setXpName] = useState<string>('');
   const [fullCycle, setFullCycle] = useState<string>('');
@@ -182,10 +184,10 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
     <div className={styles.popupOverlay} onWheel={stopPropagation}>
       <div className={styles.popup}>
         <div className={styles.header}>
-          <h2>{isEditMode ? 'Edit Bar' : 'Create Bar'}</h2>
+          <h2>{isEditMode ? `${t.edit} ${t.bar}` : `${t.create} ${t.bar}`}</h2>
           <form className={styles.form} onSubmit={handleSubmit}>
             <label className={styles.label}>
-              Bar Name:
+              {t.barName}:
               <input
                 className={styles.input}
                 type="text"
@@ -195,7 +197,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
               />
             </label>
             <label className={styles.label}>
-              XP Name:
+              {t.xpName}:
               <input
                 className={styles.input}
                 type="text"
@@ -205,7 +207,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
               />
             </label>
             <label className={styles.label}>
-              Full Cycle:
+              {t.fullCycle}:
               <input
                 className={styles.input}
                 type="number"
@@ -219,10 +221,10 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
         </div>
         <div className={styles.columns}>
           <div className={styles.columnBar}>
-            <h3>Properties</h3>
+            <h3>{t.properties}</h3>
             <form className={styles.form}>
               <label className={styles.label}>
-                Size Vertical:
+                {t.sizeV}:
                 <input
                   className={styles.input}
                   type="number"
@@ -233,7 +235,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                 />
               </label>
               <label className={styles.label}>
-                Size Horizontal:
+                {t.sizeH}:
                 <input
                   className={styles.input}
                   type="number"
@@ -244,7 +246,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                 />
               </label>
               <label className={styles.label}>
-                X Axis:
+                {t.xAxis}:
                 <input
                   className={styles.input}
                   type="number"
@@ -254,7 +256,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                 />
               </label>
               <label className={styles.label}>
-                Y Axis:
+                {t.yAxis}:
                 <input
                   className={styles.input}
                   type="number"
@@ -267,7 +269,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
           </div>
           <div className={styles.columnPrizes}>
             <div className={styles.rewardsBox}>
-              <h4>Currency transactions</h4>
+              <h4>{t.currencyTransactions}</h4>
               {currencies.map((currency) => (
                 <div key={currency.currency_id} className={styles.rewardRow}>
                   <span className={styles.rewardName}>{currency.currency_name}</span>
@@ -279,7 +281,7 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
                   />
                 </div>
               ))}
-              <h4>Item vouchers</h4>
+              <h4>{t.itemVouchers}</h4>
               {items.map((item) => (
                 <div key={item.item_id} className={styles.rewardRow}>
                   <span className={styles.rewardName}>{item.item_name}</span>

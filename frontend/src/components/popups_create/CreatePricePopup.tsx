@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './createPricePopup.module.css';
 
 interface Currency {
@@ -53,6 +54,7 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
     onClose,
     onConfirm,
   }) => {
+    const { t } = useTranslation();
     const [priceCost, setPriceCost] = useState(0);
     const [priceShop, setPriceShop] = useState<number | null>(null);
     const [priceItem, setPriceItem] = useState<number | null>(null);
@@ -102,9 +104,9 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
     return (
         <div className={styles.popupOverlay} onWheel={stopPropagation}>
             <div className={styles.popup}>
-                <h2>{isEditMode ? 'Edit Price' : 'Create Price'}</h2>
+                <h2>{isEditMode ? `${t.editPrice}` : `${t.createPrice}`}</h2>
                 <div className={styles.inputGroup}>
-                    <label>Cost</label>
+                    <label>{t.price}</label>
                     <input
                         type="number"
                         value={priceCost}
@@ -114,9 +116,9 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
                     />
                 </div>
                 <div className={styles.inputGroup}>
-                    <label>Items</label>
+                    <label>{t.items}</label>
                     <select value={priceItem ?? ''} onChange={handleItemChange} required>
-                        <option value="">Select an item</option>
+                        <option value="">{t.selectItem}</option>
                         {items.map((item) => (
                             <option key={item.item_id} value={item.item_id}>
                                 {item.item_name}
@@ -125,9 +127,9 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
                     </select>
                 </div>
                 <div className={styles.inputGroup}>
-                    <label>Currencies</label>
+                    <label>{t.currencies}</label>
                     <select value={priceCurrency ?? ''} onChange={handleCurrencyChange} required>
-                        <option value="">Select a currency</option>
+                        <option value="">{t.selectCurrency}</option>
                         {currencies.map((currency) => (
                             <option key={currency.currency_id} value={currency.currency_id}>
                                 {currency.currency_name}
@@ -136,7 +138,7 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
                     </select>
                 </div>
                 <div className={styles.inputGroup}>
-                    <label>Shops</label>
+                    <label>{t.shops}</label>
                     <select value={priceShop ?? ''} onChange={handleShopChange}>
                         {shopsData.map((shop) => (
                             <option key={shop.shop_id} value={shop.shop_id}>
@@ -147,14 +149,14 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
                 </div>
                 <div className={styles.footer}>
                     <button className={styles.cancelButton} onClick={onClose}>
-                        Cancel
+                        {t.cancel}
                     </button>
                     <button
                         className={styles.confirmButton}
                         onClick={handleConfirm}
                         disabled={isConfirmDisabled}
                     >
-                        Confirm
+                        {t.confirm}
                     </button>
                 </div>
             </div>

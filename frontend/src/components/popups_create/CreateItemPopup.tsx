@@ -1,4 +1,5 @@
 import React, { useState, useEffect, FC } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './createItemPopup.module.css';
 
 interface CreateItemProps {
@@ -12,6 +13,7 @@ interface CreateItemProps {
 }
 
 const CreateItemPopup: FC<CreateItemProps> = ({ isOpen, defaultValue, isEditMode, onCreate, onEdit, onQuit, itemId }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState(defaultValue);
 
   useEffect(() => {
@@ -37,15 +39,15 @@ const CreateItemPopup: FC<CreateItemProps> = ({ isOpen, defaultValue, isEditMode
     isOpen && (
       <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
-        <h3>{isEditMode ? 'Edit Item' : 'New Item'}</h3>
+        <h3>{isEditMode ? `${t.newItem}` : `${t.editItem}`}</h3>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter new name"
+            placeholder={t.enterName}
           />
-          <button className="btn btn-primary" onClick={handleSave}>Save</button>
-          <button className="btn btn-secondary" onClick={onQuit}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>{t.confirm}</button>
+          <button className="btn btn-secondary" onClick={onQuit}>{t.cancel}</button>
         </div>
       </div>
     )

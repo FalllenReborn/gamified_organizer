@@ -1,4 +1,5 @@
 import React, { useState, useEffect, FC } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './createListPopup.module.css';
 
 interface CreateListPopupProps {
@@ -28,6 +29,7 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
   onSaveShop,
   onClose 
 }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState(defaultValue);
   const [xAxis, setXAxis] = useState(defaultX);
   const [yAxis, setYAxis] = useState(defaultY);
@@ -71,19 +73,19 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
     isOpen && (
       <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
-          <h3>{id !== null ? 'Edit List' : 'Create List'}</h3>
+          <h3>{id !== null ? `${t.editList}` : `${t.createList}`}</h3>
           <form className={styles.form}>
             <label className={styles.label}>
-              Name:
+              {t.name}:
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter new name"
+                placeholder={t.enterName}
               />
             </label>
             <label className={styles.label}>
-              Size Vertical:
+              {t.sizeV}:
               <input
                 className={styles.input}
                 type="number"
@@ -94,7 +96,7 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
               />
             </label>
             <label className={styles.label}>
-              Size Horizontal:
+              {t.sizeH}:
               <input
                 className={styles.input}
                 type="number"
@@ -105,7 +107,7 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
               />
             </label>
             <label className={styles.label}>
-              X Axis:
+              {t.xAxis}:
               <input
                 className={styles.input}
                 type="number"
@@ -115,7 +117,7 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
               />
             </label>
             <label className={styles.label}>
-              Y Axis:
+              {t.yAxis}:
               <input
                 className={styles.input}
                 type="number"
@@ -125,8 +127,8 @@ const CreateListPopup: FC<CreateListPopupProps> = ({
               />
             </label>
           </form>
-          <button className="btn btn-primary" onClick={handleSaveClick}>Save</button>
-          <button className="btn btn-secondary" onClick={onClose}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSaveClick}>{t.confirm}</button>
+          <button className="btn btn-secondary" onClick={onClose}>{t.cancel}</button>
         </div>
       </div>
     )

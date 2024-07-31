@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './createTaskPopup.module.css';
 
 interface Layer {
@@ -101,6 +102,7 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
   isEditMode,
   taskToEdit,
 }) => {
+  const { t } = useTranslation();
   const [taskName, setTaskName] = useState('');
   const [rewards, setRewards] = useState<{ [barId: number]: number }>({});
   const [vouchers, setVouchers] = useState<{ [itemId: number]: number }>({});
@@ -178,10 +180,10 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
     <div className={styles.popupOverlay} onWheel={stopPropagation}>
       <div className={styles.popup}>
         <div className={styles.header}>
-          <h2>{isEditMode ? 'Edit Task' : 'Create New Task'}</h2>
+          <h2>{isEditMode ? `${t.editTask}` : `${t.createTask}`}</h2>
         </div>
         <form className={styles.form}>
-          <label className={styles.label} htmlFor="taskName">Task Name</label>
+          <label className={styles.label} htmlFor="taskName">{t.taskName}</label>
           <input
             className={styles.input}
             type="text"
@@ -193,13 +195,13 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
         </form>
         <div className={styles.columns}>
           <div className={styles.column}>
-            <h3>Properties</h3>
+            <h3>{t.properties}</h3>
             {/* Properties content will go here */}
           </div>
           <div className={styles.column}>
-            <h3>Rewards</h3>
+            <h3>{t.rewards}</h3>
             <div className={styles.rewardsBox}>
-              <h4>Progress bars</h4>
+              <h4>{t.progressBars}</h4>
               {bars.map((bar) => (
                 <div key={bar.bar_id} className={styles.rewardRow}>
                   <span className={styles.rewardName}>{bar.bar_name}</span>
@@ -213,7 +215,7 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
               ))}
             </div>
             <div className={styles.rewardsBox}>
-              <h4>Currency transactions</h4>
+              <h4>{t.currencyTransactions}</h4>
               {currencies.map((currency) => (
                 <div key={currency.currency_id} className={styles.rewardRow}>
                   <span className={styles.rewardName}>{currency.currency_name}</span>
@@ -227,7 +229,7 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
               ))}
             </div>
             <div className={styles.rewardsBox}>
-              <h4>Item vouchers</h4>
+              <h4>{t.itemVouchers}</h4>
               {items.map((item) => (
                 <div key={item.item_id} className={styles.rewardRow}>
                   <span className={styles.rewardName}>{item.item_name}</span>
@@ -243,8 +245,8 @@ const CreateTaskPopup: React.FC<CreateTaskPopupProps> = ({
           </div>
         </div>
         <div className={styles.footer}>
-          <button className={styles.cancelButton} onClick={onClose}>Cancel</button>
-          <button className={styles.confirmButton} onClick={handleConfirm}>Confirm</button>
+          <button className={styles.cancelButton} onClick={onClose}>{t.cancel}</button>
+          <button className={styles.confirmButton} onClick={handleConfirm}>{t.confirm}</button>
         </div>
       </div>
     </div>

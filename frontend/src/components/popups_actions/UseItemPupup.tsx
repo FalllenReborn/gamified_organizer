@@ -41,10 +41,14 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
     setCharCount(e.target.value.length);
   };
 
+  const stopPropagation = (e: React.WheelEvent) => {
+    e.stopPropagation();
+  };
+
   const isConfirmDisabled = useMany && (quantity < 1 || quantity > maxQuantity);
 
   return (
-    <div className={styles.popupOverlay}>
+    <div className={styles.popupOverlay} onWheel={stopPropagation}>
       <div className={styles.popup}>
         <h2>{t.useItem}</h2>
         <div className={styles.quantity}>
@@ -81,8 +85,8 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
           <div className={styles.charCount}>{charCount}/500</div>
         </div>
         <div className={styles.buttons}>
-          <button className={styles.cancelButton} onClick={onCancel}>Cancel</button>
-          <button className={styles.confirmButton} onClick={handleConfirm} disabled={isConfirmDisabled}>Confirm</button>
+          <button className={styles.cancelButton} onClick={onCancel}>{t.cancel}</button>
+          <button className={styles.confirmButton} onClick={handleConfirm} disabled={isConfirmDisabled}>{t.confirm}</button>
         </div>
       </div>
     </div>

@@ -1,17 +1,19 @@
 import React, { useState, useEffect, FC } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './createCurrencyPopup.module.css';
 
 interface CreateCurrencyProps {
   isOpen: boolean;
   defaultValue: string;
-  isEditMode: boolean; // New prop to indicate edit mode
+  isEditMode: boolean;
   onCreate: (newName: string) => Promise<void>;
   onEdit: (currencyId: number, newName: string) => Promise<void>;
   onQuit: () => void;
-  currencyId?: number; // New optional prop for currency ID
+  currencyId?: number;
 }
 
 const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, isEditMode, onCreate, onEdit, onQuit, currencyId }) => {
+  const { t } = useTranslation();
   const [name, setName] = useState(defaultValue);
 
   useEffect(() => {
@@ -22,9 +24,9 @@ const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, is
 
   const handleSave = async () => {
     if (isEditMode && currencyId !== undefined) {
-      await onEdit(currencyId, name); // Call onEdit for edit mode
+      await onEdit(currencyId, name);
     } else {
-      await onCreate(name); // Call onCreate for create mode
+      await onCreate(name);
     }
     onQuit();
   };
@@ -37,15 +39,15 @@ const CreateCurrencyPopup: FC<CreateCurrencyProps> = ({ isOpen, defaultValue, is
     isOpen && (
       <div className={styles.overlay} onWheel={stopPropagation}>
         <div className={styles.popup}>
-          <h3>{isEditMode ? 'Edit Currency' : 'New Currency'}</h3>
+          <h3>{isEditMode ? `${t.editCurrency}` : `${t.newCurrency}`}</h3>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Enter new name"
+            placeholder={t.enterName}
           />
-          <button className="btn btn-primary" onClick={handleSave}>Save</button>
-          <button className="btn btn-secondary" onClick={onQuit}>Cancel</button>
+          <button className="btn btn-primary" onClick={handleSave}>{t.confirm}</button>
+          <button className="btn btn-secondary" onClick={onQuit}>{t.cancel}</button>
         </div>
       </div>
     )

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './bar.module.css';
 import axios from 'axios';
 
@@ -53,6 +54,7 @@ const Bar: React.FC<BarProps> = ({
     onPositionUpdate,
     onSizeUpdate,
 }) => {
+    const { t } = useTranslation();
     const [position, setPosition] = useState({ x: initialX, y: initialY });
     const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
     const [isDragging, setIsDragging] = useState(false);
@@ -310,8 +312,9 @@ const Bar: React.FC<BarProps> = ({
                         </button>
                         {dropdownOpen && (
                             <div className={styles.dropdownContent}>
-                                <button onClick={handleDelete}>Delete</button>
-                                <button onClick={handleEdit}>Edit</button>
+                                <button>{t.hide}</button>
+                                <button onClick={handleDelete}>{t.delete}</button>
+                                <button onClick={handleEdit}>{t.edit}</button>
                             </div>
                         )}
                     </div>
@@ -320,8 +323,8 @@ const Bar: React.FC<BarProps> = ({
                 <div className={styles.content}>
                     <span className={styles.title}>{title}</span>
                     <div className={styles.progressTop}>
-                        <div className={styles.progressHeader}>Progress bar:</div>
-                        <div className={styles.lvl}>Level: {Math.floor(total_points / full_cycle)}</div>
+                        <div className={styles.progressHeader}>{t.progressBar}:</div>
+                        <div className={styles.lvl}>{t.level}: {Math.floor(total_points / full_cycle)}</div>
                     </div>
                     <div className={styles.progressContainer}>
                         <div className={styles.progressBar} style={{ width: `${progressPercentage}%` }}></div>
@@ -333,7 +336,7 @@ const Bar: React.FC<BarProps> = ({
                         <p className={styles.xpName}>{xp_name}</p>
                     </div>
                     <div className={styles.completion}>
-                        Completion:
+                        {t.completion}:
                         <ul className={styles.transactions}> 
                             {getTransactionsForBar(id).map((transaction) => (
                                 <li key={transaction.transaction_id} className={styles.transaction}>

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './items.module.css';
 
 interface ItemsProps {
@@ -16,6 +17,7 @@ const Items: React.FC<ItemsProps> = ({
     onUseItem,
     items,
 }) => {
+    const { t } = useTranslation();
     const [isHidden, setIsHidden] = useState(false);
 
     const handleHide = async () => {
@@ -33,7 +35,7 @@ const Items: React.FC<ItemsProps> = ({
                 {!isHidden && 
                     <>
                         <button className={styles.addButton} onClick={onCreateNewItem}>+</button>
-                        <div className={styles.title}>Items</div>
+                        <div className={styles.title}>{t.items}</div>
                     </>
                 }
                 <div className={styles.hideButton} onClick={handleHide}>

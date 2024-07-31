@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './list.module.css';
 import axios from 'axios';
 
@@ -69,6 +70,7 @@ const List: React.FC<ListProps> = ({
   tasks,
   onExpand,
 }) => {
+  const { t } = useTranslation();
   const [position, setPosition] = useState({ x: initialX, y: initialY });
   const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
   const [isDragging, setIsDragging] = useState(false);
@@ -342,7 +344,7 @@ const List: React.FC<ListProps> = ({
                 </button>
                 <div className={styles.taskText}>{task.task_name}</div>
                 {hoveredTask === task.task_id && (
-                  <button className={styles.editButton} onClick={() => handleEditTask(task.task_id)}>Edit</button>
+                  <button className={styles.editButton} onClick={() => handleEditTask(task.task_id)}>{t.edit}</button>
                 )}
               </div>
               {isDetailView && (
@@ -381,7 +383,7 @@ const List: React.FC<ListProps> = ({
           {task.expanded && (
             <div className={styles.nestedTasks}>
               {renderNestedTasks(task.task_id)}
-              <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id, false, null)}>+ Create new task</button>
+              <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id, false, null)}>+ {t.createTask}</button>
             </div>
           )}
         </div>
@@ -442,9 +444,9 @@ const List: React.FC<ListProps> = ({
                 </button>
                 {isDropdownOpen && (
                   <div className={styles.dropdownMenu}>
-                    <button onClick={handleHide}>Hide</button>
-                    <button onClick={handleDelete}>Delete</button>
-                    <button onClick={handleRename}>Edit</button>
+                    <button onClick={handleHide}>{t.hide}</button>
+                    <button onClick={handleDelete}>{t.delete}</button>
+                    <button onClick={handleRename}>{t.edit}</button>
                   </div>
                 )}
                 <button 
@@ -463,9 +465,9 @@ const List: React.FC<ListProps> = ({
           </div>
           {isDetailView && (
             <div className={styles.detailViewHeaders}>
-              <div className={styles.columnHeader} id={styles.progressHeader}>Progress</div>
-              <div className={styles.columnHeader} id={styles.currenciesHeader}>Currencies</div>
-              <div className={styles.columnHeader} id={styles.itemsHeader}>Items</div>
+              <div className={styles.columnHeader} id={styles.progressHeader}>{t.progress}</div>
+              <div className={styles.columnHeader} id={styles.currenciesHeader}>{t.currencies}</div>
+              <div className={styles.columnHeader} id={styles.itemsHeader}>{t.items}</div>
             </div>
           )}
         </div>
@@ -476,10 +478,10 @@ const List: React.FC<ListProps> = ({
             <div key={task.task_id} className={styles.taskContainer}>
               <div className={styles.taskRow}>
                 <div className={styles.taskCell}>
-                  <div 
-                    className={styles.classicView} 
+                  <div
+                    className={styles.classicView}
                     style={{ width: isDetailView ? '40%' : '100%' }}
-                    onMouseEnter={() => setHoveredTask(task.task_id)} 
+                    onMouseEnter={() => setHoveredTask(task.task_id)}
                     onMouseLeave={() => setHoveredTask(null)}
                   >
                     <div className={styles.checkbox}>
@@ -494,7 +496,7 @@ const List: React.FC<ListProps> = ({
                     </button>
                     <div className={styles.taskText}>{task.task_name}</div>
                     {hoveredTask === task.task_id && (
-                      <button className={styles.editButton} onClick={() => handleEditTask(task.task_id)}>Edit</button>
+                      <button className={styles.editButton} onClick={() => handleEditTask(task.task_id)}>{t.edit}</button>
                     )}
                   </div>
                   {isDetailView && (
@@ -533,7 +535,7 @@ const List: React.FC<ListProps> = ({
               {task.expanded && (
                 <div className={styles.nestedTasks}>
                   {renderNestedTasks(task.task_id)}
-                  <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id, false, null)}>+ Create new task</button>
+                  <button className={styles.addNestedTaskButton} onClick={() => openPopup(id, task.task_id, false, null)}>+ {t.createTask}</button>
                 </div>
               )}
             </div>

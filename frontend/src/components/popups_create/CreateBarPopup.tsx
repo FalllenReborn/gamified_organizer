@@ -163,13 +163,9 @@ const CreateBarPopup: React.FC<CreateBarPopupProps> = ({
     setter(e.target.value);
   };
 
-  const handleSizeChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value >= 50) {
-      setter(value);
-    }
+  const handleSizeChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Math.max(50, parseInt(e.target.value, 10) || 0);
+    setter(value);
   };
 
   const handleAxisChange = (setter: React.Dispatch<React.SetStateAction<number>>) => (

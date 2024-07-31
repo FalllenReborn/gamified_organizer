@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './duties.module.css';
 import axios from 'axios';
 
@@ -36,6 +37,7 @@ const Duties: React.FC<DutiesProps> = ({
     onComplete,
     onDelete,
 }) => {
+    const { t } = useTranslation();
     const [isDetailView, setIsDetailView] = useState(true);
     const [hoveredTask, setHoveredTask] = useState<number | null>(null);
     const [isHidden, setIsHidden] = useState(false);
@@ -76,8 +78,8 @@ const Duties: React.FC<DutiesProps> = ({
     
     return (
         <div className={styles.duties} style={{ 
-            width: isHidden ? '40px' : '400px',
-            height:  isHidden ? '40px' : '400px',
+            width: isHidden ? '40px' : '450px',
+            height:  isHidden ? '40px' : '350px',
         }}>
             {!isHidden && 
                 <>
@@ -88,16 +90,16 @@ const Duties: React.FC<DutiesProps> = ({
                                     +
                                 </button>
                             </div>
-                            <span className={styles.title}>Duties</span>
+                            <span className={styles.title}>{t.duties}</span>
                             <div className={styles.arrow} onClick={() => setIsDetailView(!isDetailView)}>
                                 {isDetailView ? '»' : '«'}
                             </div>
                         </div>
                         {isDetailView && (
                             <div className={styles.detailViewHeaders}>
-                                <div className={styles.columnHeader} id={styles.progressHeader}>Progress</div>
-                                <div className={styles.columnHeader} id={styles.currenciesHeader}>Currencies</div>
-                                <div className={styles.columnHeader} id={styles.itemsHeader}>Items</div>
+                                <div className={styles.columnHeader} id={styles.progressHeader}>{t.progress}</div>
+                                <div className={styles.columnHeader} id={styles.currenciesHeader}>{t.currencies}</div>
+                                <div className={styles.columnHeader} id={styles.itemsHeader}>{t.items}</div>
                             </div>
                         )}
                     </div>
@@ -115,9 +117,9 @@ const Duties: React.FC<DutiesProps> = ({
                                             <div className={styles.taskText}>{duty.task_name}</div>
                                             {hoveredTask === duty.task_id && (
                                                 <div className={styles.buttonContainer}>
-                                                    <button className={styles.completeButton} onClick={() => onComplete(duty.task_id)}>Complete</button>
-                                                    <button className={styles.deleteButton} onClick={() => onDelete(duty.task_id)}>Delete</button>
-                                                    <button className={styles.editButton} onClick={() => handleEditDuty(duty.task_id)}>Edit</button>
+                                                    <button className={styles.completeButton} onClick={() => onComplete(duty.task_id)}>{t.complete}</button>
+                                                    <button className={styles.deleteButton} onClick={() => onDelete(duty.task_id)}>{t.delete}</button>
+                                                    <button className={styles.editButton} onClick={() => handleEditDuty(duty.task_id)}>{t.edit}</button>
                                                 </div>
                                             )}
                                         </div>

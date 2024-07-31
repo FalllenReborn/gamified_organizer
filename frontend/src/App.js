@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './components/home/Home';
 import Dashboard from './components/dashboard/Dashboard';
-import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
-import { ClockProvider } from './context/ClockContext';
-import { ConfirmationProvider } from './context/ConfirmationContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { ClockProvider } from './contexts/ClockContext';
+import { ConfirmationProvider } from './contexts/ConfirmationContext';
 
 
 function App() {

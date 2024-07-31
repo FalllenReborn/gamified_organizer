@@ -1,8 +1,9 @@
 import React, { useContext, useState, useRef, FormEvent } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './registerPopup.module.css';
 
 interface RegisterPopupProps {
@@ -13,7 +14,8 @@ interface RegisterPopupProps {
 }
 
 const RegisterPopup: React.FC<RegisterPopupProps> = ({ show, isOpen, onClose, onOpenLogin }) => {
-  const { isDarkMode, selectedLanguage } = useContext(ThemeContext);
+  const { isDarkMode } = useContext(ThemeContext);
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [username, setUsername] = useState<string>('');
   const [email, setEmail] = useState<string>('');
@@ -49,33 +51,6 @@ const RegisterPopup: React.FC<RegisterPopupProps> = ({ show, isOpen, onClose, on
       }
     }
   };
-
-  const translations = {
-    english: {
-      login: 'Login',
-      confirm: 'Confirm',
-      register: 'Register',
-      username: 'Username',
-      email: 'Email',
-      password: 'Password',
-      confirmPassword: 'Confirm Password',
-    },
-    polish: {
-      login: 'Zaloguj się',
-      confirm: 'Potwierdź',
-      register: 'Zarejestruj się',
-      username: 'Nazwa użytkownika',
-      email: 'Email',
-      password: 'Hasło',
-      confirmPassword: 'Potwierdź hasło',
-    },
-  };
-
-  const isLanguageKey = (key: string): key is keyof typeof translations => {
-    return key in translations;
-  };
-  
-  const t = isLanguageKey(selectedLanguage) ? translations[selectedLanguage] : translations['english'];
 
   if (!show) {
     return null;

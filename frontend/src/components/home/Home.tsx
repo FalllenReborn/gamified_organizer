@@ -1,45 +1,26 @@
 import React, { useState, useContext, ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
-import LoginPopup from '../login/LoginPopup';
-import RegisterPopup from '../register/RegisterPopup';
+import { ThemeContext } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
+import LoginPopup from '../authentication/LoginPopup';
+import RegisterPopup from '../authentication/RegisterPopup';
 import styles from './home.module.css';
 import classNames from 'classnames';
 
-interface Translations {
-  login: string;
-  register: string;
-  guest: string;
-  logout: string;
-  dashboard: string;
-}
+type Language = 'english' | 'polish';
 
 const Home: React.FC = () => {
-  const { isDarkMode, toggleDarkMode, selectedLanguage, handleLanguageChange } = useContext(ThemeContext);
+  const { isDarkMode, toggleDarkMode } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
+  const { t, setLanguage, language } = useTranslation();
   const navigate = useNavigate();
 
-  const translations: Record<string, Translations> = {
-    english: {
-      login: 'Login',
-      register: 'Register',
-      guest: 'Guest',
-      logout: 'Logout',
-      dashboard: 'Dashboard',
-    },
-    polish: {
-      login: 'Zaloguj się',
-      register: 'Zarejestruj się',
-      guest: 'Gość',
-      logout: 'Wyloguj się',
-      dashboard: 'Tablica',
-    },
+  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setLanguage(e.target.value as Language);
   };
-
-  const t = translations[selectedLanguage];
 
   const handleLoginClick = () => {
     setShowRegisterPopup(false); // Close the register popup
@@ -74,12 +55,12 @@ const Home: React.FC = () => {
           </label>
           <select
             className={styles.languageDropdown}
-            value={selectedLanguage}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) => handleLanguageChange(e.target.value)}
+            value={language} 
+            onChange={handleLanguageChange}
           >
-            <option value="english">🇺🇸 English</option>
-            <option value="polish">🇵🇱 Polish</option>
-          </select>
+          <option value="english">{t.english}</option>
+          <option value="polish">{t.polish}</option>
+        </select>
         </div>
         {isAuthenticated ? (
           <div className={styles.homeButtons}>

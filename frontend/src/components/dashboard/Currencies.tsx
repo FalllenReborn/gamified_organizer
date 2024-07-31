@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './currencies.module.css';
 
 interface CurrenciesProps {
@@ -14,6 +15,7 @@ const Currencies: React.FC<CurrenciesProps> = ({
     onEditCurrency,
     currencies,
 }) => {
+    const { t } = useTranslation();
     const [isHidden, setIsHidden] = useState(false);
 
     const handleHide = async () => {
@@ -31,7 +33,7 @@ const Currencies: React.FC<CurrenciesProps> = ({
                 {!isHidden && 
                     <>
                         <button className={styles.addButton} onClick={onCreateNewCurrency}>+</button>
-                        <div className={styles.title}>Currencies</div>
+                        <div className={styles.title}>{t.currencies}</div>
                     </>
                 }
                 <div className={styles.hideButton} onClick={handleHide}>

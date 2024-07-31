@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './shop.module.css';
 import axios from 'axios';
 
@@ -68,6 +69,7 @@ const Shop: React.FC<ShopProps> = ({
     onCreate,
     onDelete,
 }) => {
+    const { t } = useTranslation();
     const [position, setPosition] = useState({ x: initialX, y: initialY });
     const [size, setSize] = useState({ width: initialWidth, height: initialHeight });
     const [isDragging, setIsDragging] = useState(false);
@@ -351,9 +353,9 @@ const Shop: React.FC<ShopProps> = ({
                     const newBalance = currency.owned - calculatedPrice[parseInt(currencyId)];
                     updatedBalances[parseInt(currencyId)] = newBalance;
                     if (newBalance <= 0) {
-                        updatedErrorMessages[parseInt(currencyId)] = `Not enough ${currency.currency_name} (${newBalance})`;
+                        updatedErrorMessages[parseInt(currencyId)] = `${t.notEnough} "${currency.currency_name}" (${newBalance})`;
                     } else {
-                        updatedErrorMessages[parseInt(currencyId)] = `New ${currency.currency_name} balance: ${newBalance}`;
+                        updatedErrorMessages[parseInt(currencyId)] = `${t.newBalance} "${currency.currency_name}": ${newBalance}`;
                     }
                 }
             });
@@ -414,9 +416,9 @@ const Shop: React.FC<ShopProps> = ({
                                 </button>
                                 {dropdownOpen && (
                                     <div className={styles.dropdownMenu}>
-                                        <button onClick={handleHide}>Hide</button>
-                                        <button onClick={handleDelete}>Delete</button>
-                                        <button onClick={handleEdit}>Edit</button>
+                                        <button onClick={handleHide}>{t.hide}</button>
+                                        <button onClick={handleDelete}>{t.delete}</button>
+                                        <button onClick={handleEdit}>{t.edit}</button>
                                     </div>
                                 )}
                                 <button 
@@ -434,8 +436,8 @@ const Shop: React.FC<ShopProps> = ({
                         </div>
                     </div>
                     <div className={styles.detailViewHeaders}>
-                        <div className={styles.columnHeader} id={styles.balanceHeader}>Balance</div>
-                        <div className={styles.columnHeader} id={styles.priceHeader}>Price</div>
+                        <div className={styles.columnHeader} id={styles.balanceHeader}>{t.price}</div>
+                        <div className={styles.columnHeader} id={styles.priceHeader}>{t.amount}</div>
                     </div>
                 </div>
                 <div className={styles.content}>
@@ -453,8 +455,8 @@ const Shop: React.FC<ShopProps> = ({
                                         <div className={styles.priceName}>{getItemName(price.item)}</div>
                                         {hoveredPrice === price.price_id && (
                                             <div className={styles.buttonContainer}>
-                                                <button className={styles.deleteButton} onClick={() => onDelete(price.price_id)}>Delete</button>
-                                                <button className={styles.editButton} onClick={() => onCreate(id, true, price)}>Edit</button>
+                                                <button className={styles.deleteButton} onClick={() => onDelete(price.price_id)}>{t.delete}</button>
+                                                <button className={styles.editButton} onClick={() => onCreate(id, true, price)}>{t.edit}</button>
                                             </div>
                                         )}
                                     </div>
@@ -527,9 +529,9 @@ const Shop: React.FC<ShopProps> = ({
                                     disabled={isBuyDisabled}
                                     onClick={() => onBuy(newBalances, inputValues)}
                                 >
-                                    Buy
+                                    {t.buy}
                                 </button>
-                                {isBuyDisabled && <div className={styles.errorMessage}>Not enough currency</div>}
+                                {isBuyDisabled && <div className={styles.errorMessage}>{t.notEnoughCurrency}</div>}
                             </div>
                         </div>
                     </div>

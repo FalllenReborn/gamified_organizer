@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './useItemPupup.module.css'
 
 interface UseItemPopupProps {
@@ -9,6 +10,7 @@ interface UseItemPopupProps {
 }
 
 const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, maxQuantity }) => {
+  const { t } = useTranslation();
   const [useMany, setUseMany] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState('');
@@ -28,6 +30,10 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
 
   const handleConfirm = () => {
     onConfirm(note, quantity);
+    setNote('');
+    setCharCount(0);
+    setQuantity(1);
+    setUseMany(false);
   };
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -40,7 +46,7 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
   return (
     <div className={styles.popupOverlay}>
       <div className={styles.popup}>
-        <h2>Use Item</h2>
+        <h2>{t.useItem}</h2>
         <div className={styles.quantity}>
           <div className={styles.checkboxContainer}>
             <div className={styles.checkbox}>
@@ -50,7 +56,7 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
                 checked={useMany}
               />
             </div>
-            <div className={styles.checkboxLabel}>Use many?</div>
+            <div className={styles.checkboxLabel}>{t.useMany}?</div>
           </div>
           {useMany && (
             <input
@@ -64,12 +70,12 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
           )}
         </div>
         <div className={styles.textareaContainer}>
-          <label className={styles.textareaLabel}>Use reason. Write why/how have you used your item.</label>
+          <label className={styles.textareaLabel}>{t.useNote}</label>
           <textarea
             maxLength={500}
             value={note}
             onChange={handleNoteChange}
-            placeholder="Enter a note (optional)"
+            placeholder={t.enterNote}
             className={styles.textarea}
           />
           <div className={styles.charCount}>{charCount}/500</div>

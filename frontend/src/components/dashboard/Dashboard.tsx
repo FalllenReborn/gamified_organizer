@@ -1,6 +1,6 @@
 import React, { useContext, useState, useRef, useEffect, MouseEvent } from 'react';
-import { ThemeContext } from '../../context/ThemeContext';
-import { useConfirmation } from '../../context/ConfirmationContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
+import { useConfirmation } from '../../contexts/ConfirmationContext';
 import Sidebar from '../sidebar/Sidebar';
 import ResetButton from '../sidebar/ResetButton';
 import styles from './dashboard.module.css';
@@ -372,18 +372,20 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const handleWheel = (e: React.WheelEvent) => {
     const scaleFactor = 0.1;
     const delta = e.deltaY > 0 ? -scaleFactor : scaleFactor;
-
+  
     if (!dashboardRef.current) return;
-
+  
     const rect = dashboardRef.current.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-
-    const newScale = Math.max(0.33, scale + delta);
+  
+    const minScale = 0.33;
+    const maxScale = 3;
+    const newScale = Math.min(maxScale, Math.max(minScale, scale + delta));
     const scaleRatio = newScale / scale;
     const newTranslateX = mouseX - scaleRatio * (mouseX - translate.x);
     const newTranslateY = mouseY - scaleRatio * (mouseY - translate.y);
-
+  
     setTranslate({
       x: newTranslateX,
       y: newTranslateY,

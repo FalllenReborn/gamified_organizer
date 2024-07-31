@@ -1,8 +1,9 @@
 import React, { useContext, useState, useRef, FormEvent, ChangeEvent } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { ThemeContext } from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
+import { ThemeContext } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 import styles from './loginPopup.module.css';
 
 interface LoginPopupProps {
@@ -13,8 +14,9 @@ interface LoginPopupProps {
 }
 
 const LoginPopup: React.FC<LoginPopupProps> = ({ show, isOpen, onClose, onOpenRegister }) => {
-  const { isDarkMode, selectedLanguage } = useContext(ThemeContext);
+  const { isDarkMode } = useContext(ThemeContext);
   const { isAuthenticated, login } = useAuth();
+  const { t } = useTranslation();
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [message, setMessage] = useState<string>('');
@@ -43,30 +45,6 @@ const LoginPopup: React.FC<LoginPopupProps> = ({ show, isOpen, onClose, onOpenRe
       }
     }
   };
-
-  // Translations
-  const translations = {
-    english: {
-      login: 'Login',
-      confirm: 'Confirm',
-      register: 'Register',
-      username: 'Username',
-      password: 'Password',
-    },
-    polish: {
-      login: 'Zaloguj się',
-      confirm: 'Potwierdź',
-      register: 'Zarejestruj się',
-      username: 'Nazwa użytkownika',
-      password: 'Hasło',
-    },
-  };
-
-  const isLanguageKey = (key: string): key is keyof typeof translations => {
-    return key in translations;
-  };
-  
-  const t = isLanguageKey(selectedLanguage) ? translations[selectedLanguage] : translations['english'];
 
   if (!show || !isOpen) {
     return null;

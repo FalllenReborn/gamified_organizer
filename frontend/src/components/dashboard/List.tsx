@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
+import { MdDelete } from "react-icons/md";
+import { MdOutlineEdit } from "react-icons/md";
+import { BiSolidHide } from "react-icons/bi";
 import styles from './list.module.css';
 import axios from 'axios';
 
@@ -77,7 +80,6 @@ const List: React.FC<ListProps> = ({
   const [isResizing, setIsResizing] = useState(false);
   const [resizeDirection, setResizeDirection] = useState('');
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDetailView, setIsDetailView] = useState(detailView);
   const [hoveredTask, setHoveredTask] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -121,10 +123,7 @@ const List: React.FC<ListProps> = ({
     if (targetElement.closest(`.${styles.arrow}`)) {
       return; // Prevent dragging if clicking on taskbar buttons
     }
-    if (targetElement.closest(`.${styles.dropdownButton}`)) {
-      return; // Prevent dragging if clicking on taskbar buttons
-    }
-    if (targetElement.closest(`.${styles.addButton}`)) {
+    if (targetElement.closest(`.${styles.taskButton}`)) {
       return; // Prevent dragging if clicking on taskbar buttons
     }
     setIsDragging(true);
@@ -253,24 +252,17 @@ const List: React.FC<ListProps> = ({
     };
   }, [isResizing, handleResizeMove, handleResizeEnd]);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen((prevState) => !prevState);
-  };
-
   const handleHide = () => {
     console.log(`Hide list ${id}`);
-    setIsDropdownOpen(false);
   };
 
   const handleDelete = async () => {
     console.log(`Delete list ${id}`);
     onClose(id);
-    setIsDropdownOpen(false);
   };
 
   const handleRename = () => {
     onRename(id);
-    setIsDropdownOpen(false);
   };
 
   const handleDetailViewToggle = async () => {
@@ -435,30 +427,40 @@ const List: React.FC<ListProps> = ({
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    toggleDropdown();
-                  }}
-                  draggable={false}
-                  className={styles.dropdownButton} 
-                >
-                  ⋮
-                </button>
-                {isDropdownOpen && (
-                  <div className={styles.dropdownMenu}>
-                    <button onClick={handleHide}>{t.hide}</button>
-                    <button onClick={handleDelete}>{t.delete}</button>
-                    <button onClick={handleRename}>{t.edit}</button>
-                  </div>
-                )}
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
                     openPopup(id, null, false, null)
                   }}
                   draggable={false}
-                  className={styles.addButton}
+                  className={styles.taskButton}
                 >
                   +
                 </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRename();
+                  }}
+                className={styles.taskButton}>
+                  <MdOutlineEdit />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleHide();
+                  }}
+                  className={styles.taskButton}
+                >
+                  <BiSolidHide />
+                </button>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete();
+                  }}
+                className={styles.taskButton}>
+                  <MdDelete />
+                </button>
+                
+                
               </div>
               <span className={styles.id}>ID: {id}</span>
             </div>

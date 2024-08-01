@@ -16,14 +16,6 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
   const [note, setNote] = useState('');
   const [charCount, setCharCount] = useState(0);
 
-  useEffect(() => {
-    if (quantity < 1) {
-      setQuantity(1);
-    } else if (quantity > maxQuantity) {
-      setQuantity(maxQuantity);
-    }
-  }, [quantity, maxQuantity]);
-
   if (!show) {
     return null;
   }
@@ -34,6 +26,16 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
     setCharCount(0);
     setQuantity(1);
     setUseMany(false);
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (parseInt(e.target.value) < 1) {
+      setQuantity(1);
+    } else if (parseInt(e.target.value) > maxQuantity) {
+      setQuantity(maxQuantity);
+    } else {
+      setQuantity(parseInt(e.target.value));
+    }
   };
 
   const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -68,7 +70,7 @@ const UseItemPopup: React.FC<UseItemPopupProps> = ({ show, onConfirm, onCancel, 
               min="1"
               max={maxQuantity}
               value={quantity}
-              onChange={(e) => setQuantity(Number(e.target.value))}
+              onChange={handleQuantityChange}
               className={styles.numericInput}
             />
           )}

@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
+import { MdDelete } from "react-icons/md";
+import { MdOutlineEdit } from "react-icons/md";
+import { BiSolidHide } from "react-icons/bi";
 import styles from './bar.module.css';
 import axios from 'axios';
 
@@ -61,7 +64,6 @@ const Bar: React.FC<BarProps> = ({
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState('');
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const barRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const positionRef = useRef(position);
@@ -97,23 +99,6 @@ const Bar: React.FC<BarProps> = ({
             console.error('Error updating position:', error);
         }
     }, [id]);
-
-    useEffect(() => {  // works only when clicking on dashboard
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node) &&
-                barRef.current &&
-                !barRef.current.contains(event.target as Node)
-            ) {
-                setDropdownOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
 
     const handleDragStart = useCallback((e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
         if ((e.target as HTMLElement).closest(`.${styles.dropdown}`)) return;
@@ -246,12 +231,10 @@ const Bar: React.FC<BarProps> = ({
     const handleDelete = async () => {
         console.log(`Delete bar ${id}`);
         onClose(id);
-        setDropdownOpen(false);
     };
 
     const handleEdit = () => {
         onEdit(id);
-        setDropdownOpen(false);
     };
 
     const getTransactionsForBar = (barId: number) => {
@@ -303,20 +286,29 @@ const Bar: React.FC<BarProps> = ({
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setDropdownOpen(!dropdownOpen);
+                                handleEdit();
                             }}
-                            draggable={false}
-                            className={styles.dropdownButton}
+                            className={styles.taskButton}
                         >
-                            Menu
+                            <MdOutlineEdit />
                         </button>
-                        {dropdownOpen && (
-                            <div className={styles.dropdownContent}>
-                                <button>{t.hide}</button>
-                                <button onClick={handleDelete}>{t.delete}</button>
-                                <button onClick={handleEdit}>{t.edit}</button>
-                            </div>
-                        )}
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                            className={styles.taskButton}
+                        >
+                            <BiSolidHide />
+                        </button>
+                        <button 
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete();
+                            }}
+                            className={styles.taskButton}
+                        >
+                            <MdDelete />
+                        </button>
                     </div>
                     <span className={styles.id}>ID: {id}</span>
                 </div>

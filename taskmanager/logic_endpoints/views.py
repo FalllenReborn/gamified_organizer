@@ -340,21 +340,25 @@ class CurrencyViewSet(viewsets.ModelViewSet):
             data = json.loads(request.body.decode('utf-8'))
             currency_name = data.get('currency_name')
             owned = data.get('owned', 0)
+            exchange_rate = data.get('exchange_rate', 1)
+            exchange_loss = data.get('exchange_loss', 0.1)
 
             if not currency_name:
-                return JsonResponse({'error': 'currency_name is required'}, status=400)
+                return Response({'error': 'currency_name is required'}, status=400)
 
             currency = Currency.objects.create(
                 currency_name=currency_name,
-                owned=owned
+                owned=owned,
+                exchange_rate=exchange_rate,
+                exchange_loss=exchange_loss
             )
             serializer = CurrencySerializer(currency)
-            return JsonResponse(serializer.data, status=201)
+            return Response(serializer.data, status=201)
 
         except json.JSONDecodeError:
-            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+            return Response({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            return Response({'error': str(e)}, status=500)
 
     @method_decorator(csrf_exempt)
     @action(detail=False, methods=['post'], url_path='update_balances')

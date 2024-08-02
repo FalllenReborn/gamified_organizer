@@ -112,6 +112,8 @@ class Currency(models.Model):
     currency_id = models.AutoField(primary_key=True)
     currency_name = models.CharField(max_length=255)
     owned = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    exchange_rate = models.DecimalField(max_digits=10, decimal_places=4, default=1.00, null=True)
+    exchange_loss = models.DecimalField(max_digits=4, decimal_places=2, default=0.10, null=True)
 
     def __str__(self):
         return self.currency_name

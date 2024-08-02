@@ -3,6 +3,7 @@ import { useTranslation } from '../../contexts/TranslationContext';
 import { MdDelete } from "react-icons/md";
 import { MdOutlineEdit } from "react-icons/md";
 import { BiSolidHide } from "react-icons/bi";
+import { MdKeyboardDoubleArrowDown } from "react-icons/md";
 import styles from './bar.module.css';
 import axios from 'axios';
 
@@ -64,8 +65,7 @@ const Bar: React.FC<BarProps> = ({
     const [isResizing, setIsResizing] = useState(false);
     const [resizeDirection, setResizeDirection] = useState('');
     const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-    const barRef = useRef<HTMLDivElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const [expandedBar, setExpandedBar] = useState(false)
     const positionRef = useRef(position);
     const sizeRef = useRef(size);
     
@@ -140,7 +140,7 @@ const Bar: React.FC<BarProps> = ({
         document.body.classList.add(styles.disableSelect);
     };
 
-    const handleResizeMove = (e: MouseEvent) => {
+    const handleResizeMove = useCallback((e: MouseEvent) => {
         if (isResizing) {
             const dx = e.clientX / scale - startPos.x;
             const dy = e.clientY / scale - startPos.y;
@@ -186,9 +186,9 @@ const Bar: React.FC<BarProps> = ({
                 y: e.clientY / scale,
             });
         }
-    };
+    }, [isResizing, scale, startPos, size.width, size.height, position.x, position.y, resizeDirection]);
 
-    const handleResizeEnd = () => {
+    const handleResizeEnd = useCallback(() => {
         if (isResizing) {
             setIsResizing(false);
             document.body.classList.remove(styles.disableSelect);
@@ -198,7 +198,7 @@ const Bar: React.FC<BarProps> = ({
             updatePositionInDatabase(updatedPosition.x, updatedPosition.y);
             onResize(id, updatedSize.width, updatedSize.height, 'bars');
         }
-    };
+    }, [isResizing, updateSizeInDatabase, updatePositionInDatabase, id, onResize]);
 
     useEffect(() => {
         if (isDragging) {
@@ -260,7 +260,6 @@ const Bar: React.FC<BarProps> = ({
     return (
         <div
             id={`bar-${id}`}
-            ref={barRef}
             className={`${styles.outerWrapper} ${isDragging ? styles.dragging : ''}`}
             style={{
                 top: `${position.y * scale}px`,
@@ -274,7 +273,6 @@ const Bar: React.FC<BarProps> = ({
         >
             <div
                 id={`bar-${id}`}
-                ref={barRef}
                 className={styles.bar}
                 onMouseDown={handleDragStart}
                 style={{
@@ -282,7 +280,7 @@ const Bar: React.FC<BarProps> = ({
                     height: `${size.height}px`,
                 }}>
                 <div className={styles.topLine}>
-                    <div className={styles.dropdown} ref={dropdownRef}>
+                    <div className={styles.dropdown}>
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -322,25 +320,36 @@ const Bar: React.FC<BarProps> = ({
                         <div className={styles.progressBar} style={{ width: `${progressPercentage}%` }}></div>
                     </div>
                     <div className={styles.progressDescription}>
-                        <div className={styles.progressText}>
-                            {total_points % full_cycle}/{full_cycle} ({progressPercentage.toFixed(2)}%)
+                        <div className={styles.xpLine}>
+                            <div className={styles.progressText}>
+                                {total_points % full_cycle}/{full_cycle} ({progressPercentage.toFixed(2)}%)
+                            </div>
+                            <p className={styles.xpName}>{xp_name}</p>
                         </div>
-                        <p className={styles.xpName}>{xp_name}</p>
-                    </div>
-                    <div className={styles.completion}>
-                        {t.completion}:
-                        <ul className={styles.transactions}> 
-                            {getTransactionsForBar(id).map((transaction) => (
-                                <li key={transaction.transaction_id} className={styles.transaction}>
-                                    {getCurrencyName(transaction.currency)}: {transaction.amount}<br />
-                                </li>
-                            ))}
-                            {getVouchersForBar(id).map((voucher) => (
-                                <li key={voucher.voucher_id} className={styles.voucher}>
-                                    {getItemName(voucher.item)}: {voucher.quantity}<br />
-                                </li>
-                            ))}
-                        </ul>
+                        <div className={styles.buttonLine}>
+                            <button className={styles.expandButton} onClick={() => setExpandedBar(!expandedBar)}>
+                                <MdKeyboardDoubleArrowDown />
+                            </button>
+                        </div>
+                        <div className={styles.completionLine}>
+                            {expandedBar && (
+                                <div className={styles.completion}>
+                                    {t.completion}:
+                                    <ul className={styles.transactions}> 
+                                        {getTransactionsForBar(id).map((transaction) => (
+                                            <li key={transaction.transaction_id} className={styles.transaction}>
+                                                {getCurrencyName(transaction.currency)}: {transaction.amount}<br />
+                                            </li>
+                                        ))}
+                                        {getVouchersForBar(id).map((voucher) => (
+                                            <li key={voucher.voucher_id} className={styles.voucher}>
+                                                {getItemName(voucher.item)}: {voucher.quantity}<br />
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -122,19 +122,47 @@
 
 .progressDescription {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     font-size: 14px;
+}
+
+.xpLine {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 .progressText {
     position: relative;
-    justify-content: flex-end;
+    display: flex;
+    margin-bottom: 0px;
 }
 
 .xpName {
     font-size: 14px;
     display: flex;
     justify-content: flex-end;
+}
+
+.buttonLine {
+    display: flex;
+    justify-content: center;
+    right: 5px;
+}
+
+.expandButton{
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
 }
 
 .resizeHandle {

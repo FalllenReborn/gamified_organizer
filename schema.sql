@@ -140,6 +140,51 @@ $$;
 ALTER FUNCTION public.delete_nested_tasks() OWNER TO postgres;
 
 --
+-- Name: exchange_currency(integer, integer, double precision); Type: FUNCTION; Schema: public; Owner: postgres
+--
+
+CREATE FUNCTION public.exchange_currency(from_currency_id integer, to_currency_id integer, amount double precision) RETURNS void
+    LANGUAGE plpgsql
+    AS $$
+DECLARE
+    from_rate FLOAT;
+    to_rate FLOAT;
+    loss FLOAT;
+    converted_amount FLOAT;
+    rounded_amount FLOAT;
+    rounded_converted_amount FLOAT;
+BEGIN
+    -- Get exchange rates and exchange loss
+    SELECT exchange_rate INTO from_rate FROM currencies WHERE currency_id = from_currency_id;
+    SELECT exchange_rate, exchange_loss INTO to_rate, loss FROM currencies WHERE currency_id = to_currency_id;
+
+    -- Check if either currency is non-exchangeable
+    IF from_rate IS NULL OR to_rate IS NULL THEN
+        RAISE EXCEPTION 'One or both currencies are non-exchangeable';
+    END IF;
+
+    -- Calculate the converted amount
+    converted_amount := amount * (from_rate / to_rate) * (1 - loss);
+
+    -- Round the amounts to two decimal places
+    rounded_amount := ROUND(amount::NUMERIC, 2)::FLOAT;
+    rounded_converted_amount := ROUND(converted_amount::NUMERIC, 2)::FLOAT;
+
+    -- Update the owned amounts
+    UPDATE currencies
+    SET owned = ROUND(owned::NUMERIC - rounded_amount::NUMERIC, 2)
+    WHERE currency_id = from_currency_id;
+
+    UPDATE currencies
+    SET owned = ROUND(owned::NUMERIC + rounded_converted_amount::NUMERIC, 2)
+    WHERE currency_id = to_currency_id;
+END;
+$$;
+
+
+ALTER FUNCTION public.exchange_currency(from_currency_id integer, to_currency_id integer, amount double precision) OWNER TO postgres;
+
+--
 -- Name: handle_task_completion(integer); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
@@ -593,7 +638,11 @@ ALTER SEQUENCE public.bars_bar_id_seq OWNED BY public.bars.bar_id;
 CREATE TABLE public.currencies (
     currency_id integer NOT NULL,
     currency_name character varying(100) NOT NULL,
-    owned numeric(10,2) DEFAULT 0 NOT NULL
+    owned numeric(10,2) DEFAULT 0 NOT NULL,
+    exchange_rate double precision DEFAULT 1,
+    exchange_loss double precision DEFAULT 0.1,
+    CONSTRAINT currencies_exchange_loss_check CHECK (((exchange_loss IS NULL) OR (exchange_loss >= (0)::double precision))),
+    CONSTRAINT currencies_exchange_rate_check CHECK (((exchange_rate IS NULL) OR (exchange_rate > (0)::double precision)))
 );
 
 

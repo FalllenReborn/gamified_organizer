@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
+import { MdDelete, MdOutlineEdit } from "react-icons/md";
+import { RiInboxUnarchiveFill } from "react-icons/ri";
 import styles from './items.module.css';
 
 interface ItemsProps {
@@ -48,9 +50,9 @@ const Items: React.FC<ItemsProps> = ({
                         <div key={index} className={styles.item}>
                             {item.item_name}: {item.storage}
                             <div className={styles.buttons}>
-                                <button className={styles.useButton} onClick={() => onUseItem(item.item_id, item.storage)}>✅</button>
-                                <button className={styles.editButton} onClick={() => onEditItem(item.item_id, item.item_name)}>✏️</button>
-                                <button className={styles.deleteButton} onClick={() => onDeleteItem(item.item_id)}>❌</button>
+                                <button className={styles.useButton} onClick={() => onUseItem(item.item_id, item.storage)}><RiInboxUnarchiveFill /></button>
+                                <button className={styles.editButton} onClick={() => onEditItem(item.item_id, item.item_name)}><MdOutlineEdit /></button>
+                                <button className={styles.deleteButton} onClick={() => onDeleteItem(item.item_id)}><MdDelete /></button>
                             </div>
                         </div>
                     ))}

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
-import { MdDelete } from "react-icons/md";
-import { MdOutlineEdit } from "react-icons/md";
+import { MdDelete, MdOutlineEdit } from "react-icons/md";
 import { BiSolidHide } from "react-icons/bi";
 import { MdKeyboardDoubleArrowDown } from "react-icons/md";
 import styles from './bar.module.css';
@@ -68,7 +67,7 @@ const Bar: React.FC<BarProps> = ({
     const [expandedBar, setExpandedBar] = useState(false)
     const positionRef = useRef(position);
     const sizeRef = useRef(size);
-    
+
     useEffect(() => {
         setPosition({ x: initialX, y: initialY });
         positionRef.current = { x: initialX, y: initialY };

@@ -1,0 +1,84 @@
+.popupContainer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 11000000;
+    
+}
+
+.popup {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 50%;
+    max-width: 600px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    background-color: #2a2a2a;
+}
+
+.header {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.columns {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.column {
+    width: 48%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.columnTitle {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.dropdown {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.input {
+    width: 100%;
+    padding: 8px;
+    font-size: 16px;
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+}
+
+.cancelButton, .confirmButton {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancelButton {
+    background: #ccc;
+}
+
+.confirmButton {
+    background: #007bff;
+    color: white;
+}

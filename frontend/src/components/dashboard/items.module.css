@@ -81,3 +81,16 @@
     width: 20px;
     height: 20px;
 }
+
+.editButton {
+    color: #ceb04c;
+}
+
+.deleteButton {
+    color: #f44336;
+}
+
+.useButton {
+    color: #10c719;
+}
+

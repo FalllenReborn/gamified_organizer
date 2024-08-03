@@ -378,6 +378,39 @@ class CurrencyViewSet(viewsets.ModelViewSet):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
+    @method_decorator(csrf_exempt)
+    @action(detail=False, methods=['post'], url_path='exchange_currency')
+    def exchange_currency(self, request):
+        try:
+            data = json.loads(request.body.decode('utf-8'))
+            from_currency_id = data.get('from_currency')
+            to_currency_id = data.get('to_currency')
+            amount = float(data.get('amount'))
+
+            if amount <= 0:
+                return Response({'error': 'Amount must be greater than 0'}, status=400)
+
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT exchange_rate FROM currencies WHERE currency_id = %s", [from_currency_id])
+                from_currency_exchange_rate = cursor.fetchone()
+
+                cursor.execute("SELECT exchange_rate FROM currencies WHERE currency_id = %s", [to_currency_id])
+                to_currency_exchange_rate = cursor.fetchone()
+
+                if not from_currency_exchange_rate or not to_currency_exchange_rate:
+                    return Response({'error': 'Invalid currency ID'}, status=400)
+
+                cursor.callproc('exchange_currency', [from_currency_id, to_currency_id, amount])
+
+            return Response({'success': 'Currency exchanged successfully'}, status=200)
+
+        except Currency.DoesNotExist:
+            return Response({'error': 'Currency not found'}, status=404)
+        except json.JSONDecodeError:
+            return Response({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return Response({'error': str(e)}, status=500)
+
 
 class TransactionViewSet(viewsets.ModelViewSet):
     queryset = Transaction.objects.all()

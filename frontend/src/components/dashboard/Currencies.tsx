@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
+import { MdCurrencyExchange, MdDelete, MdOutlineEdit, MdBlock  } from "react-icons/md";
 import styles from './currencies.module.css';
 
 interface CurrenciesProps {
@@ -7,9 +8,11 @@ interface CurrenciesProps {
     onCreateNewCurrency: () => void;
     onDeleteCurrency: (id: number) => void;
     onEditCurrency: (currencyId: number, currencyName: string) => void;
+    onExchangeCurrency: (id: number) => void;
 }
 
 const Currencies: React.FC<CurrenciesProps> = ({
+    onExchangeCurrency,
     onCreateNewCurrency,
     onDeleteCurrency,
     onEditCurrency,
@@ -42,13 +45,15 @@ const Currencies: React.FC<CurrenciesProps> = ({
             </div>
             {!isHidden && (
                 <div className={styles.content}>
-
                     {sortedCurrencies.map((currency, index) => (
                         <div key={index} className={styles.currency}>
                             {currency.currency_name}: {currency.owned}
                             <div className={styles.buttons}>
-                                <button className={styles.editButton} onClick={() => onEditCurrency(currency.currency_id, currency.currency_name)}>✏️</button>
-                                <button className={styles.deleteButton} onClick={() => onDeleteCurrency(currency.currency_id)}>❌</button>
+                                {currency.exchange_rate != null &&  (
+                                    <button className={styles.exchangeButton} onClick={() => onExchangeCurrency(currency.currency_id)}><MdCurrencyExchange /></button>
+                                )}
+                                <button className={styles.editButton} onClick={() => onEditCurrency(currency.currency_id, currency.currency_name)}><MdOutlineEdit /></button>
+                                <button className={styles.deleteButton} onClick={() => onDeleteCurrency(currency.currency_id)}><MdDelete /></button>
                             </div>
                         </div>
                     ))}

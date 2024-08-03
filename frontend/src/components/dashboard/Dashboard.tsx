@@ -20,6 +20,7 @@ import CreateCurrencyPopup from '../popups_create/CreateCurrencyPopup';
 import CreateItemPopup from '../popups_create/CreateItemPopup';
 import UseItemPopup from '../popups_actions/UseItemPupup';
 import axios from 'axios';
+import ExchangePopup from '../popups_actions/ExchangePopup';
 
 interface Layer {
   layer_id: number;
@@ -76,6 +77,8 @@ interface Currency {
   currency_id: number;
   currency_name: string;
   owned: number;
+  exchange_rate: number | null;
+  exchange_loss: number;
 }
 
 interface Item {
@@ -197,8 +200,10 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [priceToEdit, setPriceToEdit] = useState<Price | undefined>(undefined);
   const [isCreateBarPopupOpen, setIsCreateBarPopupOpen] = useState(false);
   const [showItemUse, setShowItemUse] = useState(false);
+  const [showExchange, setShowExchange] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
   const [barToEdit, setBarToEdit] = useState<Bar | null>(null);
+  const [fromCurrency, setFromCurrency] = useState<number>(0)
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 0;
   const taskUpdateCallbacks = useRef<{ [key: number]: () => void }>({});
@@ -1088,6 +1093,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     });
   };
 
+  const handleExchangeCurrency = (fromCurrencyId: number) => {
+    setShowExchange(true);
+    setFromCurrency(fromCurrencyId)
+  }
+
+  const handleCancelExchange = () => {
+    setShowExchange(false);
+  }
+
+  const handleConfirmExchange = () => {
+    setShowExchange(false);
+  }
+
   const handleCreateItem = async () => {
     setCreateItemPopup({ 
       isOpen: true,
@@ -1666,6 +1684,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         <div className={styles.currencies}>
           <Currencies 
             currencies={currencies}
+            onExchangeCurrency={handleExchangeCurrency}
             onDeleteCurrency={handleCurrencyDeletion}
             onEditCurrency={handleEditCurrency}
             onCreateNewCurrency={handleCreateCurrency}
@@ -1866,6 +1885,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           onConfirm={handleConfirmUse}
           onCancel={handleCancelUse}
           maxQuantity={maxQuantity}
+        />
+        <ExchangePopup
+          show={showExchange}
+          fromCurrencyId={fromCurrency}
+          currencies={currencies}
+          onClose={handleCancelExchange}
+          onConfirm={handleConfirmExchange}
         />
       </div>
       <div

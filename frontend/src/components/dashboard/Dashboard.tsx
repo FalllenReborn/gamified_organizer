@@ -1102,9 +1102,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setShowExchange(false);
   }
 
-  const handleConfirmExchange = () => {
+  const handleConfirmExchange = async (fromCurrencyId: number, toCurrencyId: number, fromAmount: number) => {
+    try {
+        const response = await axios.post(
+            'http://localhost:8000/api/currencies/exchange_currency/', 
+            {
+                from_currency_id: fromCurrencyId,
+                to_currency_id: toCurrencyId,
+                amount: fromAmount,
+            },
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+        console.log('Exchange successful:', response.data);
+    } catch (error: any) {
+        if (error.response) {
+            // The request was made and the server responded with a status code
+            // that falls out of the range of 2xx
+            console.error('Error response:', error.response.data);
+            console.error('Error status:', error.response.status);
+            console.error('Error headers:', error.response.headers);
+        } else if (error.request) {
+            // The request was made but no response was received
+            console.error('Error request:', error.request);
+        } else {
+            // Something happened in setting up the request that triggered an Error
+            console.error('Error message:', error.message);
+        }
+        console.error('Error config:', error.config);
+    }
+
+    fetchCurrencies();
     setShowExchange(false);
-  }
+};
 
   const handleCreateItem = async () => {
     setCreateItemPopup({ 

@@ -9,7 +9,6 @@
     justify-content: center;
     background: rgba(0, 0, 0, 0.5);
     z-index: 11000000;
-    
 }
 
 .popup {
@@ -59,11 +58,41 @@
     width: 100%;
     padding: 8px;
     font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.description {
+    width: 80%;
+    flex-direction: row;
+    flex: 1;
+    margin: 0 auto 20px auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: left;
+    text-align: left;
+}
+
+.descriptionName, .descriptionValue {
+    flex: 1 1 45%;
+}
+
+.descriptionName {
+    text-align: left;
+    font-weight: bold;
+}
+
+.descriptionValue {
+    text-align: right;
+}
+
+.equation {
+    text-align: center;
 }
 
 .buttons {
     display: flex;
     justify-content: space-between;
+    align-items: center;
 }
 
 .cancelButton, .confirmButton {
@@ -81,4 +110,15 @@
 .confirmButton {
     background: #007bff;
     color: white;
+}
+
+.confirmButton:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.errorText {
+    color: red;
+    font-size: 14px;
+    margin-right: 10px;
 }

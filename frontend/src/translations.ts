@@ -53,7 +53,7 @@ export const translations: Record<Language, { [key: string]: string }> = {
     useNote: 'Note describing usage',
     useMany: 'Use many',
     useItem: 'Use item',
-    enterNote: 'Enter a note (optiona)',
+    enterNote: 'Enter a note (optional)',
     bar: 'Bar',
     properties: 'Properties',
     xAxis: 'X Axis',
@@ -89,6 +89,9 @@ export const translations: Record<Language, { [key: string]: string }> = {
     areYouSureShop: 'Are you sure you want to delete this shop?',
     areYouSureCurrency: 'Are you sure you want to delete this currency?',
     completeDuties: 'Complete duty?',
+    exchangeCurrencies: 'Exchange currencies',
+    fromCurrency: 'From currency:',
+    toCurrency: 'To currency:',
   },
   polish: {
     createList: 'Stwórz listę',
@@ -178,5 +181,8 @@ export const translations: Record<Language, { [key: string]: string }> = {
     areYouSureShop: 'Czy na pewno chcesz usunąć ten sklep?',
     areYouSureCurrency: 'Czy na pewno chcesz usunąć tą walutę?',
     completeDuties: 'Ukończyć obowiązek?',
+    exchangeCurrencies: 'Wymień waluty',
+    fromCurrency: 'Z waluty',
+    toCurrency: 'Na walutę',
   },
 };

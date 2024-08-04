@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from .models import TaskList, Task, Reward, Bar, Currency, Transaction, Layer, Item, Voucher, Shop, Price
@@ -382,10 +382,12 @@ class CurrencyViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='exchange_currency')
     def exchange_currency(self, request):
         try:
-            data = json.loads(request.body.decode('utf-8'))
-            from_currency_id = data.get('from_currency')
-            to_currency_id = data.get('to_currency')
-            amount = float(data.get('amount'))
+            from_currency_id = request.data.get('from_currency_id')
+            to_currency_id = request.data.get('to_currency_id')
+            amount = request.data.get('amount')
+
+            if not from_currency_id or not to_currency_id or not amount:
+                return Response({"error": "Invalid input"}, status=status.HTTP_400_BAD_REQUEST)
 
             if amount <= 0:
                 return Response({'error': 'Amount must be greater than 0'}, status=400)

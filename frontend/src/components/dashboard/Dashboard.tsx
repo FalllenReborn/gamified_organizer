@@ -98,6 +98,8 @@ interface Task {
 interface CreateCurrencyState {
   isOpen: boolean;
   defaultValue: string;
+  defaultRate: number | null;
+  defaultLoss: number;
   isEditMode: boolean;
   currencyId: number | undefined;
 }
@@ -119,7 +121,7 @@ interface CreateListPopupState {
   defaultHeight: number;
 }
 
-interface Bar extends BarData {
+interface BarPrizes extends BarData {
   transactions: { [currencyId: number]: number };
   vouchers: { [itemId: number]: number };
 }
@@ -174,7 +176,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [isDraggingSidebar, setIsDraggingSidebar] = useState(false);
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '', isEditMode: false, currencyId: undefined, });
+  const [createCurrencyPopup, setCreateCurrencyPopup] = useState<CreateCurrencyState>({ isOpen: false, defaultValue: '', defaultRate: 1, defaultLoss:0.1, isEditMode: false, currencyId: undefined, });
   const [createItemPopup, setCreateItemPopup] = useState<CreateItemState>({ isOpen: false, defaultValue: '', isEditMode: false, itemId: undefined});
   const [createListPopup, setCreateListPopup] = useState<CreateListPopupState>({ isOpen: false, id: null, defaultValue: '', defaultX: 0, defaultY: 0, defaultWidth: 300, defaultHeight: 200});
   const [componentType, setComponentType] = useState<number>(0);
@@ -202,15 +204,11 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
   const [showItemUse, setShowItemUse] = useState(false);
   const [showExchange, setShowExchange] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
-  const [barToEdit, setBarToEdit] = useState<Bar | null>(null);
+  const [barToEdit, setBarToEdit] = useState<BarPrizes | null>(null);
   const [fromCurrency, setFromCurrency] = useState<number>(0)
   const dashboardRef = useRef<HTMLDivElement>(null);
   const sidebarWidth = 0;
   const taskUpdateCallbacks = useRef<{ [key: number]: () => void }>({});
-
-  const registerTaskUpdateCallback = (id: number, callback: () => void) => {
-    taskUpdateCallbacks.current[id] = callback;
-  };
 
   const toggleTaskChecked = (taskId: number) => {
     setCheckedTasks((prev) =>
@@ -412,7 +410,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
       const initialTranslate = getInitialTranslate();
       setTranslate(initialTranslate);
     }
-  }, [dashboardRef.current]);
+  }, []);
 
   const handleReset = () => {
     const initialTranslate = getInitialTranslate();
@@ -1079,15 +1077,19 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setCreateCurrencyPopup({
       isOpen: true,
       defaultValue: '',
+      defaultRate: 1, 
+      defaultLoss: 0.1,
       isEditMode: false,
       currencyId: undefined,
     });
   };
 
-  const handleEditCurrency = (currencyId: number, currencyName: string) => {
+  const handleEditCurrency = (currencyId: number, currencyName: string, exchangeRate: number | null, exchangeLoss: number) => {
     setCreateCurrencyPopup({
       isOpen: true,
       defaultValue: currencyName,
+      defaultRate: exchangeRate, 
+      defaultLoss: exchangeLoss,
       isEditMode: true,
       currencyId: currencyId,
     });
@@ -1183,16 +1185,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     setShowItemUse(false);
   };
 
-
-  const handleSaveNewCurrency = async (newName: string) => {
-    try {
-      await axios.post(`http://localhost:8000/api/currencies/create_currency/`, { currency_name: newName });
-      await fetchCurrencies();
-    } catch (error) {
-      console.error('Error creating currency:', error);
-    }
-  };
-
   const handleSaveNewItem = async (newName: string) => {
     try {
       await axios.post(`http://localhost:8000/api/items/create_item/`, { item_name: newName });
@@ -1202,12 +1194,55 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
     }
   };
 
-  const handleUpdateCurrency = async (currencyId: number, newName: string) => {
+  const handleSaveNewCurrency = async (newName: string, newRate: number | null, newLoss: number) => {
+    const exchangeRate = newRate === 0 || newRate === null || newRate === undefined ? null : newRate;
+  
+    const currencyPayload = {
+      currency_name: newName,
+      exchange_rate: exchangeRate,
+      exchange_loss: newLoss
+    };
+  
     try {
-      await axios.patch(`http://localhost:8000/api/currencies/${currencyId}/`, { currency_name: newName });
+      const response = await axios.post('http://localhost:8000/api/currencies/create_currency/', currencyPayload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Response:', response);
       await fetchCurrencies();
     } catch (error) {
-      console.error('Error creating currency:', error);
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Error response:', error.response.data);
+      } else {
+        console.error('Error creating currency:', error);
+      }
+    }
+  };
+  
+  const handleUpdateCurrency = async (currencyId: number, newName: string, newRate: number | null, newLoss: number) => {
+    const exchangeRate = newRate === 0 || newRate === null || newRate === undefined ? null : newRate;
+  
+    const currencyPayload = {
+      currency_name: newName,
+      exchange_rate: exchangeRate,
+      exchange_loss: newLoss
+    };
+  
+    try {
+      const response = await axios.patch(`http://localhost:8000/api/currencies/${currencyId}/`, currencyPayload, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      console.log('Response:', response);
+      await fetchCurrencies();
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        console.error('Error response:', error.response.data);
+      } else {
+        console.error('Error updating currency:', error);
+      }
     }
   };
 
@@ -1842,11 +1877,13 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <CreateCurrencyPopup
             isOpen={createCurrencyPopup.isOpen}
             defaultValue={createCurrencyPopup.defaultValue}
+            defaultRate={createCurrencyPopup.defaultRate}
+            defaultLoss={createCurrencyPopup.defaultLoss}
             isEditMode={createCurrencyPopup.isEditMode}
             currencyId={createCurrencyPopup.currencyId}
             onCreate={handleSaveNewCurrency}
             onEdit={handleUpdateCurrency}
-            onQuit={() => setCreateCurrencyPopup({ isOpen: false, defaultValue: '', isEditMode: false, currencyId: undefined })}
+            onQuit={() => setCreateCurrencyPopup({ isOpen: false, defaultValue: '', defaultRate: 1, defaultLoss:0.1, isEditMode: false, currencyId: undefined })}
           />
         )}
         {createItemPopup.isOpen && (

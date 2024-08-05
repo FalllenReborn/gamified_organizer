@@ -22,6 +22,13 @@
   .popup h2 {
     margin-top: 0;
   }
+
+  .form {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+    margin-right: 20px;
+  }
   
   .popup input {
     width: 100%;

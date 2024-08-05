@@ -155,7 +155,7 @@ const ExchangePopup: React.FC<ExchangePopupProps> = ({ fromCurrencyId, currencie
                     </div>
                 </div>
                 <div className={styles.equation}>
-                    {fromAmount} * ({fromCurrency?.exchange_rate!} / {toCurrency?.exchange_rate!}) * (1 - {toCurrency?.exchange_loss}) = {toAmount}
+                    {fromAmount} * ({fromCurrency?.exchange_rate!} / {toCurrency?.exchange_rate!}) * (1 - {toCurrency?.exchange_loss}) ≈ {toAmount}
                 </div>
                 <div className={styles.buttons}>
                     

@@ -337,7 +337,7 @@ class CurrencyViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], url_path='create_currency')
     def create_currency(self, request):
         try:
-            data = json.loads(request.body.decode('utf-8'))
+            data = request.data
             currency_name = data.get('currency_name')
             owned = data.get('owned', 0)
             exchange_rate = data.get('exchange_rate', 1)
@@ -355,10 +355,9 @@ class CurrencyViewSet(viewsets.ModelViewSet):
             serializer = CurrencySerializer(currency)
             return Response(serializer.data, status=201)
 
-        except json.JSONDecodeError:
-            return Response({'error': 'Invalid JSON'}, status=400)
         except Exception as e:
             return Response({'error': str(e)}, status=500)
+
 
     @method_decorator(csrf_exempt)
     @action(detail=False, methods=['post'], url_path='update_balances')

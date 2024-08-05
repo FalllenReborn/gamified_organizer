@@ -92,6 +92,8 @@ export const translations: Record<Language, { [key: string]: string }> = {
     exchangeCurrencies: 'Exchange currencies',
     fromCurrency: 'From currency:',
     toCurrency: 'To currency:',
+    rate: 'Rate',
+    loss: 'Loss',
   },
   polish: {
     createList: 'Stwórz listę',
@@ -184,5 +186,7 @@ export const translations: Record<Language, { [key: string]: string }> = {
     exchangeCurrencies: 'Wymień waluty',
     fromCurrency: 'Z waluty',
     toCurrency: 'Na walutę',
+    rate: 'Kurs',
+    loss: 'Strata',
   },
 };

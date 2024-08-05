@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
-import { MdCurrencyExchange, MdDelete, MdOutlineEdit, MdBlock  } from "react-icons/md";
+import { MdCurrencyExchange, MdDelete, MdOutlineEdit  } from "react-icons/md";
 import styles from './currencies.module.css';
 
 interface CurrenciesProps {
     currencies: any[];
     onCreateNewCurrency: () => void;
     onDeleteCurrency: (id: number) => void;
-    onEditCurrency: (currencyId: number, currencyName: string) => void;
+    onEditCurrency: (currencyId: number, currencyName: string, exchangeRate: number | null, exchangeLoss: number) => void;
     onExchangeCurrency: (id: number) => void;
 }
 
@@ -52,7 +52,12 @@ const Currencies: React.FC<CurrenciesProps> = ({
                                 {currency.exchange_rate != null &&  (
                                     <button className={styles.exchangeButton} onClick={() => onExchangeCurrency(currency.currency_id)}><MdCurrencyExchange /></button>
                                 )}
-                                <button className={styles.editButton} onClick={() => onEditCurrency(currency.currency_id, currency.currency_name)}><MdOutlineEdit /></button>
+                                <button 
+                                    className={styles.editButton} 
+                                    onClick={() => onEditCurrency(currency.currency_id, currency.currency_name, currency.exchange_rate, currency.exchange_loss)}
+                                >
+                                    <MdOutlineEdit />
+                                </button>
                                 <button className={styles.deleteButton} onClick={() => onDeleteCurrency(currency.currency_id)}><MdDelete /></button>
                             </div>
                         </div>

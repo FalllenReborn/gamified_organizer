@@ -1931,6 +1931,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           <CreatePricePopup
             onClose={closePricePopup}
             onConfirm={handlePriceConfirm}
+            prices={prices}
             currencies={currencies}
             items={items}
             isEditMode={isEditMode}

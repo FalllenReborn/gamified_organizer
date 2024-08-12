@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
 import { MdCurrencyExchange, MdDelete, MdOutlineEdit  } from "react-icons/md";
+import { GrMoney } from "react-icons/gr";
 import styles from './currencies.module.css';
 
 interface CurrenciesProps {
@@ -21,7 +22,7 @@ const Currencies: React.FC<CurrenciesProps> = ({
     const { t } = useTranslation();
     const [isHidden, setIsHidden] = useState(false);
 
-    const handleHide = async () => {
+    const handleHide = () => {
         setIsHidden(!isHidden);
     };
     
@@ -40,7 +41,7 @@ const Currencies: React.FC<CurrenciesProps> = ({
                     </>
                 }
                 <div className={styles.hideButton} onClick={handleHide}>
-                    {isHidden ? '▼' : '▲'}
+                    {isHidden ? <GrMoney /> : '▲'}
                 </div>
             </div>
             {!isHidden && (

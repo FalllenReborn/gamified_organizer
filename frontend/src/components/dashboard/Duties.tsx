@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
+import { FaTasks } from "react-icons/fa";
 import styles from './duties.module.css';
-import axios from 'axios';
 
 interface Duty {
     task_id: number;
@@ -166,7 +166,7 @@ const Duties: React.FC<DutiesProps> = ({
                 className={`${styles.hideButton} ${isHidden ? '' : styles.bordered}`} 
                 onClick={() => setIsHidden(!isHidden)}
             >
-                {isHidden ? '▲' : '▼'}
+                {isHidden ? <FaTasks /> : '▼'}
             </div>
         </div>
     );

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from '../../contexts/TranslationContext';
 import { MdDelete, MdOutlineEdit } from "react-icons/md";
 import { BiSolidHide } from "react-icons/bi";
-import { MdKeyboardDoubleArrowDown } from "react-icons/md";
+import { MdKeyboardDoubleArrowDown, MdKeyboardDoubleArrowUp } from "react-icons/md";
 import styles from './bar.module.css';
 import axios from 'axios';
 
@@ -327,7 +327,7 @@ const Bar: React.FC<BarProps> = ({
                         </div>
                         <div className={styles.buttonLine}>
                             <button className={styles.expandButton} onClick={() => setExpandedBar(!expandedBar)}>
-                                <MdKeyboardDoubleArrowDown />
+                                {expandedBar ? <MdKeyboardDoubleArrowUp /> : <MdKeyboardDoubleArrowDown />}
                             </button>
                         </div>
                         <div className={styles.completionLine}>

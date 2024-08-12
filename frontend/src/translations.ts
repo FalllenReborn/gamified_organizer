@@ -12,7 +12,7 @@ export const translations: Record<Language, { [key: string]: string }> = {
     returnHome: 'Home page',
     logout: 'Logout',
     settings: 'Settings',
-    create: 'Create,',
+    create: 'Create',
     actions: 'Actions',
     language: 'Language',
     theme: 'Theme',

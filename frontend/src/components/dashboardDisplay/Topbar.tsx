@@ -2,14 +2,13 @@ import React, { useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { ClockContext } from '../../contexts/ClockContext';
 import { useTranslation } from '../../contexts/TranslationContext';
 import LoginPopup from '../authentication/LoginPopup';
 import RegisterPopup from '../authentication/RegisterPopup';
-import styles from './sidebar.module.css';
+import styles from './topbar.module.css';
 import classNames from 'classnames';
 
-interface SidebarProps {
+interface TopbarProps {
   onCreateNewList: () => void;
   onCompleteTasks: () => void;
   onDeleteTasks: () => void;
@@ -22,7 +21,7 @@ type DropdownState = 'createDropdown' | 'actionsDropdown' | 'languageDropdown' |
 
 type Language = 'english' | 'polish';
 
-const Sidebar: React.FC<SidebarProps> = ({ 
+const Topbar: React.FC<TopbarProps> = ({ 
   onCreateNewList, 
   onCompleteTasks, 
   onCreateNewBar, 
@@ -31,11 +30,10 @@ const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const { isDarkMode, toggleDarkMode, toggleLightMode, } = useContext(ThemeContext);
   const { isAuthenticated, logout } = useAuth();
-  const currentDateTime = useContext(ClockContext); // Use ClockContext
   const [showLoginPopup, setShowLoginPopup] = useState(false);
   const [showRegisterPopup, setShowRegisterPopup] = useState(false);
   const [dropdownStates, setDropdownStates] = useState<DropdownState | null>(null);
-  const { t, setLanguage, language } = useTranslation();
+  const { t, setLanguage } = useTranslation();
   const navigate = useNavigate();
 
   const handleLanguageChange = (language: Language) => {
@@ -158,4 +156,4 @@ const Sidebar: React.FC<SidebarProps> = ({
   );
 };
 
-export default Sidebar;
+export default Topbar;

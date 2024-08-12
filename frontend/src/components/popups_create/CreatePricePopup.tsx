@@ -77,7 +77,7 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
             setPriceShop(shopId);
             setPricesData(prices);
         }
-    }, [isEditMode, priceToEdit, shopId]);
+    }, [isEditMode, priceToEdit, shopId, prices]);
 
     const handleItemChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
         setPriceItem(Number(event.target.value));
@@ -197,7 +197,7 @@ const CreatePricePopup: React.FC<CreatePricePopupProps> = ({
                                 pricesData
                                 .filter((price) => price.item === priceItem)
                                 .map((price) => ( 
-                                    <div>
+                                    <div key={price.price_id}>
                                         ID: {price.price_id} Based on "{getCurrencyName(price.currency)}": {calculateSuggestion(price)}
                                     </div>
                                 ))

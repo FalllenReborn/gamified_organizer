@@ -2,10 +2,11 @@ import React, { useContext, useState, useRef, useEffect, MouseEvent } from 'reac
 import { ThemeContext } from '../../contexts/ThemeContext';
 import { useConfirmation } from '../../contexts/ConfirmationContext';
 import { useTranslation } from '../../contexts/TranslationContext';
-import Sidebar from '../sidebar/Sidebar';
-import ResetButton from '../sidebar/ResetButton';
+import Topbar from '../dashboardDisplay/Topbar';
+import SideContainer from '../dashboardDisplay/SideContainer';
+import ResetButton from '../dashboardDisplay/ResetButton';
 import styles from './dashboard.module.css';
-import ToggleButton from '../sidebar/ToggleButton';
+import ToggleButton from '../dashboardDisplay/ToggleButton';
 import List from './List';
 import Bar from './Bar';
 import Shop from './Shop';
@@ -1740,7 +1741,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
         onMouseDown={(e) => e.stopPropagation()}
       >
         <ToggleButton onClick={handleToggle} isVisible={isSidebarVisible} />
-        {isSidebarVisible && <Sidebar 
+        {isSidebarVisible && <Topbar 
           onCreateNewShop={handleCreateNewShop}
           onReturnHome={onReturnHome} 
           onCreateNewList={handleCreateNewList} 
@@ -1749,7 +1750,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
           onDeleteTasks={handleDeleteTasks}
         />}
         <ResetButton onClick={handleReset} />
-        <div className={styles.currencies}>
+        <SideContainer>
           <Currencies 
             currencies={currencies}
             onExchangeCurrency={handleExchangeCurrency}
@@ -1757,8 +1758,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onEditCurrency={handleEditCurrency}
             onCreateNewCurrency={handleCreateCurrency}
           /> 
-        </div>
-        <div className={styles.items}>
           <Items 
             items={items}
             onDeleteItem={handleItemDeletion}
@@ -1766,7 +1765,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onReturnHome }) => {
             onCreateNewItem={handleCreateItem}
             onUseItem={handleUseItem}
           /> 
-        </div>
+        </SideContainer>
         <div className={styles.duties}>
           <Duties 
             duties={getFilteredTasks(null)}

@@ -1,8 +1,4 @@
 .currenciesBase {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 10000000;
     border: 2px solid #bbb;
     background-color: #4a4a4a;
 }
@@ -34,8 +30,8 @@
 .hideButton {
     cursor: pointer;
     margin-left: auto;
-    margin-right: 12px;
-    margin-top: 7px;
+    margin-right: 10px;
+    margin-top: 5px;
     user-select: none;
     cursor: pointer;
 }
